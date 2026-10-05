@@ -100,14 +100,14 @@ All helpers are `security definer`, `stable`, `search_path = ''`, take an explic
 
 ## Phase checklist
 
-- [ ] 1 Foundation — repo, design system, auth (magic link + Google), workspaces, membership, RLS, i18n, PWA shell, layout
-- [ ] 2 Core — projects, sections, tasks, subtasks, checklist, labels, list/board, task panel, quick add + parser, inbox, palette
-- [ ] 3 Collaboration — invitations, guests, realtime, comments, mentions, attachments, notifications, activity
-- [ ] 4 Time — calendar, timeline, recurrence, time blocks, Home, overview, plan tomorrow, ICS
-- [ ] 5 Reminders — reminders, pg_cron, web push, email, Telegram bot, digest, weekly review
-- [ ] 6 Insight — goals, habits, focus, reports, workload
-- [ ] 7 Data — export, import (CSV + planner JSON), trash, templates, onboarding
-- [ ] 8 Polish & ship — empty states, motion, a11y, Lighthouse, Playwright, README, deploy
+- [x] 1 Foundation — repo, design system, auth (magic link + Google), workspaces, membership, RLS, i18n, PWA shell, layout
+- [x] 2 Core — projects, sections, tasks, subtasks, checklist, labels, list/board, task panel, quick add + parser, inbox, palette
+- [x] 3 Collaboration — invitations, guests, realtime, comments, mentions, attachments, notifications, activity
+- [x] 4 Time — calendar, timeline, recurrence, time blocks, Home, overview, plan tomorrow, ICS
+- [x] 5 Reminders — reminders, pg_cron, web push, email, Telegram bot, digest, weekly review
+- [x] 6 Insight — goals, habits, focus, reports, workload
+- [x] 7 Data — export, import (CSV + planner JSON), trash, templates, onboarding
+- [~] 8 Polish & ship — empty states, motion, a11y, README, deploy docs done; Playwright suite written; e2e run, Lighthouse and live deploy need the Supabase/Vercel/Telegram credentials
 
 ## Decisions and deviations
 

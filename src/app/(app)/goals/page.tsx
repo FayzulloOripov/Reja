@@ -244,7 +244,7 @@ function NewGoalDialog({ open, onOpenChange, workspaceId }: { open: boolean; onO
             <div className="space-y-1.5">
               <Label>{t("goals.project")}</Label>
               <Select value={projectId} onValueChange={setProjectId}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger aria-label={t("goals.project")}><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">{t("goals.workspaceGoal")}</SelectItem>
                   {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}

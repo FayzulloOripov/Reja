@@ -107,7 +107,7 @@ export function OnboardingClient({ userId, demo }: { userId: string; demo?: bool
               <div className="space-y-2">
                 <p className="text-sm font-medium">{tc("settings.timezone")}</p>
                 <Select value={me.timezone} onValueChange={(v) => updateProfile({ timezone: v })}>
-                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                  <SelectTrigger aria-label={tc("settings.timezone")} className="w-full"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {Array.from(new Set(["Asia/Tashkent", "Asia/Samarkand", detectedTz, "Europe/Moscow", "Europe/Istanbul", "Asia/Dubai", "Europe/London", "UTC"])).map((z) => (
                       <SelectItem key={z} value={z}>{z}</SelectItem>

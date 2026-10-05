@@ -172,7 +172,7 @@ export function ShareDialog({ project, open, onOpenChange, manager }: { project:
                           value={m.role}
                           onValueChange={(v) => mutate([{ table: "project_members", kind: "update", row: { project_id: m.project_id, user_id: m.user_id }, values: { role: v as ProjectRole } }])}
                         >
-                          <SelectTrigger className="h-8 w-32"><SelectValue /></SelectTrigger>
+                          <SelectTrigger aria-label={t("common.role")} className="h-8 w-32"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             {(["manager", "member", "viewer"] as const).map((r) => (
                               <SelectItem key={r} value={r}>{roleLabel(r)}</SelectItem>

@@ -1,0 +1,29 @@
+# Nightly database backup for the Supabase free plan (which has no downloadable backups).
+# Add a repository secret SUPABASE_DB_URL = the "Session pooler" connection string
+# (Project Settings → Database → Connection string, with your database password).
+# Dumps are kept as encrypted-at-rest workflow artifacts for 90 days. Use a PRIVATE repository.
+name: Database backup
+on:
+  schedule:
+    - cron: "30 21 * * *" # 02:30 Tashkent
+  workflow_dispatch:
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y postgresql-client
+      - name: Dump schema and data
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          stamp=$(date -u +%Y-%m-%d)
+          pg_dump "$DB_URL" --no-owner --no-privileges --schema=public --format=custom --file="reja-$stamp.dump"
+          pg_dump "$DB_URL" --no-owner --no-privileges --schema=auth --data-only --table=auth.users --format=custom --file="reja-auth-users-$stamp.dump"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reja-backup-${{ github.run_id }}
+          path: "*.dump"
+          retention-days: 90

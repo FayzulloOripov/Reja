@@ -243,7 +243,7 @@ function MembersCard({ workspaceId, admin }: { workspaceId: string; admin: boole
           <form className="flex flex-col gap-2 sm:flex-row" onSubmit={(e) => { e.preventDefault(); if (email.trim()) void invite(true); }}>
             <Input type="email" placeholder={t("auth.emailPlaceholder")} value={email} onChange={(e) => setEmail(e.target.value)} aria-label={t("common.email")} />
             <Select value={role} onValueChange={(v) => setRole(v as typeof role)}>
-              <SelectTrigger className="sm:w-40"><SelectValue /></SelectTrigger>
+              <SelectTrigger aria-label={t("settings.inviteRole")} className="sm:w-40"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {(["admin", "member", "guest"] as const).map((r) => <SelectItem key={r} value={r}>{t(`settings.roles.${r}`)}</SelectItem>)}
               </SelectContent>
@@ -281,7 +281,7 @@ function MembersCard({ workspaceId, admin }: { workspaceId: string; admin: boole
             {admin && m.role !== "owner" && m.id !== uid ? (
               <>
                 <Select value={m.role} onValueChange={(v) => mutate([{ table: "workspace_members", kind: "update", row: { workspace_id: workspaceId, user_id: m.id }, values: { role: v as WorkspaceRole } }])}>
-                  <SelectTrigger className="h-8 w-36"><SelectValue /></SelectTrigger>
+                  <SelectTrigger aria-label={t("common.role")} className="h-8 w-36"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {(["admin", "member", "guest"] as const).map((r) => <SelectItem key={r} value={r}>{t(`settings.roles.${r}`)}</SelectItem>)}
                   </SelectContent>

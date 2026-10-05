@@ -62,7 +62,7 @@ export function ProfileSection() {
             router.refresh();
           }}
         >
-          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+          <SelectTrigger aria-label={t("settings.language")} className="w-40"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="uz">Oʻzbekcha</SelectItem>
             <SelectItem value="en">English</SelectItem>
@@ -71,7 +71,7 @@ export function ProfileSection() {
       </SettingsRow>
       <SettingsRow label={t("settings.timezone")}>
         <Select value={me.timezone} onValueChange={(v) => updateProfile({ timezone: v })}>
-          <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
+          <SelectTrigger aria-label={t("settings.timezone")} className="w-56"><SelectValue /></SelectTrigger>
           <SelectContent className="max-h-80">
             {zones.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}
           </SelectContent>
@@ -79,7 +79,7 @@ export function ProfileSection() {
       </SettingsRow>
       <SettingsRow label={t("settings.theme")}>
         <Select value={theme} onValueChange={(v) => { setTheme(v as "light"); updateProfile({ theme: v as Profile["theme"] }); }}>
-          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+          <SelectTrigger aria-label={t("settings.theme")} className="w-40"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="system">{t("nav.themeSystem")}</SelectItem>
             <SelectItem value="light">{t("nav.themeLight")}</SelectItem>
@@ -139,7 +139,7 @@ export function NotificationsSection() {
         <SettingsRow label={t("settings.weeklyReview")} description={t("settings.weeklyReviewHint")}>
           <Switch checked={me.review_enabled} onCheckedChange={(v) => updateProfile({ review_enabled: v })} aria-label={t("settings.weeklyReview")} />
           <Select value={String(me.review_dow)} onValueChange={(v) => updateProfile({ review_dow: Number(v) })} disabled={!me.review_enabled}>
-            <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+            <SelectTrigger aria-label={t("settings.weeklyReview")} className="w-36"><SelectValue /></SelectTrigger>
             <SelectContent>
               {f.weekdays.map((d, i) => <SelectItem key={d} value={String(i + 1)}>{d[0].toUpperCase() + d.slice(1)}</SelectItem>)}
             </SelectContent>
@@ -151,7 +151,7 @@ export function NotificationsSection() {
         </SettingsRow>
         <SettingsRow label={t("settings.defaultReminder")}>
           <Select value={me.default_reminder} onValueChange={(v) => updateProfile({ default_reminder: v as Profile["default_reminder"] })}>
-            <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+            <SelectTrigger aria-label={t("settings.defaultReminder")} className="w-48"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="none">{t("settings.defaultReminderNone")}</SelectItem>
               <SelectItem value="at_due">{t("task.reminderAtDue")}</SelectItem>
