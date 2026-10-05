@@ -44,7 +44,7 @@ export function onTimeRate(tasks: T[], weeks: WeekBucket[], tz: string) {
       const limit = [t.due_date, t.deadline].filter(Boolean).sort().at(-1)!;
       return d <= limit;
     });
-    return { week: w.start, rate: done.length ? Math.round((onTime.length / done.length) * 100) : null, total: done.length };
+    return { week: w.start, rate: done.length ? Math.round((onTime.length / done.length) * 100) : null, total: done.length, onTime: onTime.length };
   });
 }
 
@@ -89,7 +89,7 @@ export function progressOverTime(tasks: T[], weeks: WeekBucket[], tz: string) {
   });
 }
 
-export function minutesByKey(entries: Pick<TimeEntry, "task_id" | "minutes" | "started_at">[], keyOf: (taskId: string) => string | null, from: ISODate, tz: string) {
+export function minutesByKey(entries: Pick<TimeEntry, "task_id" | "minutes" | "started_at">[], keyOf: (taskId: string | null) => string | null, from: ISODate, tz: string) {
   const out = new Map<string, number>();
   for (const e of entries) {
     if (dateIn(tz, e.started_at) < from) continue;

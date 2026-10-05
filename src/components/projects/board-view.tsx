@@ -5,7 +5,7 @@ import {
   DndContext,
   DragOverlay,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
   TouchSensor,
   useDroppable,
   useSensor,
@@ -16,7 +16,7 @@ import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalList
 import { CSS } from "@dnd-kit/utilities";
 import { CheckSquare, MessageSquare, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { AvatarStack, DueChip, PriorityIcon, StatusIcon } from "@/components/common/bits";
 import { InlineAdd, positionBetween } from "@/components/tasks/task-list";
 import { TaskCheckbox } from "@/components/tasks/task-row";
@@ -24,7 +24,7 @@ import { byPosition } from "@/lib/filters";
 import { isOverdue } from "@/lib/health";
 import type { Project, Section, Task, TaskStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { createSection, moveTasks, toggleComplete, updateTask } from "@/store/actions";
+import { createSection, moveCard, toggleComplete } from "@/store/actions";
 import { assigneesByTask, checklistByTask, commentsByTask, labelsByTask, useToday } from "@/store/hooks";
 import { useStore } from "@/store/store";
 import { useUI } from "@/store/ui";
@@ -49,17 +49,27 @@ export function BoardView({ project, tasks, sections, by, writable }: { project:
       return STATUSES.filter((s) => s !== "cancelled").map((s) => ({ key: s, title: t(`status.${s}`), status: s, tasks: tasks.filter((x) => x.status === s).sort(byPosition) }));
     }
     const loose = tasks.filter((x) => !x.section_id || !sections.some((s) => s.id === x.section_id)).sort(byPosition);
+    // every column stays visible, empty or not, so a card can always be dragged back
     return [
-      ...(loose.length || sections.length === 0 ? [{ key: "none", title: t("project.noSection"), sectionId: null, tasks: loose }] : []),
+      { key: "none", title: t("project.noSection"), sectionId: null, tasks: loose },
       ...sections.map((s) => ({ key: s.id, title: s.name, sectionId: s.id, tasks: tasks.filter((x) => x.section_id === s.id).sort(byPosition) })),
     ];
   }, [by, tasks, sections, t]);
 
+  // mouse drags after 6px; on touch a long press (250 ms) starts the drag, so swiping scrolls the board
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 220, tolerance: 6 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
+  const scroller = useRef<HTMLDivElement>(null);
+  const [visibleCol, setVisibleCol] = useState(0);
+  const onScroll = () => {
+    const el = scroller.current;
+    const first = el?.querySelector<HTMLElement>("[data-board-column]");
+    if (!el || !first) return;
+    setVisibleCol(Math.min(columns.length - 1, Math.round(el.scrollLeft / (first.offsetWidth + 12))));
+  };
 
   function onDragEnd(e: DragEndEvent) {
     setActive(null);
@@ -76,10 +86,9 @@ export function BoardView({ project, tasks, sections, by, writable }: { project:
     const position = positionBetween(list[index - 1]?.position, list[index]?.position);
     if (by === "status") {
       if (col.status === "done" && task.status !== "done") toggleComplete(task);
-      else updateTask(task.id, { status: col.status!, position });
+      else moveCard(task, { status: col.status!, position });
     } else {
-      if ((col.sectionId ?? null) !== (task.section_id ?? null)) moveTasks([task.id], { projectId: project.id, sectionId: col.sectionId ?? null });
-      updateTask(task.id, { position });
+      moveCard(task, { section_id: col.sectionId ?? null, position });
     }
   }
 
@@ -91,12 +100,29 @@ export function BoardView({ project, tasks, sections, by, writable }: { project:
       onDragEnd={onDragEnd}
       onDragCancel={() => setActive(null)}
     >
-      <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6 lg:-mx-10 lg:px-10" role="list">
+      {/* phones: which column is in view */}
+      <div className="mb-2 flex items-center justify-between gap-2 md:hidden" aria-hidden>
+        <span className="truncate text-13 font-semibold">{columns[visibleCol]?.title}</span>
+        <span className="flex items-center gap-1.5">
+          {columns.map((c, i) => (
+            <span key={c.key} className={cn("size-1.5 rounded-full transition-colors", i === visibleCol ? "bg-brand" : "bg-border-strong")} />
+          ))}
+          <span className="ml-1 text-xs font-medium text-muted-foreground tnum">
+            {visibleCol + 1}/{columns.length}
+          </span>
+        </span>
+      </div>
+      <div
+        ref={scroller}
+        onScroll={onScroll}
+        className="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6 md:snap-none lg:-mx-10 lg:px-10"
+        role="list"
+      >
         {columns.map((col) => (
           <BoardColumn key={col.key} column={col} project={project} writable={writable} />
         ))}
         {by === "section" && writable && (
-          <div className="w-72 shrink-0">
+          <div className="w-[85vw] shrink-0 snap-start sm:w-72">
             {adding ? (
               <form
                 onSubmit={(e) => {
@@ -132,15 +158,24 @@ export function BoardView({ project, tasks, sections, by, writable }: { project:
 }
 
 function BoardColumn({ column, project, writable }: { column: Column; project: Project; writable: boolean }) {
+  const t = useTranslations();
   const { setNodeRef, isOver } = useDroppable({ id: `col:${column.key}` });
   return (
-    <section role="listitem" aria-label={column.title} className="flex max-h-[calc(100dvh-15rem)] w-72 shrink-0 flex-col rounded-2xl bg-canvas/80 ring-1 ring-border/60">
+    <section
+      role="listitem"
+      aria-label={column.title}
+      data-board-column
+      className="flex max-h-[calc(100dvh-15rem)] w-[85vw] shrink-0 snap-start flex-col rounded-2xl bg-canvas/80 ring-1 ring-border/60 sm:w-72"
+    >
       <header className="flex items-center gap-2 px-3 pt-3 pb-2">
         {column.status ? <StatusIcon status={column.status} /> : <span data-color={project.color} className="size-2 rounded-full bg-pc" />}
         <h3 className="flex-1 truncate font-sans text-13 font-semibold tracking-normal">{column.title}</h3>
         <span className="rounded-full bg-card px-1.5 text-2xs font-semibold text-muted-foreground tnum shadow-elev-1">{column.tasks.length}</span>
       </header>
-      <div ref={setNodeRef} className={cn("min-h-16 flex-1 space-y-2 overflow-y-auto px-2 pb-2 transition-colors", isOver && "bg-brand-soft/50")}>
+      <div ref={setNodeRef} className={cn("min-h-24 flex-1 space-y-2 overflow-y-auto rounded-xl px-2 pb-2 transition-colors", isOver && "bg-brand-soft/50")}>
+        {column.tasks.length === 0 && (
+          <p className="flex h-20 items-center justify-center rounded-xl border border-dashed text-xs text-muted-foreground">{t("project.dropHere")}</p>
+        )}
         <SortableContext items={column.tasks.map((x) => x.id)} strategy={verticalListSortingStrategy}>
           {column.tasks.map((task) => (
             <SortableCard key={task.id} task={task} disabled={!writable} />

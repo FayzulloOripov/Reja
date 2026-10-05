@@ -4,8 +4,9 @@
 // background) and the destructive ones offer an undo toast.
 
 import { toast } from "sonner";
+import { showUndo } from "@/components/common/undo-toast";
 import { addDays, todayIn, zonedToUtc } from "@/lib/dates";
-import { tr } from "@/lib/i18n-client";
+import { formatter, tr } from "@/lib/i18n-client";
 import { computeRemindAt } from "@/lib/reminders";
 import { planCompletion } from "@/lib/tasks/complete";
 import type {
@@ -54,9 +55,7 @@ const today = () => todayIn(tz());
 const nowIso = () => new Date().toISOString();
 
 function undoToast(message: string, inverse: MutationInput[]) {
-  toast(message, {
-    action: { label: tr("common.undo"), onClick: () => mutate(inverse) },
-  });
+  showUndo(message, () => mutate(inverse));
 }
 
 // ------------------------------------------------------------------ tasks
@@ -139,12 +138,24 @@ export function setDue(task: Task, date: string | null, time?: string | null) {
   updateTask(task.id, values);
 }
 
-export function toggleComplete(task: Task, opts: { silent?: boolean } = {}) {
-  if (task.status === "done") {
-    mutate([{ table: "tasks", kind: "update", row: { id: task.id }, values: { status: "todo", completed_at: null } }]);
-    return;
-  }
+/** The open occurrence generated when this recurring task was completed, if any. */
+function generatedOccurrence(taskId: string): Task | undefined {
+  return Object.values(S().data.tasks).find((t) => t.recurrence_parent_id === taskId && !t.deleted_at);
+}
+
+export function toggleComplete(task: Task, opts: { silent?: boolean } = {}): MutationInput[] {
   const d = S().data;
+  if (task.status === "done") {
+    // reopening a recurring task also removes the occurrence its completion generated (if still open)
+    const ops: MutationInput[] = [{ table: "tasks", kind: "update", row: { id: task.id }, values: { status: "todo", completed_at: null } }];
+    const next = generatedOccurrence(task.id);
+    if (next && next.status !== "done") {
+      const ts = nowIso();
+      ops.push({ table: "tasks", kind: "update", row: { id: next.id }, values: { deleted_at: ts } });
+      for (const st of subtasksByParent(d.tasks)[next.id] ?? []) ops.push({ table: "tasks", kind: "update", row: { id: st.id }, values: { deleted_at: ts } });
+    }
+    return mutate(ops);
+  }
   const plan = planCompletion({
     task,
     subtasks: subtasksByParent(d.tasks)[task.id] ?? [],
@@ -155,6 +166,7 @@ export function toggleComplete(task: Task, opts: { silent?: boolean } = {}) {
     tz: tz(),
     now: new Date(),
     newId: uuid,
+    hasNextOccurrence: Boolean(generatedOccurrence(task.id)),
   });
   const ops: MutationInput[] = [{ table: "tasks", kind: "update", row: { id: task.id }, values: plan.complete.values }];
   if (plan.next) {
@@ -168,11 +180,13 @@ export function toggleComplete(task: Task, opts: { silent?: boolean } = {}) {
   }
   const inverse = mutate(ops);
   if (!opts.silent) {
-    const msg = plan.next
-      ? `${tr("task.completedToast", { title: task.title })} · ${tr("task.nextOccurrence", { date: plan.next.task.due_date ?? "" })}`
+    const nextDate = plan.next?.task.due_date;
+    const msg = nextDate
+      ? `${tr("task.completedToast", { title: task.title })} · ${tr("task.nextOccurrence", { date: formatter(today(), tz()).relativeWithDate(nextDate).replace(/^./, (c) => c.toLocaleLowerCase()) })}`
       : tr("task.completedToast", { title: task.title });
     undoToast(msg, inverse);
   }
+  return inverse;
 }
 
 export function deleteTasks(ids: string[]) {
@@ -205,6 +219,13 @@ export function moveTasks(ids: string[], target: { projectId: string | null; sec
   }));
   const inverse = mutate(ops);
   undoToast(ids.length === 1 ? tr("task.movedToast") : tr("task.bulkMoved", { count: ids.length }), inverse);
+}
+
+/** Board drop: section/status and position change in one step, with one undo. */
+export function moveCard(task: Task, values: Partial<Pick<Task, "section_id" | "status" | "position">>) {
+  const changed = Object.entries(values).some(([k, v]) => (task as unknown as Record<string, unknown>)[k] !== v && k !== "position");
+  const inverse = mutate([{ table: "tasks", kind: "update", row: { id: task.id }, values }]);
+  if (changed) undoToast(tr("task.movedToast"), inverse);
 }
 
 export function rescheduleTasks(ids: string[], date: string | null) {
@@ -350,6 +371,20 @@ export function addStandaloneReminder(title: string, at: Date) {
 }
 
 // time tracking
+/** A finished focus session (optionally on a task). Home and the focus page count only these. */
+export function logFocusSession(task: Task | null, minutes: number, startedAt: Date) {
+  if (minutes < 1) return;
+  const workspaceId = task?.workspace_id ?? me()?.current_workspace_id ?? Object.values(S().data.workspaces).find((w) => w.is_personal)?.id;
+  if (!workspaceId) return;
+  mutate([
+    {
+      table: "time_entries",
+      kind: "insert",
+      row: newTimeEntry({ task_id: task?.id ?? null, workspace_id: workspaceId, user_id: uid(), minutes: Math.round(minutes), started_at: startedAt.toISOString(), source: "focus" }),
+    },
+  ]);
+}
+
 export function logTime(task: Task, minutes: number, startedAt = new Date()) {
   if (minutes < 1) return;
   mutate([
@@ -502,7 +537,7 @@ export function deleteNote(id: string) {
 }
 
 export function createGoal(input: Partial<Goal> & { workspace_id: string; title: string }, krs: Partial<KeyResult>[] = []): Goal {
-  const goal = newGoal({ ...input, owner_id: uid() });
+  const goal = newGoal({ start_date: today(), ...input, owner_id: uid() });
   const ops: MutationInput[] = [{ table: "goals", kind: "insert", row: goal }];
   krs.forEach((kr, i) =>
     ops.push({

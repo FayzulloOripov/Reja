@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { dateIn } from "@/lib/dates";
+import { startOfWeek } from "@/lib/dates";
+import { focusSummary } from "@/lib/focus-stats";
 import { byDueThenPriority } from "@/lib/filters";
 import { useFormat } from "@/lib/format";
 import { isOpen } from "@/lib/health";
@@ -63,8 +64,9 @@ function FocusInner() {
   const planned = focus.running || focus.remainingMs !== null ? focus.plannedMs : (focus.phase === "work" ? workMin : breakMin) * 60_000;
   const progress = 1 - remaining / planned;
   const idle = !focus.running && focus.remainingMs === null;
-  const todayMinutes = useMemo(() => Object.values(entries).filter((e) => e.user_id === uid && dateIn(tz, e.started_at) === today).reduce((n, e) => n + e.minutes, 0), [entries, uid, tz, today]);
-  const sessions = focus.sessions.date === new Date().toISOString().slice(0, 10) ? focus.sessions.count : 0;
+  // finished sessions only, from the same rows the Home card reads
+  const todayFocus = useMemo(() => focusSummary(Object.values(entries), uid, tz, today, today), [entries, uid, tz, today]);
+  const weekFocus = useMemo(() => focusSummary(Object.values(entries), uid, tz, startOfWeek(today), today), [entries, uid, tz, today]);
 
   const R = 120;
   const C = 2 * Math.PI * R;
@@ -147,10 +149,15 @@ function FocusInner() {
         </div>
 
         <div className="grid w-full max-w-md grid-cols-2 gap-3 border-t pt-5">
-          <div>
-            <p className="text-xs text-muted-foreground">{t("focus.today")}</p>
-            <p className="text-xl font-semibold tnum">{f.duration(todayMinutes)}</p>
-            <p className="text-xs text-muted-foreground">{t("focus.sessions", { count: sessions })}</p>
+          <div className="space-y-2">
+            <div>
+              <p className="text-xs text-muted-foreground">{t("focus.today")}</p>
+              <p className="text-xl font-semibold tnum">{f.duration(todayFocus.minutes)}</p>
+              <p className="text-xs text-muted-foreground">{t("focus.sessions", { count: todayFocus.sessions })}</p>
+            </div>
+            <p className="text-xs text-muted-foreground tnum">
+              {t("focus.thisWeek")}: {f.duration(weekFocus.minutes)} · {t("focus.sessions", { count: weekFocus.sessions })}
+            </p>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">

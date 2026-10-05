@@ -72,10 +72,14 @@ function mentionSuggestion(getPeople: () => MentionPerson[]) {
         });
         el.style.display = items.length ? "block" : "none";
       };
+      // open below the caret, or above it when the space below (above the phone keyboard) is too small
       const place = (rect: DOMRect | null | undefined) => {
         if (!el || !rect) return;
-        el.style.left = `${Math.min(rect.left, window.innerWidth - 220)}px`;
-        el.style.top = `${rect.bottom + 6}px`;
+        const viewport = window.visualViewport;
+        const bottomEdge = viewport ? viewport.offsetTop + viewport.height : window.innerHeight;
+        const height = el.offsetHeight || 200;
+        el.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - 220))}px`;
+        el.style.top = rect.bottom + 6 + height > bottomEdge ? `${Math.max(8, rect.top - height - 6)}px` : `${rect.bottom + 6}px`;
       };
       return {
         onStart: (props: { items: MentionPerson[]; command: typeof command; clientRect?: (() => DOMRect | null) | null }) => {

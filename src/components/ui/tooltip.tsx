@@ -17,10 +17,27 @@ function TooltipProvider({
   )
 }
 
+const hoverQuery = "(hover: hover) and (pointer: fine)"
+function subscribeHover(cb: () => void) {
+  const mq = window.matchMedia(hoverQuery)
+  mq.addEventListener("change", cb)
+  return () => mq.removeEventListener("change", cb)
+}
+
+/** True on devices with a real hover pointer. Tooltips stay off on touch screens, where a tap would leave them stuck open. */
+export function useCanHover() {
+  return React.useSyncExternalStore(
+    subscribeHover,
+    () => window.matchMedia(hoverQuery).matches,
+    () => false
+  )
+}
+
 function Tooltip({
   ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Root>) {
-  return <TooltipPrimitive.Root data-slot="tooltip" {...props} />
+  const canHover = useCanHover()
+  return <TooltipPrimitive.Root data-slot="tooltip" {...props} {...(canHover ? {} : { open: false })} />
 }
 
 function TooltipTrigger({
@@ -53,4 +70,14 @@ function TooltipContent({
   )
 }
 
-export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger }
+/** Desktop tooltip for an icon button (the button still needs its own aria-label). */
+function Tip({ label, children, side }: { label: React.ReactNode; children: React.ReactElement; side?: "top" | "bottom" | "left" | "right" }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent side={side}>{label}</TooltipContent>
+    </Tooltip>
+  )
+}
+
+export { Tip, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger }

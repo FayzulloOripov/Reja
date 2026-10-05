@@ -1,11 +1,11 @@
 import { redirect } from "next/navigation";
 import { DEMO_USER_ID } from "@/lib/demo/seed";
-import { DEMO_MODE } from "@/lib/env";
+import { isDemoRequest } from "@/lib/demo/server";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { OnboardingClient } from "./onboarding-client";
 
 export default async function OnboardingLayout() {
-  if (DEMO_MODE) return <OnboardingClient userId={DEMO_USER_ID} demo />;
+  if (await isDemoRequest()) return <OnboardingClient userId={DEMO_USER_ID} demo />;
   const supabase = await getServerSupabase();
   const {
     data: { user },

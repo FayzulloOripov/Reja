@@ -172,7 +172,7 @@ function TaskRowInner({ task, showProject, focused, selected, readOnly, indent, 
       {dragHandle && !readOnly && (
         <button
           {...dragHandle}
-          aria-label="drag"
+          aria-label={t("task.dragHandle")}
           onClick={(e) => e.stopPropagation()}
           className="absolute top-2.5 -left-4 hidden cursor-grab touch-none text-subtle-foreground opacity-0 group-hover/row:opacity-100 active:cursor-grabbing md:block"
         >
@@ -188,6 +188,7 @@ function TaskRowInner({ task, showProject, focused, selected, readOnly, indent, 
             {task.title}
           </p>
           <div className="flex shrink-0 items-center gap-1.5">
+            {isTop && <Star role="img" aria-label={t("task.top3")} className="size-3.5 fill-warning text-warning" />}
             {task.priority !== "none" && <PriorityIcon priority={task.priority} />}
             {meta.assignees.length > 0 && <AvatarStack people={meta.assignees} size={20} max={2} />}
           </div>
@@ -225,7 +226,10 @@ function TaskRowInner({ task, showProject, focused, selected, readOnly, indent, 
       </div>
 
       {!readOnly && (
-        <div className="absolute top-1.5 right-2 hidden items-center gap-0.5 rounded-md bg-card/90 p-0.5 shadow-elev-1 backdrop-blur group-hover/row:flex group-focus-within/row:flex" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="absolute top-1.5 right-2 hidden items-center gap-0.5 rounded-md bg-card/90 p-0.5 shadow-elev-1 backdrop-blur group-hover/row:flex group-focus-within/row:flex [@media(hover:none)]:!hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
           <button
             onClick={() => setTop(task, !isTop)}
             aria-label={isTop ? t("home.top3Remove") : t("home.top3Add")}
@@ -241,7 +245,6 @@ function TaskRowInner({ task, showProject, focused, selected, readOnly, indent, 
           </DatePicker>
         </div>
       )}
-      {isTop && <Star aria-label={t("task.top3")} className="absolute top-2.5 right-2.5 size-3 fill-warning text-warning group-hover/row:hidden" />}
     </div>
   );
 

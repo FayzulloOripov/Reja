@@ -1,6 +1,6 @@
 "use client";
 
-import { CloudOff, FlaskConical } from "lucide-react";
+import { CloudOff } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
@@ -11,6 +11,7 @@ import { useMe } from "@/store/hooks";
 import { useStore } from "@/store/store";
 import { useBootstrap } from "@/hooks/use-bootstrap";
 import { MobileTabBar, MobileTopBar } from "./mobile-nav";
+import { DemoBanner } from "./demo-banner";
 import { FocusPill } from "./focus-pill";
 import { PwaManager } from "./pwa";
 import { Sidebar } from "./sidebar";
@@ -71,11 +72,7 @@ export function AppClient({ userId, demo, children }: { userId: string; demo?: b
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <MobileTopBar />
-        {demo && (
-          <div className="flex items-center justify-center gap-2 bg-info-soft px-4 py-1.5 text-xs font-medium text-info-fg">
-            <FlaskConical className="size-3.5" /> {t("app.demoBanner")}
-          </div>
-        )}
+        {demo && mounted && <DemoBanner />}
         {mounted && !online && (
           <div role="status" className="flex items-center justify-center gap-2 bg-warning-soft px-4 py-1.5 text-xs font-medium text-warning-fg">
             <CloudOff className="size-3.5" />

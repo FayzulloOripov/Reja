@@ -11,7 +11,11 @@
     "installIosBody": "In Safari tap Share → Add to Home Screen.",
     "demoBanner": "Demo mode: data is stored only in this browser",
     "updateReady": "A new version is ready",
-    "reload": "Reload"
+    "reload": "Reload",
+    "demoShort": "Demo",
+    "demoPill": "About demo mode",
+    "demoHide": "Hide",
+    "demoSignUp": "Sign up"
   },
   "common": {
     "save": "Save",
@@ -89,7 +93,10 @@
     "email": "Email",
     "link": "Link",
     "expires": "Expires",
-    "never": "Never"
+    "never": "Never",
+    "collapse": "Collapse",
+    "expand": "Expand",
+    "hoursShort": "{count} h"
   },
   "nav": {
     "home": "Today",
@@ -121,7 +128,9 @@
     "collapse": "Collapse sidebar",
     "expand": "Expand sidebar",
     "skipToContent": "Skip to content",
-    "mainNav": "Main navigation"
+    "mainNav": "Main navigation",
+    "accountMenu": "Account menu: {name}",
+    "leaveDemo": "Leave the demo and sign up"
   },
   "auth": {
     "title": "Welcome to Reja",
@@ -140,7 +149,10 @@
     "linkError": "The link has expired or is invalid. Request a new one.",
     "terms": "By signing in you agree that your data is stored in this app.",
     "signedOut": "You have signed out",
-    "invitedTo": "You've been invited to “{name}”. Sign in to continue."
+    "invitedTo": "You've been invited to “{name}”. Sign in to continue.",
+    "openDemo": "Open the demo",
+    "tryDemo": "Want to look around first?",
+    "fromDemo": "What you entered in the demo is still in this browser. After you sign in you can move it into your account with one click."
   },
   "greeting": {
     "morning": "Good morning, {name}",
@@ -183,7 +195,10 @@
     "planTomorrowSaved": "Tomorrow is planned",
     "allClear": "Well done! Today's plan is complete.",
     "byProject": "By project",
-    "noProject": "No project"
+    "noProject": "No project",
+    "completedToday": "Done today",
+    "completedTodayHint": "Ticked one by mistake? Tap its circle to reopen it.",
+    "focusThisWeekSessions": "this week · {count, plural, one {# session} other {# sessions}}"
   },
   "inbox": {
     "title": "Inbox",
@@ -197,7 +212,9 @@
   "upcoming": {
     "title": "Upcoming",
     "subtitle": "Next 14 days",
-    "empty": "Nothing scheduled"
+    "empty": "Nothing scheduled",
+    "emptyDays": "{count, plural, one {# empty day} other {# empty days}}",
+    "showEmptyDays": "Show empty days"
   },
   "priority": {
     "label": "Priority",
@@ -231,7 +248,17 @@
     "suggested": "Suggested: {health}",
     "reasonOverdue": "{percent}% of open tasks are overdue",
     "reasonDeadline": "{days} days to target, {percent}% done",
-    "reasonPassed": "Target date has passed"
+    "reasonPassed": "Target date has passed",
+    "partLeft": "{days} days left",
+    "partPassed": "{days} days past the target",
+    "partDone": "{percent}% done",
+    "partOverdue": "{count} overdue",
+    "manualSet": "Set manually by the owner",
+    "manualNote": "Owner's note: {note}",
+    "note": "Note (why?)",
+    "notePlaceholder": "e.g. waiting for the client's reply",
+    "change": "Change health",
+    "save": "Save"
   },
   "project": {
     "new": "New project",
@@ -273,7 +300,8 @@
     "telegramGroup": "Telegram group",
     "telegramGroupHint": "Add the bot to your group and send this command:",
     "telegramGroupConnected": "Group connected — task changes are posted there",
-    "telegramGroupDisconnect": "Disconnect group"
+    "telegramGroupDisconnect": "Disconnect group",
+    "dropHere": "Drop a task here"
   },
   "views": {
     "list": "List",
@@ -288,7 +316,7 @@
     "groupStatus": "Status",
     "groupPriority": "Priority",
     "groupAssignee": "Assignee",
-    "groupDue": "Due date",
+    "groupDue": "Date",
     "groupNone": "No grouping",
     "showDone": "Show completed",
     "hideDone": "Hide completed",
@@ -311,15 +339,23 @@
     "next": "Next",
     "more": "{count} more",
     "unscheduled": "Unscheduled",
-    "dropHint": "Drop on a day"
+    "dropHint": "Drop on a day",
+    "agenda": "Agenda",
+    "threeDays": "3 days",
+    "view": "View",
+    "agendaEmpty": "Nothing scheduled in these days",
+    "nothingToday": "No tasks",
+    "projectDeadline": "Project due: {name}"
   },
   "timeline": {
     "zoomDay": "Day",
     "zoomWeek": "Week",
     "zoomMonth": "Month",
-    "noDates": "Tasks without start and due dates",
+    "noDates": "No dates",
     "dependency": "Dependency",
-    "today": "Today"
+    "today": "Today",
+    "showDone": "Show completed ({count})",
+    "noDatesHint": "Drag a task onto the chart to give it a day"
   },
   "table": {
     "title": "Title",
@@ -354,7 +390,7 @@
     "watch": "Watch",
     "unwatch": "Unwatch",
     "attachments": "Attachments",
-    "dropFiles": "Drop files here",
+    "dropFiles": "Drop files here or choose",
     "uploading": "Uploading…",
     "fileTooBig": "File is larger than 25 MB",
     "comments": "Comments",
@@ -363,11 +399,11 @@
     "activity": "Activity",
     "project": "Project",
     "section": "Section",
-    "due": "Due",
+    "due": "Date",
     "dueTime": "Time",
     "start": "Start",
     "deadline": "Deadline",
-    "deadlineHint": "Hard deadline (does not move)",
+    "deadlineHint": "Hard deadline: must not slip past this",
     "estimate": "Estimate",
     "estimatePlaceholder": "minutes",
     "repeat": "Repeat",
@@ -380,7 +416,7 @@
     "repeatCustom": "Custom…",
     "reminders": "Reminders",
     "addReminder": "Add reminder",
-    "reminderAtDue": "At due time",
+    "reminderAtDue": "At the set time",
     "reminder15m": "15 minutes before",
     "reminder1h": "1 hour before",
     "reminder1d": "1 day before",
@@ -414,7 +450,10 @@
     "bulkAssigned": "{count} tasks assigned",
     "bulkLabeled": "{count} tasks labelled",
     "swipeDone": "Done",
-    "swipeLater": "Later"
+    "swipeLater": "Later",
+    "dragHandle": "Drag to reorder",
+    "dueHint": "The day you plan to work on it",
+    "chooseFile": "Choose a file"
   },
   "quickAdd": {
     "title": "Quick add",
@@ -432,7 +471,10 @@
     "chipPerson": "Assignee",
     "chipPriority": "Priority",
     "chipTop": "Top 3",
-    "unknownProject": "No project named “{name}”"
+    "unknownProject": "No project named “{name}”",
+    "recognized": "Recognised",
+    "dismissChip": "Don’t interpret “{text}”",
+    "restoreChip": "Interpret “{text}” again"
   },
   "palette": {
     "placeholder": "Search tasks, projects, notes or commands…",
@@ -479,7 +521,11 @@
     "goals": "Goals",
     "goalsEmpty": "No goals yet",
     "openTasks": "{count} open",
-    "noProjects": "No projects in this workspace"
+    "noProjects": "No projects in this workspace",
+    "loadToday": "Today",
+    "loadWeek": "This week",
+    "loadOverdue": "Overdue",
+    "noUpcomingDates": "No upcoming dates"
   },
   "activity": {
     "created": "{actor} created “{title}”",
@@ -532,8 +578,9 @@
     "filters": {
       "all": "All",
       "mentions": "Mentions",
-      "assigned": "Assigned",
-      "reminders": "Reminders"
+      "assigned": "Assigned to me",
+      "reminders": "Reminders",
+      "comments": "Comments"
     }
   },
   "goals": {
@@ -560,7 +607,21 @@
       "achieved": "Achieved",
       "missed": "Missed",
       "archived": "Archived"
-    }
+    },
+    "howCalculated": "How is {percent}% calculated?",
+    "calcTitle": "How the percentage is calculated",
+    "calcBody": "For each key result: (current − start) ÷ (target − start). The goal is the average of its key results.",
+    "calcAverage": "Average",
+    "krFrom": "from {value}",
+    "timePassed": "{percent}% of the time has passed",
+    "pace": {
+      "ahead": "{elapsed}% of the time passed, {progress}% done — ahead",
+      "on_pace": "{elapsed}% of the time passed, {progress}% done — on pace",
+      "behind": "{elapsed}% of the time passed, {progress}% done — behind"
+    },
+    "deleteKr": "Delete key result “{title}”",
+    "deleteKrTitle": "Delete this key result?",
+    "deleteKrBody": "“{title}” and its history will be deleted. This cannot be undone."
   },
   "habits": {
     "title": "Habits",
@@ -577,7 +638,17 @@
     "empty": "No habits",
     "emptyBody": "Add your first habit — check it off with one tap each day.",
     "archive": "Archive",
-    "private": "Only visible to you"
+    "private": "Only visible to you",
+    "doneToday": "Done today ✓",
+    "markToday": "I did it today",
+    "notToday": "Not planned today",
+    "cell": {
+      "done": "done",
+      "missed": "missed",
+      "off": "not planned",
+      "before": "before the habit existed",
+      "future": "future"
+    }
   },
   "focus": {
     "title": "Focus",
@@ -597,7 +668,8 @@
     "breakMinutes": "Break (minutes)",
     "today": "Focused today",
     "breakTime": "Break time! Stand up and stretch.",
-    "workTime": "Back to work"
+    "workTime": "Back to work",
+    "thisWeek": "This week"
   },
   "reports": {
     "title": "Reports",
@@ -620,7 +692,10 @@
     "minutes": "Minutes",
     "rate": "Rate",
     "totalDone": "Total done",
-    "avgPerWeek": "Average per week"
+    "avgPerWeek": "Average per week",
+    "lastWeeks": "Last {count} weeks",
+    "focusTime": "Time logged",
+    "focusNoTask": "Focus without a task"
   },
   "workload": {
     "title": "Workload",
@@ -669,8 +744,8 @@
     "pushTitle": "Push notifications",
     "pushEnable": "Enable on this device",
     "pushDisable": "Disable on this device",
-    "pushEnabled": "Enabled on this device",
-    "pushDenied": "Your browser blocked notifications. Allow them in site settings.",
+    "pushEnabled": "On — reminders come to this device",
+    "pushDenied": "The browser blocks notifications. Click the lock icon in the address bar → Notifications → Allow, then reload the page.",
     "pushUnsupported": "This browser doesn't support push notifications.",
     "pushIos": "On iPhone, push only works when the app is installed on the home screen (iOS 16.4+). In Safari tap Share → Add to Home Screen, then open the app from the home screen.",
     "pushDevices": "Connected devices",
@@ -685,7 +760,6 @@
     "telegramCodeExpires": "The code is valid for 15 minutes",
     "telegramTest": "Send test message",
     "telegramTestSent": "Test message sent to Telegram",
-    "telegramNotConfigured": "The Telegram bot is not configured yet (TELEGRAM_BOT_TOKEN).",
     "calendarTitle": "Calendar feed (ICS)",
     "calendarHint": "Your dated tasks and time blocks in Google or Apple Calendar. Keep this link private.",
     "calendarCopy": "Copy link",
@@ -746,7 +820,40 @@
     "saved": "Settings saved",
     "workspacesTitle": "Workspaces",
     "createWorkspace": "Create workspace",
-    "personalWorkspace": "Personal"
+    "personalWorkspace": "Personal",
+    "sectionHints": {
+      "profile": "Name, language, theme, time zone, work days",
+      "notifications": "Which message goes to which channel, quiet hours",
+      "integrations": "Telegram bot, push, calendar",
+      "workspace": "Name, members and invitations",
+      "labels": "Shared labels",
+      "templates": "Project templates",
+      "trash": "Restore deleted items",
+      "data": "Download, import, backup"
+    },
+    "events": {
+      "reminder": "A task reminder is due",
+      "assigned": "Someone assigned you a task",
+      "mentioned": "Someone mentioned you in a comment",
+      "comment": "New comment on a task you follow",
+      "status_change": "A task you follow changed status",
+      "due_soon": "A task is due soon",
+      "overdue": "A task is overdue",
+      "invite": "Someone accepted your invitation",
+      "digest": "Morning daily digest",
+      "review": "Weekly review reminder"
+    },
+    "channelsHint": "Choose which channel each message comes through",
+    "notAvailable": "Not available",
+    "quietFrom": "Quiet hours start",
+    "quietTo": "Quiet hours end",
+    "defaultReminderHint": "For tasks with a time. All-day tasks are reminded at 09:00 on the day.",
+    "pushThisDevice": "This device",
+    "pushOff": "Off for now",
+    "pushNotReady": "Push notifications are not set up yet. Contact the administrator.",
+    "telegramUnavailable": "The Telegram bot is not available yet. Until it is, reminders come in the app and by push.",
+    "telegramNotLinked": "Not connected yet",
+    "telegramLinkHint": "Press the button to get a one-time code for the bot"
   },
   "invite": {
     "title": "Invitation",

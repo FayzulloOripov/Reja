@@ -1,7 +1,7 @@
 // Clearly fake demo data, used by demo mode (NEXT_PUBLIC_DEMO_MODE) and `npm run seed:demo`.
 // Every person and company here is invented; names end with "(demo)" where they could be mistaken.
 
-import { addDays, startOfWeek, zonedToUtc } from "../dates";
+import { addDays, addMonths, startOfMonth, startOfWeek, zonedToUtc } from "../dates";
 import type {
   ChecklistItem,
   Goal,
@@ -81,7 +81,7 @@ export function buildDemoData(userId: string, today: string, tz = "Asia/Tashkent
     review_dow: 7,
     review_time: "09:00:00",
     overdue_nudge_enabled: true,
-    default_reminder: "at_due",
+    default_reminder: "15m",
     notify_prefs: {
       in_app: { assigned: true, mentioned: true, comment: true, status_change: true, invite: true, reminder: true, due_soon: true, overdue: true },
       telegram: { assigned: true, mentioned: true, reminder: true, digest: true, review: true, overdue: true },
@@ -131,6 +131,7 @@ export function buildDemoData(userId: string, today: string, tz = "Asia/Tashkent
     goal: null,
     health: null,
     health_manual: false,
+    health_note: null,
     owner_id: userId,
     position: n,
     share_token: null,
@@ -195,6 +196,7 @@ export function buildDemoData(userId: string, today: string, tz = "Asia/Tashkent
       deadline: null,
       estimate_min: null,
       recurrence: null,
+      recurrence_parent_id: null,
       top_date: null,
       position: n,
       completed_at: null,
@@ -254,10 +256,11 @@ export function buildDemoData(userId: string, today: string, tz = "Asia/Tashkent
     });
   });
 
+  const habitStamp = { created_at: at(addDays(today, -60), "08:00"), updated_at: ts };
   const habits: Habit[] = [
-    { id: id(), user_id: userId, name: uz ? "Sport" : "Workout", icon: "dumbbell", color: "lime", days: [1, 3, 5, 6], position: 1, archived_at: null, ...stamp },
-    { id: id(), user_id: userId, name: uz ? "20 bet kitob" : "Read 20 pages", icon: "book", color: "violet", days: [1, 2, 3, 4, 5, 6, 7], position: 2, archived_at: null, ...stamp },
-    { id: id(), user_id: userId, name: uz ? "Kunni rejalashtirish" : "Plan the day", icon: "sun", color: "amber", days: [1, 2, 3, 4, 5, 6], position: 3, archived_at: null, ...stamp },
+    { id: id(), user_id: userId, name: uz ? "Sport" : "Workout", icon: "dumbbell", color: "lime", days: [1, 3, 5, 6], position: 1, archived_at: null, ...habitStamp },
+    { id: id(), user_id: userId, name: uz ? "20 bet kitob" : "Read 20 pages", icon: "book", color: "violet", days: [1, 2, 3, 4, 5, 6, 7], position: 2, archived_at: null, ...habitStamp },
+    { id: id(), user_id: userId, name: uz ? "Kunni rejalashtirish" : "Plan the day", icon: "sun", color: "amber", days: [1, 2, 3, 4, 5, 6], position: 3, archived_at: null, ...habitStamp },
   ];
   const habit_logs: HabitLog[] = [];
   for (let d = -60; d < 0; d++) {
@@ -267,8 +270,8 @@ export function buildDemoData(userId: string, today: string, tz = "Asia/Tashkent
     });
   }
 
-  const goal: Goal = { id: id(), workspace_id: wsTeam.id, project_id: pSales.id, title: uz ? "Oktabr: 120 mln soʻm tushum" : "October: 120M revenue", description: null, owner_id: userId, target_date: addDays(today, 26), status: "active", color: "tangerine", deleted_at: null, ...stamp };
-  const goal2: Goal = { id: id(), workspace_id: wsTeam.id, project_id: pAgency.id, title: uz ? "Agentlikni ishga tushirish" : "Launch the agency", description: null, owner_id: userId, target_date: addDays(today, 40), status: "active", color: "indigo", deleted_at: null, ...stamp };
+  const goal: Goal = { id: id(), workspace_id: wsTeam.id, project_id: pSales.id, title: uz ? "Oktabr: 120 mln soʻm tushum" : "October: 120M revenue", description: null, owner_id: userId, start_date: startOfMonth(today), target_date: addDays(startOfMonth(addMonths(today, 1)), -1), status: "active", color: "tangerine", deleted_at: null, ...stamp };
+  const goal2: Goal = { id: id(), workspace_id: wsTeam.id, project_id: pAgency.id, title: uz ? "Agentlikni ishga tushirish" : "Launch the agency", description: null, owner_id: userId, start_date: addDays(today, -20), target_date: addDays(today, 40), status: "active", color: "indigo", deleted_at: null, ...stamp };
   const key_results: KeyResult[] = [
     { id: id(), goal_id: goal.id, workspace_id: wsTeam.id, title: uz ? "Tushum" : "Revenue", start_value: 0, target: 120, current: 54, unit: uz ? "mln soʻm" : "M", position: 1, ...stamp },
     { id: id(), goal_id: goal.id, workspace_id: wsTeam.id, title: uz ? "Konversiya" : "Conversion", start_value: 8, target: 15, current: 11, unit: "%", position: 2, ...stamp },
@@ -320,6 +323,7 @@ export function buildDemoData(userId: string, today: string, tz = "Asia/Tashkent
     started_at: at(addDays(weekStart, d), "10:00"),
     minutes: [25, 50, 25, 75, 25][i],
     note: null,
+    source: "focus",
     created_at: ts,
   }));
 

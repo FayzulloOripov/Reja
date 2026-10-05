@@ -116,6 +116,8 @@ export interface Project {
   goal: string | null;
   health: ProjectHealth | null;
   health_manual: boolean;
+  /** why the owner set the health manually */
+  health_note: string | null;
   owner_id: UUID | null;
   position: number;
   share_token: string | null;
@@ -168,6 +170,8 @@ export interface Task {
   deadline: ISODate | null;
   estimate_min: number | null;
   recurrence: string | null;
+  /** the occurrence this one was generated from when a recurring task was completed */
+  recurrence_parent_id: UUID | null;
   top_date: ISODate | null;
   position: number;
   completed_at: ISODateTime | null;
@@ -258,12 +262,15 @@ export interface Attachment {
 
 export interface TimeEntry {
   id: UUID;
-  task_id: UUID;
+  /** null for a focus session without a task */
+  task_id: UUID | null;
   workspace_id: UUID;
   user_id: UUID;
   started_at: ISODateTime;
   minutes: number;
   note: string | null;
+  /** "focus" = a finished focus session; "manual" = time logged by hand or a stopped session */
+  source: "manual" | "focus";
   created_at: ISODateTime;
 }
 
@@ -324,6 +331,7 @@ export interface Goal {
   title: string;
   description: string | null;
   owner_id: UUID | null;
+  start_date: ISODate | null;
   target_date: ISODate | null;
   status: "active" | "achieved" | "missed" | "archived";
   color: string;

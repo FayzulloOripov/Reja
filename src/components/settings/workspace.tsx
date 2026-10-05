@@ -11,7 +11,10 @@ import { ColorPicker } from "@/components/tasks/pickers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DEMO_MODE, TELEGRAM_BOT_USERNAME } from "@/lib/env";
+import { TELEGRAM_BOT_USERNAME } from "@/lib/env";
+import { isDemo, useIsDemo } from "@/hooks/use-demo";
+import { downloadText, toCSV } from "@/lib/csv";
+import { EXPORT_TABLES, exportFileName, taskCsvRows } from "@/lib/export";
 import { useFormat } from "@/lib/format";
 import { mapCsvImport, mapPlannerImport, type ImportPlan } from "@/lib/import/planner";
 import { isWorkspaceAdmin } from "@/lib/permissions";
@@ -24,6 +27,20 @@ import { integrationStatus, sendTestNotification, type IntegrationStatus } from 
 import { SettingsCard, SettingsRow } from "./common";
 import { useSyncedState } from "@/hooks/use-synced-state";
 
+/** Export the workspace from the data loaded in this browser (used by the demo). */
+function exportInBrowser(ws: { id: string; name: string }, format: "json" | "csv") {
+  const d = useStore.getState().data;
+  const rows = (table: (typeof EXPORT_TABLES)[number]) =>
+    Object.values(d[table] as unknown as Record<string, Record<string, unknown>>).filter((r) => r.workspace_id === ws.id);
+  if (format === "csv") {
+    downloadText(exportFileName(ws.name, "csv"), toCSV(taskCsvRows(rows("tasks"), rows("projects"), rows("sections"))));
+    return;
+  }
+  const out: Record<string, unknown> = { exported_at: new Date().toISOString(), workspace: { id: ws.id, name: ws.name } };
+  for (const table of EXPORT_TABLES) out[table] = rows(table);
+  downloadText(exportFileName(ws.name, "json"), JSON.stringify(out, null, 2), "application/json");
+}
+
 // ------------------------------------------------------------------ Telegram & calendar
 
 export function IntegrationsSection() {
@@ -31,12 +48,14 @@ export function IntegrationsSection() {
   const me = useMe();
   const adapter = useStore((s) => s.adapter);
   const [code, setCode] = useState<string | null>(null);
-  const [status, setStatus] = useState<IntegrationStatus | null>(DEMO_MODE ? { telegram: false, push: false, email: false } : null);
+  const demo = useIsDemo();
+  const [serverStatus, setStatus] = useState<IntegrationStatus | null>(null);
+  const status: IntegrationStatus | null = demo ? { telegram: false, push: false, email: false } : serverStatus;
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!DEMO_MODE) void integrationStatus().then(setStatus);
-  }, []);
+    if (!demo) void integrationStatus().then(setStatus);
+  }, [demo]);
 
   if (!me) return null;
   const icsUrl = me.ics_token && typeof window !== "undefined" ? `${window.location.origin}/api/ics/${me.ics_token}` : "";
@@ -48,8 +67,10 @@ export function IntegrationsSection() {
   return (
     <div className="space-y-5">
       <SettingsCard title={<span className="flex items-center gap-2"><Send className="size-4 text-info" /> {t("settings.telegramTitle")}</span>} description={t("settings.telegramHint")}>
-        {status && !status.telegram && <p className="px-5 py-3 text-13 text-warning-fg">{t("settings.telegramNotConfigured")}</p>}
-        {me.telegram_chat_id ? (
+        {status && !status.telegram ? (
+          // the bot is not set up on this server: say so plainly, without configuration details
+          <p className="px-5 py-4 text-13 text-muted-foreground">{t("settings.telegramUnavailable")}</p>
+        ) : me.telegram_chat_id ? (
           <SettingsRow label={t("settings.telegramConnected", { username: me.telegram_username ? `@${me.telegram_username}` : String(me.telegram_chat_id) })}>
             <Button
               variant="outline"
@@ -81,7 +102,7 @@ export function IntegrationsSection() {
             <p className="text-xs text-muted-foreground">{t("settings.telegramCodeExpires")}</p>
           </div>
         ) : (
-          <SettingsRow label={t("settings.telegramConnect")}>
+          <SettingsRow label={t("settings.telegramNotLinked")} description={t("settings.telegramLinkHint")}>
             <Button
               size="sm"
               disabled={busy}
@@ -218,7 +239,7 @@ function MembersCard({ workspaceId, admin }: { workspaceId: string; admin: boole
   );
 
   async function invite(withEmail: boolean) {
-    if (DEMO_MODE) {
+    if (isDemo()) {
       toast.message(t("app.demoBanner"));
       return;
     }
@@ -404,6 +425,7 @@ export function TemplatesSection() {
 
 export function TrashSection() {
   const t = useTranslations();
+  const demo = useIsDemo();
   const today = useToday();
   const tz = useTz();
   const f = useFormat(today, tz);
@@ -432,7 +454,7 @@ export function TrashSection() {
 
   return (
     <SettingsCard title={t("settings.trash")} description={t("settings.trashHint")}>
-      {!loaded && !DEMO_MODE ? (
+      {!loaded && !demo ? (
         <div className="m-5 h-16 animate-pulse rounded-lg bg-muted" />
       ) : items.length === 0 ? (
         <EmptyState compact illustration="trash" title={t("settings.trashEmpty")} />
@@ -480,6 +502,7 @@ export function TrashSection() {
 
 export function DataSection() {
   const t = useTranslations();
+  const demo = useIsDemo();
   const ws = useCurrentWorkspace();
   const projects = useProjects(ws?.id, { includeArchived: true });
   const today = useToday();
@@ -505,8 +528,12 @@ export function DataSection() {
     <div className="space-y-5">
       <SettingsCard title={t("settings.exportTitle")} description={t("settings.exportHint")}>
         <div className="flex flex-wrap gap-2 px-5 py-4">
-          {DEMO_MODE ? (
-            <p className="text-13 text-muted-foreground">{t("app.demoBanner")}</p>
+          {demo ? (
+            // the demo has no server copy: build the files from the data in this browser
+            <>
+              <Button variant="outline" onClick={() => exportInBrowser(ws, "json")}><FileJson /> {t("settings.exportJson")}</Button>
+              <Button variant="outline" onClick={() => exportInBrowser(ws, "csv")}><Download /> {t("settings.exportCsv")}</Button>
+            </>
           ) : (
             <>
               <Button asChild variant="outline"><a href={`/api/export?workspace=${ws.id}&format=json`}><FileJson /> {t("settings.exportJson")}</a></Button>

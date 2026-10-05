@@ -21,7 +21,7 @@ export function BulkBar() {
   const action = (label: string, icon: React.ReactNode, onClick?: () => void) => (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Button variant="ghost" size="icon" onClick={onClick} aria-label={label} className="text-background hover:bg-white/15 hover:text-background dark:text-foreground dark:hover:bg-white/10">
+        <Button tooltip={false} variant="ghost" size="icon" onClick={onClick} aria-label={label} className="text-background hover:bg-white/15 hover:text-background dark:text-foreground dark:hover:bg-white/10">
           {icon}
         </Button>
       </TooltipTrigger>

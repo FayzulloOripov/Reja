@@ -16,6 +16,12 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
-      - run: npm run build
-        env:
-          NEXT_PUBLIC_DEMO_MODE: "true"
+      - run: npx playwright install --with-deps chromium
+      # builds, starts the app on :3100 (playwright.config webServer) and runs the demo suite,
+      # which needs no keys: it uses the in-browser demo at /demo
+      - run: npx playwright test --project=demo
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report

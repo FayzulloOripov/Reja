@@ -38,10 +38,20 @@ export function uzApostrophe(input: string): string {
   return input.replace(/([oOgG])['’‘`ʼ]/g, "$1ʻ");
 }
 
+/**
+ * Up to two initials from a display name. Bracketed parts ("(demo)"), digits and punctuation are
+ * skipped; works for Latin and Cyrillic; a one-word name gives one letter.
+ */
 export function initials(name: string | null | undefined): string {
-  const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "?";
-  return (parts[0][0] + (parts[1]?.[0] ?? "")).toUpperCase();
+  const cleaned = (name ?? "").replace(/\([^)]*\)|\[[^\]]*\]|\{[^}]*\}/g, " ");
+  const words = cleaned
+    .split(/\s+/)
+    .map((w) => [...w].filter((ch) => /\p{L}/u.test(ch)).join(""))
+    .filter(Boolean);
+  if (words.length === 0) return "?";
+  const first = [...words[0]][0];
+  const second = words.length > 1 ? [...words[words.length - 1]][0] : "";
+  return (first + second).toLocaleUpperCase();
 }
 
 export function truncate(s: string, n: number): string {

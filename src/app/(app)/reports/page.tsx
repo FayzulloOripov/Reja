@@ -70,17 +70,21 @@ function Personal({ weeks, tz, uid, weekLabel }: { weeks: ReturnType<typeof last
   const overdue = useMemo(() => overdueTrend(mine, weeks, tz), [mine, weeks, tz]);
   const time = useMemo(() => {
     const myEntries = Object.values(entries).filter((e) => e.user_id === uid);
-    return minutesByKey(myEntries, (taskId) => tasks[taskId]?.project_id ?? "inbox", weeks[0].start, tz).map(([pid, minutes]) => ({
+    return minutesByKey(myEntries, (taskId) => (taskId ? (tasks[taskId]?.project_id ?? "inbox") : "no-task"), weeks[0].start, tz).map(([pid, minutes]) => ({
       id: pid,
-      name: pid === "inbox" ? t("nav.inbox") : (projects.find((p) => p.id === pid)?.name ?? "…"),
+      name: pid === "inbox" ? t("nav.inbox") : pid === "no-task" ? t("reports.focusNoTask") : (projects.find((p) => p.id === pid)?.name ?? "…"),
       color: projects.find((p) => p.id === pid)?.color ?? null,
       minutes,
     }));
   }, [entries, uid, tasks, weeks, tz, projects, t]);
 
   const total = completed.reduce((n, w) => n + w.count, 0);
-  const lastRates = onTime.slice(-4).filter((w) => w.rate !== null);
-  const rate = lastRates.length ? Math.round(lastRates.reduce((n, w) => n + (w.rate ?? 0), 0) / lastRates.length) : null;
+  // every number on the page covers the selected period
+  const rated = onTime.reduce((acc, w) => ({ onTime: acc.onTime + (w.onTime ?? 0), total: acc.total + (w.rate === null ? 0 : w.total) }), { onTime: 0, total: 0 });
+  const rate = rated.total ? Math.round((rated.onTime / rated.total) * 100) : null;
+  const period = t("reports.lastWeeks", { count: weeks.length });
+  const maxMinutes = Math.max(0, ...time.map((r) => r.minutes));
+  const timeTicks = timeAxisTicks(maxMinutes);
   const totalMinutes = time.reduce((n, r) => n + r.minutes, 0);
 
   if (total === 0 && totalMinutes === 0) return <EmptyState illustration="chart" title={t("reports.noData")} />;
@@ -88,10 +92,10 @@ function Personal({ weeks, tz, uid, weekLabel }: { weeks: ReturnType<typeof last
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatTile icon={<CheckCircle2 className="text-success" />} label={t("reports.totalDone")} value={total} hint={t("reports.weeks", { count: weeks.length })} />
-        <StatTile icon={<BarChart3 />} label={t("reports.avgPerWeek")} value={(total / weeks.length).toFixed(1)} />
-        <StatTile icon={<Gauge />} label={t("reports.onTimeRate")} value={rate === null ? "—" : `${rate}%`} hint={t("reports.weeks", { count: 4 })} />
-        <StatTile icon={<Clock />} label={t("reports.timeByProject")} value={f.duration(totalMinutes)} />
+        <StatTile icon={<CheckCircle2 className="text-success" />} label={t("reports.totalDone")} value={f.num(total)} hint={period} />
+        <StatTile icon={<BarChart3 />} label={t("reports.avgPerWeek")} value={f.num(total / weeks.length, 1)} hint={period} />
+        <StatTile icon={<Gauge />} label={t("reports.onTimeRate")} value={rate === null ? "—" : `${f.num(rate)}%`} hint={period} />
+        <StatTile icon={<Clock />} label={t("reports.focusTime")} value={f.duration(totalMinutes)} hint={period} />
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
         <ChartCard
@@ -144,7 +148,7 @@ function Personal({ weeks, tz, uid, weekLabel }: { weeks: ReturnType<typeof last
 
         <ChartCard
           title={t("reports.timeByProject")}
-          subtitle={t("reports.minutes")}
+          subtitle={period}
           csvName="time-by-project"
           height={Math.max(160, time.length * 34)}
           table={{ columns: [{ key: "name", label: t("task.project") }, { key: "minutes", label: t("reports.minutes"), numeric: true }], rows: time.map((r) => ({ name: r.name, minutes: r.minutes })) }}
@@ -155,7 +159,7 @@ function Personal({ weeks, tz, uid, weekLabel }: { weeks: ReturnType<typeof last
             <ResponsiveContainer>
               <BarChart data={time} layout="vertical" margin={{ top: 0, right: 24, left: 8, bottom: 0 }}>
                 <CartesianGrid {...gridProps} horizontal={false} vertical />
-                <XAxis type="number" {...axisProps} />
+                <XAxis type="number" ticks={timeTicks} domain={[0, timeTicks[timeTicks.length - 1]]} tickFormatter={(v: number) => f.hoursTick(v)} {...axisProps} />
                 <YAxis
                   type="category"
                   dataKey="name"
@@ -182,6 +186,16 @@ function Personal({ weeks, tz, uid, weekLabel }: { weeks: ReturnType<typeof last
       </div>
     </div>
   );
+}
+
+/** Axis ticks for durations at round steps (15/30 min, 1/2/5 h…), so ticks read as time, not raw minutes. */
+function timeAxisTicks(max: number): number[] {
+  const steps = [15, 30, 60, 120, 180, 300, 600, 1200, 3000];
+  const step = steps.find((s) => max / s <= 5) ?? 6000;
+  const top = Math.max(step, Math.ceil(max / step) * step);
+  const out: number[] = [];
+  for (let v = 0; v <= top; v += step) out.push(v);
+  return out;
 }
 
 function ProjectReport({ weeks, tz, weekLabel, today }: { weeks: ReturnType<typeof lastWeeks>; tz: string; weekLabel: (w: string | number) => string; today: string }) {

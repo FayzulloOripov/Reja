@@ -57,7 +57,7 @@ export function SubtasksSection({ task, writable }: { task: Task; writable: bool
         {subtasks.map((s) => (
           <TaskRow key={s.id} task={s} readOnly={!writable} />
         ))}
-        {writable && <InlineAdd defaults={{ parentId: task.id, projectId: task.project_id }} placeholder={t("task.addSubtask")} />}
+        {writable && <InlineAdd sticky defaults={{ parentId: task.id, projectId: task.project_id }} placeholder={t("task.addSubtask")} />}
       </div>
     </section>
   );
@@ -277,7 +277,7 @@ export function AttachmentsSection({ task, writable }: { task: Task; writable: b
         action={
           writable && (
             <Button variant="ghost" size="xs" className="text-muted-foreground" onClick={() => fileRef.current?.click()}>
-              <Upload /> {t("dropFiles")}
+              <Upload /> {t("chooseFile")}
             </Button>
           )
         }
@@ -285,8 +285,11 @@ export function AttachmentsSection({ task, writable }: { task: Task; writable: b
       <input ref={fileRef} type="file" multiple hidden onChange={(e) => onFiles(e.target.files)} />
       <div className={cn("rounded-xl border border-dashed p-2 transition-colors", over ? "border-brand bg-brand-soft" : items.length ? "border-transparent p-0" : "")}>
         {items.length === 0 ? (
-          <button onClick={() => fileRef.current?.click()} className="flex w-full items-center justify-center gap-2 py-3 text-13 text-muted-foreground">
-            <Upload className="size-4" /> {t("dropFiles")}
+          <button onClick={() => fileRef.current?.click()} className="flex min-h-11 w-full items-center justify-center gap-2 py-3 text-13 text-muted-foreground">
+            <Upload className="size-4" aria-hidden />
+            {/* "drop here" only makes sense with a mouse */}
+            <span className="[@media(hover:none)]:hidden">{t("dropFiles")}</span>
+            <span className="hidden [@media(hover:none)]:inline">{t("chooseFile")}</span>
           </button>
         ) : (
           <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">

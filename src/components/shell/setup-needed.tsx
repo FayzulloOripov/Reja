@@ -9,8 +9,11 @@ export function SetupNeeded() {
         <h1 className="text-22 font-bold">Configure Supabase</h1>
         <p className="text-sm text-muted-foreground">
           Set <code>NEXT_PUBLIC_SUPABASE_URL</code> and <code>NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY</code> (see README), or run locally with{" "}
-          <code>NEXT_PUBLIC_DEMO_MODE=true</code>.
+          <code>NEXT_PUBLIC_DEMO=1</code>.
         </p>
+        <a href="/demo" className="inline-flex h-10 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground">
+          Open the demo →
+        </a>
       </div>
     </main>
   );

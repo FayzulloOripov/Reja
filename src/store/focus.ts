@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { tr } from "@/lib/i18n-client";
-import { logTime } from "./actions";
+import { logFocusSession, logTime } from "./actions";
 import { useStore } from "./store";
 
 export interface FocusState {
@@ -19,7 +19,6 @@ export interface FocusState {
   /** length of the current phase */
   plannedMs: number;
   phaseStartedAt: number | null;
-  sessions: { date: string; count: number };
   setTask: (id: string | null) => void;
   start: (workMin: number, breakMin: number) => void;
   pause: () => void;
@@ -27,8 +26,6 @@ export interface FocusState {
   stop: () => void;
   skipBreak: () => void;
 }
-
-const today = () => new Date().toISOString().slice(0, 10);
 
 export const useFocus = create<FocusState>()(
   persist(
@@ -40,7 +37,6 @@ export const useFocus = create<FocusState>()(
       remainingMs: null,
       plannedMs: 25 * 60_000,
       phaseStartedAt: null,
-      sessions: { date: "", count: 0 },
       setTask: (id) => set({ taskId: id }),
       start: (workMin, breakMin) => {
         const ms = (get().phase === "work" ? workMin : breakMin) * 60_000;
@@ -57,8 +53,9 @@ export const useFocus = create<FocusState>()(
       stop: () => {
         const s = get();
         if (s.phase === "work" && s.phaseStartedAt) {
+          // a stopped session is not a finished focus session: its time goes to the task only
           const remaining = s.running && s.endsAt ? Math.max(0, s.endsAt - Date.now()) : (s.remainingMs ?? 0);
-          logWork(s.taskId, s.plannedMs - remaining, s.phaseStartedAt);
+          logPartial(s.taskId, s.plannedMs - remaining, s.phaseStartedAt);
         }
         set({ running: false, endsAt: null, remainingMs: null, phase: "work", phaseStartedAt: null });
       },
@@ -74,18 +71,25 @@ export const useFocus = create<FocusState>()(
         remainingMs: s.remainingMs,
         plannedMs: s.plannedMs,
         phaseStartedAt: s.phaseStartedAt,
-        sessions: s.sessions,
       }),
     },
   ),
 );
 
-function logWork(taskId: string | null, workedMs: number, startedAt: number) {
-  const minutes = Math.round(workedMs / 60_000);
-  if (!taskId || minutes < 1) return;
-  const task = useStore.getState().data.tasks[taskId];
-  if (!task) return;
-  logTime(task, Math.min(minutes, 180), new Date(startedAt));
+/** A finished work phase: stored as a focus session (with or without a task). */
+function logSession(taskId: string | null, workedMs: number, startedAt: number) {
+  const minutes = Math.min(180, Math.round(workedMs / 60_000));
+  if (minutes < 1) return;
+  const task = taskId ? useStore.getState().data.tasks[taskId] : undefined;
+  logFocusSession(task ?? null, minutes, new Date(startedAt));
+  if (task) toast.success(tr("focus.logged", { minutes, title: task.title }));
+}
+
+function logPartial(taskId: string | null, workedMs: number, startedAt: number) {
+  const minutes = Math.min(180, Math.round(workedMs / 60_000));
+  const task = taskId ? useStore.getState().data.tasks[taskId] : undefined;
+  if (!task || minutes < 1) return;
+  logTime(task, minutes, new Date(startedAt));
   toast.success(tr("focus.logged", { minutes, title: task.title }));
 }
 
@@ -108,10 +112,12 @@ export function useFocusEngine() {
       const st = useStore.getState();
       const me = st.data.profiles[st.userId ?? ""];
       if (s.phase === "work") {
-        if (s.phaseStartedAt) logWork(s.taskId, s.plannedMs, s.phaseStartedAt);
-        const count = s.sessions.date === today() ? s.sessions.count + 1 : 1;
+        if (s.phaseStartedAt) logSession(s.taskId, s.plannedMs, s.phaseStartedAt);
+        // the break starts when the work phase ended (the screen may have been locked)
         const breakMs = (me?.pomodoro_break ?? 5) * 60_000;
-        useFocus.setState({ phase: "break", endsAt: Date.now() + breakMs, plannedMs: breakMs, phaseStartedAt: Date.now(), sessions: { date: today(), count } });
+        const endsAt = s.endsAt + breakMs;
+        if (endsAt <= Date.now()) useFocus.setState({ phase: "work", running: false, endsAt: null, phaseStartedAt: null });
+        else useFocus.setState({ phase: "break", endsAt, plannedMs: breakMs, phaseStartedAt: s.endsAt });
         toast(tr("focus.breakTime"));
         notify(tr("focus.breakTime"));
       } else {

@@ -30,7 +30,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useTheme } from "@/components/providers/theme";
 import { useMemo, type ComponentType, type ReactNode } from "react";
-import { Kbd, ProjectDot } from "@/components/common/bits";
+import { Kbd, ProjectDot, UserAvatar } from "@/components/common/bits";
 import { LogoMark } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,8 +44,9 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { APP_NAME, DEMO_MODE } from "@/lib/env";
+import { Tip, Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { APP_NAME } from "@/lib/env";
+import { useIsDemo } from "@/hooks/use-demo";
 import { isOpen } from "@/lib/health";
 import { cn } from "@/lib/utils";
 import { switchWorkspace, updateProfile } from "@/store/actions";
@@ -190,6 +191,7 @@ export function UserMenu({ collapsed }: { collapsed?: boolean }) {
   const locale = useLocale();
   const router = useRouter();
   const setShortcuts = useUI((s) => s.setShortcuts);
+  const demo = useIsDemo();
 
   async function changeLanguage(l: "uz" | "en") {
     updateProfile({ language: l });
@@ -204,9 +206,15 @@ export function UserMenu({ collapsed }: { collapsed?: boolean }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size={collapsed ? "icon" : "default"} className={cn("text-muted-foreground", !collapsed && "w-full justify-start gap-2.5 px-2.5")}>
-          <Settings className="size-4" />
-          {!collapsed && <span className="truncate text-13">{me?.name || t("settings")}</span>}
+        <Button
+          variant="ghost"
+          size={collapsed ? "icon" : "default"}
+          aria-label={t("accountMenu", { name: me?.name || me?.email || "" })}
+          className={cn("min-w-0 text-muted-foreground", !collapsed && "h-9 flex-1 justify-start gap-2.5 px-2")}
+        >
+          <UserAvatar profile={me} size={22} />
+          {!collapsed && <span className="truncate text-13 text-foreground">{me?.name || me?.email}</span>}
+          {!collapsed && <ChevronDown className="ml-auto size-3.5" aria-hidden />}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent side="top" align="start" className="w-60">
@@ -250,7 +258,16 @@ export function UserMenu({ collapsed }: { collapsed?: boolean }) {
         <DropdownMenuItem onSelect={() => setShortcuts(true)} className="hidden md:flex">
           <Keyboard /> {t("shortcuts")} <Kbd className="ml-auto">?</Kbd>
         </DropdownMenuItem>
-        {!DEMO_MODE && (
+        {demo ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <a href="/demo/exit">
+                <LogOut /> {t("leaveDemo")}
+              </a>
+            </DropdownMenuItem>
+          </>
+        ) : (
           <>
             <DropdownMenuSeparator />
             <form action="/auth/signout" method="post">
@@ -306,7 +323,7 @@ export function Sidebar() {
         <WorkspaceSwitcher collapsed={collapsed} />
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon-sm" onClick={toggle} aria-label={collapsed ? t("expand") : t("collapse")} className="shrink-0 text-muted-foreground">
+            <Button tooltip={false} variant="ghost" size="icon-sm" onClick={toggle} aria-label={collapsed ? t("expand") : t("collapse")} className="shrink-0 text-muted-foreground">
               <PanelLeftClose className={cn("size-4 transition-transform", collapsed && "rotate-180")} />
             </Button>
           </TooltipTrigger>
@@ -330,7 +347,7 @@ export function Sidebar() {
         </Button>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="outline" size="icon" onClick={() => setPalette(true)} aria-label={t("search")} className="size-8 bg-card">
+            <Button tooltip={false} variant="outline" size="icon" onClick={() => setPalette(true)} aria-label={t("search")} className="size-8 bg-card">
               <Search className="size-4" />
             </Button>
           </TooltipTrigger>
@@ -391,8 +408,15 @@ export function Sidebar() {
         </ul>
       </nav>
 
-      <div className={cn("border-t border-sidebar-border p-2.5", collapsed && "flex justify-center")}>
+      <div className={cn("flex items-center gap-1 border-t border-sidebar-border p-2.5", collapsed && "flex-col")}>
         <UserMenu collapsed={collapsed} />
+        <Tip label={t("settings")} side={collapsed ? "right" : "top"}>
+          <Button asChild variant="ghost" size="icon" className={cn("shrink-0 text-muted-foreground", isActive("/settings") && "bg-card text-foreground shadow-elev-1")}>
+            <Link href="/settings" aria-label={t("settings")} aria-current={isActive("/settings") ? "page" : undefined}>
+              <Settings className="size-4" />
+            </Link>
+          </Button>
+        </Tip>
       </div>
     </aside>
   );

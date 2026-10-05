@@ -37,6 +37,10 @@ export interface TaskGroup {
   defaults?: Partial<CreateTaskInput>;
   tone?: "danger";
   collapsible?: boolean;
+  /** hide the "add task" row for this group (e.g. overdue) */
+  noAdd?: boolean;
+  /** a compact placeholder row (e.g. "3 empty days") instead of a header; clicking it calls onExpand */
+  gap?: { label: ReactNode; onExpand: () => void };
 }
 
 export interface TaskListProps {
@@ -85,6 +89,7 @@ function GroupDrop({ id, children }: { id: string; children: ReactNode }) {
 }
 
 export function TaskList({ groups, showProject, sortable, readOnly, allowAdd, onMove, empty, className, triage, nativeDragType }: TaskListProps) {
+  const t = useTranslations();
   const selection = useUI((s) => s.selection);
   const toggleSelect = useUI((s) => s.toggleSelect);
   const setSelection = useUI((s) => s.setSelection);
@@ -236,6 +241,7 @@ export function TaskList({ groups, showProject, sortable, readOnly, allowAdd, on
       className={cn("space-y-5", className)}
     >
       {groups.map((g) => {
+        if (g.gap) return <GapRow key={g.key} group={g} droppable={Boolean(sortable && !readOnly)} />;
         const isCollapsed = collapsed[g.key];
         const rows = (
           <div className="space-y-px">
@@ -270,7 +276,8 @@ export function TaskList({ groups, showProject, sortable, readOnly, allowAdd, on
                   <button
                     onClick={() => setCollapsed((c) => ({ ...c, [g.key]: !c[g.key] }))}
                     aria-expanded={!isCollapsed}
-                    className="-ml-1 rounded p-0.5 text-muted-foreground hover:bg-muted"
+                    aria-label={isCollapsed ? t("common.expand") : t("common.collapse")}
+                    className="-m-2 rounded p-2 text-muted-foreground hover:bg-muted"
                   >
                     <ChevronRight className={cn("size-3.5 transition-transform", !isCollapsed && "rotate-90")} />
                   </button>
@@ -291,7 +298,7 @@ export function TaskList({ groups, showProject, sortable, readOnly, allowAdd, on
               ) : (
                 rows
               ))}
-            {!isCollapsed && allowAdd && !readOnly && <InlineAdd defaults={g.defaults} />}
+            {!isCollapsed && allowAdd && !readOnly && !g.noAdd && <InlineAdd defaults={g.defaults} />}
           </section>
         );
       })}
@@ -313,11 +320,40 @@ export function TaskList({ groups, showProject, sortable, readOnly, allowAdd, on
   );
 }
 
+function GapRow({ group, droppable }: { group: TaskGroup; droppable: boolean }) {
+  const button = (
+    <button
+      onClick={group.gap!.onExpand}
+      className="flex min-h-9 w-full items-center gap-2 rounded-lg border border-dashed px-3 py-1.5 text-left text-13 text-muted-foreground transition-colors hover:border-border-strong hover:text-foreground"
+    >
+      <ChevronRight className="size-3.5" aria-hidden />
+      {group.gap!.label}
+    </button>
+  );
+  return droppable ? <GroupDrop id={`group:${group.key}`}>{button}</GroupDrop> : button;
+}
+
 /** "Add task" row that understands the quick-add syntax. */
-export function InlineAdd({ defaults, placeholder, autoFocus, onDone }: { defaults?: Partial<CreateTaskInput>; placeholder?: string; autoFocus?: boolean; onDone?: () => void }) {
+export function InlineAdd({
+  defaults,
+  placeholder,
+  autoFocus,
+  onDone,
+  sticky,
+}: {
+  defaults?: Partial<CreateTaskInput>;
+  placeholder?: string;
+  autoFocus?: boolean;
+  onDone?: () => void;
+  /** stay open after each entry (fast entry of subtasks); closes with Escape or the close button */
+  sticky?: boolean;
+}) {
   const t = useTranslations("task");
+  const tc = useTranslations("common");
   const [open, setOpen] = useState(Boolean(autoFocus));
   const [value, setValue] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const lastSubmit = useRef(0);
   const today = useToday();
   const nowMinutes = useNowMinutes();
   const ws = useCurrentWorkspace();
@@ -345,7 +381,16 @@ export function InlineAdd({ defaults, placeholder, autoFocus, onDone }: { defaul
       top: parsed.top || defaults?.top,
     });
     setValue("");
+    lastSubmit.current = Date.now();
+    // phones blur the field on "Enter": put the cursor back for the next entry
+    requestAnimationFrame(() => inputRef.current?.focus());
   }
+
+  const finish = () => {
+    setOpen(false);
+    setValue("");
+    onDone?.();
+  };
 
   if (!open) {
     return (
@@ -359,30 +404,31 @@ export function InlineAdd({ defaults, placeholder, autoFocus, onDone }: { defaul
     <div className="flex items-center gap-3 rounded-lg border bg-card px-2.5 py-1.5 shadow-elev-1">
       <span className="size-[18px] shrink-0 rounded-full border-[1.75px] border-dashed border-border-strong" />
       <input
+        ref={inputRef}
         autoFocus
         value={value}
         onChange={(e) => setValue(e.target.value)}
+        enterKeyHint={sticky ? "next" : "done"}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             e.preventDefault();
             submit();
           }
-          if (e.key === "Escape") {
-            setOpen(false);
-            setValue("");
-            onDone?.();
-          }
+          if (e.key === "Escape") finish();
         }}
         onBlur={() => {
-          if (!value.trim()) {
-            setOpen(false);
-            onDone?.();
-          }
+          if (sticky || value.trim() || Date.now() - lastSubmit.current < 400) return;
+          finish();
         }}
-        placeholder={t("titlePlaceholder")}
-        aria-label={t("addTask")}
+        placeholder={placeholder ?? t("titlePlaceholder")}
+        aria-label={placeholder ?? t("addTask")}
         className="h-7 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
       />
+      {sticky && (
+        <button type="button" onClick={finish} className="min-h-8 shrink-0 rounded-md px-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground">
+          {tc("done")}
+        </button>
+      )}
     </div>
   );
 }

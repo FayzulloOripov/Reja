@@ -15,8 +15,11 @@ export default defineConfig({
   reporter: [["list"], ["html", { open: "never" }]],
   use: { baseURL, trace: "retain-on-failure", locale: "uz-UZ", timezoneId: "Asia/Tashkent" },
   projects: [
-    { name: "desktop", use: { ...devices["Desktop Chrome"] } },
-    { name: "mobile", use: { ...devices["Pixel 7"] }, testMatch: /mobile\.spec\.ts/ },
+    // real backend (skipped without Supabase test keys)
+    { name: "desktop", use: { ...devices["Desktop Chrome"] }, testMatch: /(core-flow|sharing)\.spec\.ts/ },
+    { name: "mobile", use: { ...devices["Pixel 7"] }, testMatch: /\/mobile\.spec\.ts/ },
+    // in-browser demo (/demo): runs anywhere, no keys needed
+    { name: "demo", use: { ...devices["Desktop Chrome"] }, testMatch: /demo\/.*\.spec\.ts/ },
   ],
   webServer: process.env.E2E_BASE_URL
     ? undefined

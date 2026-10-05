@@ -1,11 +1,11 @@
 "use client";
 
-import { FileText, FolderPlus, Languages, Moon, Plus, Search, Users } from "lucide-react";
+import { FileText, FolderPlus, Languages, Moon, Plus, Settings, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useTheme } from "@/components/providers/theme";
 import { useMemo, useState } from "react";
-import { ProjectDot, StatusIcon, UserAvatar } from "@/components/common/bits";
+import { DueChip, ProjectDot, StatusIcon, UserAvatar } from "@/components/common/bits";
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandShortcut } from "@/components/ui/command";
 import { Command } from "@/components/ui/command";
 import { matchScore } from "@/lib/text";
@@ -77,13 +77,16 @@ export function CommandPalette() {
                 return (
                   <CommandItem key={task.id} value={`task:${task.id}`} onSelect={() => run(() => openTask(task.id))}>
                     <StatusIcon status={task.status} />
-                    <span className="truncate">{task.title}</span>
-                    {p && (
-                      <span className="ml-auto flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
-                        <ProjectDot color={p.color} size="sm" />
-                        {p.name}
-                      </span>
-                    )}
+                    <span className="min-w-0 flex-1 truncate">{task.title}</span>
+                    <span className="ml-auto flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+                      <DueChip date={task.due_date} dueAt={task.due_at} deadline={task.deadline} done={task.status === "done"} />
+                      {p && (
+                        <span className="hidden items-center gap-1.5 sm:flex">
+                          <ProjectDot color={p.color} size="sm" />
+                          <span className="max-w-32 truncate">{p.name}</span>
+                        </span>
+                      )}
+                    </span>
                   </CommandItem>
                 );
               })}
@@ -148,8 +151,8 @@ export function CommandPalette() {
                 <item.icon /> {item.label}
               </CommandItem>
             ))}
-            <CommandItem value={t("nav.settings")} onSelect={() => run(() => router.push("/settings/profile"))}>
-              <Search /> {t("nav.settings")}
+            <CommandItem value={t("nav.settings")} onSelect={() => run(() => router.push("/settings"))}>
+              <Settings /> {t("nav.settings")}
             </CommandItem>
           </CommandGroup>
 

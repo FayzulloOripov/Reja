@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { EmptyState } from "@/components/common/empty-state";
+import { Switch } from "@/components/ui/switch";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { safeColor } from "@/lib/colors";
 import { addDays, diffDays, eachDay, isoWeekday, parseISODate, startOfWeek, timeIn, zonedToUtc } from "@/lib/dates";
@@ -10,11 +11,12 @@ import { useFormat } from "@/lib/format";
 import type { Section, Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { updateTask } from "@/store/actions";
-import { useToday, useTz } from "@/store/hooks";
+import { useMe, useToday, useTz } from "@/store/hooks";
 import { useStore } from "@/store/store";
 import { useUI } from "@/store/ui";
 
 const ROW = 38;
+const UNDATED_DRAG = "application/x-reja-undated";
 const PX: Record<"day" | "week" | "month", number> = { day: 40, week: 18, month: 6 };
 
 interface Drag {
@@ -32,6 +34,9 @@ export function TimelineView({ tasks, sections, writable, color }: { tasks: Task
   const openTask = useUI((s) => s.openTask);
   const deps = useStore((s) => s.data.task_dependencies);
   const [zoom, setZoom] = useState<"day" | "week" | "month">("week");
+  const [showDone, setShowDone] = useState(false);
+  const [dropOver, setDropOver] = useState(false);
+  const workDays = useMe()?.work_days ?? [1, 2, 3, 4, 5, 6];
   const [drag, setDrag] = useState<Drag | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const px = PX[zoom];
@@ -39,9 +44,10 @@ export function TimelineView({ tasks, sections, writable, color }: { tasks: Task
   const rows = useMemo(() => {
     const order = new Map(sections.map((s, i) => [s.id, i]));
     return tasks
-      .filter((x) => x.start_date || x.due_date)
+      .filter((x) => (x.start_date || x.due_date) && (showDone || (x.status !== "done" && x.status !== "cancelled")))
       .sort((a, b) => (order.get(a.section_id ?? "") ?? -1) - (order.get(b.section_id ?? "") ?? -1) || (a.start_date ?? a.due_date!).localeCompare(b.start_date ?? b.due_date!));
-  }, [tasks, sections]);
+  }, [tasks, sections, showDone]);
+  const doneCount = useMemo(() => tasks.filter((x) => (x.start_date || x.due_date) && (x.status === "done" || x.status === "cancelled")).length, [tasks]);
   const undated = useMemo(() => tasks.filter((x) => !x.start_date && !x.due_date && x.status !== "done"), [tasks]);
 
   const [from, to] = useMemo(() => {
@@ -117,7 +123,18 @@ export function TimelineView({ tasks, sections, writable, color }: { tasks: Task
     return { ...m, label: `${f.months[dt.getUTCMonth()]} ${dt.getUTCFullYear()}` };
   });
 
-  if (rows.length === 0 && undated.length === 0) {
+  /** Dropping an undated task on the chart gives it that day. */
+  function onDrop(e: React.DragEvent) {
+    setDropOver(false);
+    const id = e.dataTransfer.getData(UNDATED_DRAG);
+    const el = scrollRef.current;
+    if (!id || !el || !writable) return;
+    const x = e.clientX - el.getBoundingClientRect().left + el.scrollLeft;
+    const day = addDays(from, Math.max(0, Math.floor(x / px)));
+    updateTask(id, { start_date: day, due_date: day });
+  }
+
+  if (rows.length === 0 && undated.length === 0 && doneCount === 0) {
     return <EmptyState illustration="calendar" title={t("empty.timelineEmpty")} />;
   }
 
@@ -139,7 +156,13 @@ export function TimelineView({ tasks, sections, writable, color }: { tasks: Task
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex flex-wrap items-center justify-end gap-3">
+        {doneCount > 0 && (
+          <label className="mr-auto flex min-h-9 items-center gap-2 text-13 text-muted-foreground">
+            <Switch checked={showDone} onCheckedChange={setShowDone} />
+            {t("timeline.showDone", { count: doneCount })}
+          </label>
+        )}
         <ToggleGroup type="single" value={zoom} onValueChange={(v) => v && setZoom(v as typeof zoom)} variant="outline" size="sm">
           <ToggleGroupItem value="day">{t("timeline.zoomDay")}</ToggleGroupItem>
           <ToggleGroupItem value="week">{t("timeline.zoomWeek")}</ToggleGroupItem>
@@ -155,7 +178,20 @@ export function TimelineView({ tasks, sections, writable, color }: { tasks: Task
             </button>
           ))}
         </div>
-        <div ref={scrollRef} className="relative flex-1 overflow-x-auto" onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={() => setDrag(null)}>
+        <div
+          ref={scrollRef}
+          className={cn("relative flex-1 overflow-x-auto", dropOver && "bg-brand-soft/40")}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={() => setDrag(null)}
+          onDragOver={(e) => {
+            if (!e.dataTransfer.types.includes(UNDATED_DRAG)) return;
+            e.preventDefault();
+            setDropOver(true);
+          }}
+          onDragLeave={() => setDropOver(false)}
+          onDrop={onDrop}
+        >
           <div style={{ width }} className="relative">
             <div className="sticky top-0 z-10 h-12 border-b bg-muted/50">
               {months.map((m) => (
@@ -172,11 +208,14 @@ export function TimelineView({ tasks, sections, writable, color }: { tasks: Task
                   ) : null,
                 )}
             </div>
-            <div className="relative" style={{ height: rows.length * ROW }}>
-              {/* weekend shading and today line */}
+            <div className="relative" style={{ height: Math.max(rows.length, 2) * ROW }}>
+              {/* days off shading and today line */}
               {zoom !== "month" &&
-                days.map((d, i) => (isoWeekday(d) >= 6 ? <div key={d} style={{ left: i * px, width: px }} className="absolute inset-y-0 bg-muted/40" /> : null))}
-              <div style={{ left: diffDays(from, today) * px + px / 2 }} className="absolute inset-y-0 z-10 w-0.5 bg-brand" aria-label={t("timeline.today")} />
+                days.map((d, i) => (!workDays.includes(isoWeekday(d)) ? <div key={d} style={{ left: i * px, width: px }} className="absolute inset-y-0 bg-muted/40" /> : null))}
+              <div style={{ left: diffDays(from, today) * px + px / 2 }} className="absolute inset-y-0 z-10 w-0.5 bg-brand" aria-hidden />
+              <span style={{ left: diffDays(from, today) * px + px / 2 }} className="absolute -top-0.5 z-30 -translate-x-1/2 rounded-full bg-brand px-1.5 text-[10px] font-semibold text-white">
+                {t("timeline.today")}
+              </span>
               {rows.map((_, i) => (
                 <div key={i} style={{ top: (i + 1) * ROW - 1 }} className="absolute inset-x-0 h-px bg-border/70" />
               ))}
@@ -219,10 +258,20 @@ export function TimelineView({ tasks, sections, writable, color }: { tasks: Task
       </div>
       {undated.length > 0 && (
         <div className="rounded-2xl border bg-card p-3 shadow-elev-1">
-          <p className="mb-2 text-13 font-semibold">{t("timeline.noDates")}</p>
+          <p className="text-13 font-semibold">{t("timeline.noDates")}</p>
+          <p className="mb-2 text-xs text-muted-foreground">{writable ? t("timeline.noDatesHint") : null}</p>
           <div className="flex flex-wrap gap-1.5">
             {undated.map((u) => (
-              <button key={u.id} onClick={() => openTask(u.id)} className="rounded-md border bg-muted/40 px-2 py-1 text-xs hover:bg-muted">
+              <button
+                key={u.id}
+                draggable={writable}
+                onDragStart={(e) => {
+                  e.dataTransfer.setData(UNDATED_DRAG, u.id);
+                  e.dataTransfer.effectAllowed = "move";
+                }}
+                onClick={() => openTask(u.id)}
+                className={cn("min-h-8 rounded-md border bg-muted/40 px-2 py-1 text-left text-xs hover:bg-muted", writable && "cursor-grab active:cursor-grabbing")}
+              >
                 {u.title}
               </button>
             ))}

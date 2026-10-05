@@ -1,9 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { DEMO_MODE, SUPABASE_PUBLIC_KEY, SUPABASE_URL, supabaseConfigured } from "@/lib/env";
+import { DEMO_COOKIE, FORCED_DEMO, SUPABASE_PUBLIC_KEY, SUPABASE_URL, supabaseConfigured } from "@/lib/env";
 
 // Routes that work without a session.
-const PUBLIC_PREFIXES = ["/login", "/auth", "/share", "/invite", "/offline", "/api/telegram", "/api/cron", "/api/ics"];
+const PUBLIC_PREFIXES = ["/login", "/auth", "/demo", "/share", "/invite", "/offline", "/api/telegram", "/api/cron", "/api/ics"];
 
 function isPublic(pathname: string) {
   return PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
@@ -16,7 +16,8 @@ function isPublic(pathname: string) {
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
-  if (DEMO_MODE || !supabaseConfigured) {
+  // the demo (whole deployment, or a visitor who opened /demo) needs no session
+  if (FORCED_DEMO || !supabaseConfigured || (request.cookies.get(DEMO_COOKIE)?.value === "1" && !pathname.startsWith("/api/"))) {
     return NextResponse.next();
   }
 

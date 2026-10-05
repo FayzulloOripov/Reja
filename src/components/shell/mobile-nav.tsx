@@ -1,6 +1,6 @@
 "use client";
 
-import { FolderKanban, Inbox, Menu, Plus, Search, SunMedium } from "lucide-react";
+import { FolderKanban, Inbox, Menu, Plus, Search, Settings, SunMedium } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -112,6 +112,16 @@ export function MobileTabBar() {
                       </Link>
                     </li>
                   ))}
+                  <li>
+                    <Link
+                      href="/settings"
+                      onClick={() => setSheet(null)}
+                      className="flex flex-col items-center gap-1.5 rounded-xl border bg-card p-3 text-xs font-medium shadow-elev-1"
+                    >
+                      <Settings className="size-5 text-brand" />
+                      {t("settings")}
+                    </Link>
+                  </li>
                   <li>
                     <button
                       onClick={() => { setSheet(null); useUI.getState().setPalette(true); }}

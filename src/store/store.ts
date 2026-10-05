@@ -62,7 +62,7 @@ export function setOpErrorListener(fn: ErrorListener) {
 }
 
 // ------------------------------------------------------------------ persistence
-const SNAPSHOT_VERSION = 3;
+const SNAPSHOT_VERSION = 4;
 const snapshotKey = (uid: string) => `reja:snapshot:v${SNAPSHOT_VERSION}:${uid}`;
 let persistTimer: ReturnType<typeof setTimeout> | null = null;
 

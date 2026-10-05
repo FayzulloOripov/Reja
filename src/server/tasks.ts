@@ -18,12 +18,13 @@ export async function completeTaskFor(sb: SupabaseClient, taskId: string, userId
   const { data: task } = await sb.from("tasks").select("*").eq("id", taskId).single<Task>();
   if (!task || task.deleted_at) return null;
   if (task.status === "done") return task;
-  const [subtasks, checklist, labels, assignees, reminders] = await Promise.all([
+  const [subtasks, checklist, labels, assignees, reminders, nextOcc] = await Promise.all([
     sb.from("tasks").select("*").eq("parent_id", taskId).is("deleted_at", null),
     sb.from("checklist_items").select("*").eq("task_id", taskId),
     sb.from("task_labels").select("*").eq("task_id", taskId),
     sb.from("task_assignees").select("*").eq("task_id", taskId),
     sb.from("reminders").select("*").eq("task_id", taskId),
+    sb.from("tasks").select("id").eq("recurrence_parent_id", taskId).is("deleted_at", null).limit(1),
   ]);
   const plan = planCompletion({
     task,
@@ -35,8 +36,11 @@ export async function completeTaskFor(sb: SupabaseClient, taskId: string, userId
     tz,
     now: new Date(),
     newId: randomUUID,
+    hasNextOccurrence: Boolean(nextOcc.data?.length),
   });
-  await sb.from("tasks").update(plan.complete.values).eq("id", taskId);
+  // conditional update: when two completions race, only one of them sees the open task
+  const { data: updated } = await sb.from("tasks").update(plan.complete.values).eq("id", taskId).neq("status", "done").select("id");
+  if (!updated?.length) return task;
   if (plan.next) {
     const n = plan.next;
     const strip = <T extends Record<string, unknown>>(rows: T[], drop: string[]) => rows.map((r) => Object.fromEntries(Object.entries(r).filter(([k]) => !drop.includes(k))));

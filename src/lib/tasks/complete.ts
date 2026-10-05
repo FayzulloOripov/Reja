@@ -18,6 +18,8 @@ export interface CompletionInput {
   tz: string;
   now: Date;
   newId: () => string;
+  /** an open occurrence generated from this task already exists (completed twice, or reopened and completed again) */
+  hasNextOccurrence?: boolean;
 }
 
 export interface NextOccurrencePlan {
@@ -41,7 +43,7 @@ export function planCompletion(input: CompletionInput): CompletionPlan {
     complete: { id: task.id, values: { status: "done", completed_at: nowIso } },
     next: null,
   };
-  if (!task.recurrence || task.parent_id) return plan;
+  if (!task.recurrence || task.parent_id || input.hasNextOccurrence) return plan;
 
   const occ = nextOccurrence(task.recurrence, { dueDate: task.due_date, dueAt: task.due_at }, tz, now);
   if (!occ) return plan;
@@ -53,6 +55,7 @@ export function planCompletion(input: CompletionInput): CompletionPlan {
   const nextTask: Task = {
     ...task,
     id: nextId,
+    recurrence_parent_id: task.id,
     status: "todo",
     completed_at: null,
     top_date: null,
@@ -71,6 +74,7 @@ export function planCompletion(input: CompletionInput): CompletionPlan {
       ...s,
       id: newId(),
       parent_id: nextId,
+      recurrence_parent_id: null,
       status: "todo" as const,
       completed_at: null,
       top_date: null,

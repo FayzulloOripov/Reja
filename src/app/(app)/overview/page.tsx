@@ -4,26 +4,25 @@ import { CalendarClock, LayoutDashboard, Target, Users } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
-import { PageHeader, ProgressBar, ProjectDot, UserAvatar } from "@/components/common/bits";
+import { KeyDateChip, PageHeader, ProgressBar, ProjectDot, UserAvatar } from "@/components/common/bits";
 import { EmptyState } from "@/components/common/empty-state";
-import { HealthPill } from "@/components/projects/project-header";
+import { HealthWithReason } from "@/components/projects/project-header";
 import { PageContainer } from "@/components/shell/app-client";
 import { ActivityList } from "@/components/tasks/task-detail-sections";
 import { Button } from "@/components/ui/button";
 import { addDays, startOfWeek } from "@/lib/dates";
-import { useFormat } from "@/lib/format";
+import { goalProgress } from "@/lib/goals";
 import { effectiveHealth, isOpen, isOverdue, suggestHealth } from "@/lib/health";
+import { nextKeyDate, nextKeyDateOf, type KeyDate } from "@/lib/tasks/key-dates";
 import type { ActivityEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { assigneesByTask, tasksByProject, useCurrentWorkspace, useMembers, useProjects, useToday, useTz } from "@/store/hooks";
+import { assigneesByTask, tasksByProject, useCurrentWorkspace, useMembers, useProjects, useToday } from "@/store/hooks";
 import { useStore } from "@/store/store";
 import { useUI } from "@/store/ui";
 
 export default function OverviewPage() {
   const t = useTranslations();
   const today = useToday();
-  const tz = useTz();
-  const f = useFormat(today, tz);
   const ws = useCurrentWorkspace();
   const projects = useProjects(ws?.id);
   const members = useMembers(ws?.id);
@@ -49,9 +48,7 @@ export default function OverviewPage() {
         .map((p) => {
           const list = byProject[p.id] ?? [];
           const s = suggestHealth(p, list, today);
-          const next = list
-            .filter((x) => isOpen(x) && !x.parent_id && (x.deadline || x.due_date) && (x.deadline ?? x.due_date)! >= today)
-            .sort((a, b) => (a.deadline ?? a.due_date)!.localeCompare((b.deadline ?? b.due_date)!))[0];
+          const next = nextKeyDateOf(list.filter((x) => isOpen(x) && !x.parent_id), today);
           return { p, s, health: effectiveHealth(p, s.health), next };
         })
         .sort((a, b) => ({ off_track: 0, at_risk: 1, on_track: 2 })[a.health] - ({ off_track: 0, at_risk: 1, on_track: 2 })[b.health]),
@@ -64,11 +61,9 @@ export default function OverviewPage() {
     () =>
       Object.values(tasks)
         .filter((x) => !x.deleted_at && isOpen(x) && x.project_id && projectIds.has(x.project_id))
-        .filter((x) => {
-          const d = x.deadline ?? x.due_date;
-          return d && d >= today && d <= weekEnd;
-        })
-        .sort((a, b) => (a.deadline ?? a.due_date)!.localeCompare((b.deadline ?? b.due_date)!))
+        .map((x) => ({ x, k: nextKeyDate(x, today) }))
+        .filter((r): r is { x: (typeof r)["x"]; k: KeyDate } => Boolean(r.k && r.k.date <= weekEnd))
+        .sort((a, b) => a.k.date.localeCompare(b.k.date))
         .slice(0, 12),
     [tasks, projectIds, today, weekEnd],
   );
@@ -78,7 +73,13 @@ export default function OverviewPage() {
     return members
       .map((m) => {
         const mine = Object.values(tasks).filter((x) => !x.deleted_at && isOpen(x) && x.project_id && projectIds.has(x.project_id) && (by[x.id] ?? []).some((a) => a.user_id === m.id));
-        return { m, open: mine.length, overdue: mine.filter((x) => isOverdue(x, today)).length, week: mine.filter((x) => x.due_date && x.due_date <= weekEnd).length };
+        return {
+          m,
+          open: mine.length,
+          overdue: mine.filter((x) => isOverdue(x, today)).length,
+          todayCount: mine.filter((x) => x.due_date === today).length,
+          week: mine.filter((x) => x.due_date && x.due_date >= today && x.due_date <= weekEnd).length,
+        };
       })
       .sort((a, b) => b.open - a.open);
   }, [members, tasks, assignees, projectIds, today, weekEnd]);
@@ -100,7 +101,7 @@ export default function OverviewPage() {
           <section className="space-y-3 xl:col-span-2" aria-labelledby="ov-projects">
             <h2 id="ov-projects" className="font-sans text-13 font-semibold tracking-normal text-muted-foreground">{t("overview.projects")}</h2>
             <div className="grid gap-3 sm:grid-cols-2">
-              {rows.map(({ p, s, health, next }) => (
+              {rows.map(({ p, s, next }) => (
                 <Link
                   key={p.id}
                   href={`/projects/${p.id}?view=overview`}
@@ -108,13 +109,11 @@ export default function OverviewPage() {
                   className="group relative overflow-hidden rounded-2xl border bg-card p-4 shadow-elev-1 transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-elev-3"
                 >
                   <span className="absolute inset-x-0 top-0 h-1 bg-pc" />
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold">{p.name}</p>
-                      {p.goal && <p className="truncate text-xs text-muted-foreground">{p.goal}</p>}
-                    </div>
-                    <HealthPill health={health} />
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold" title={p.name}>{p.name}</p>
+                    {p.goal && <p className="truncate text-xs text-muted-foreground" title={p.goal}>{p.goal}</p>}
                   </div>
+                  <HealthWithReason project={p} result={s} className="mt-2" />
                   <div className="mt-4 flex items-end justify-between gap-3">
                     <p className="font-display text-28 leading-none font-bold tnum">{s.percentDone}%</p>
                     <div className="text-right text-xs text-muted-foreground tnum">
@@ -124,13 +123,13 @@ export default function OverviewPage() {
                   </div>
                   <ProgressBar value={s.percentDone} color={p.color} className="mt-2" />
                   <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <CalendarClock className="size-3.5" />
                     {next ? (
-                      <span className="truncate">
-                        <span className="font-medium text-foreground tnum">{f.dayMonth((next.deadline ?? next.due_date)!)}</span> · {next.title}
+                      <span className="flex min-w-0 items-center gap-1.5">
+                        <KeyDateChip kind={next.kind} date={next.date} />
+                        <span className="truncate">· {next.task.title}</span>
                       </span>
                     ) : (
-                      <span>—</span>
+                      <span>{t("overview.noUpcomingDates")}</span>
                     )}
                   </div>
                 </Link>
@@ -147,13 +146,12 @@ export default function OverviewPage() {
                 <p className="text-13 text-muted-foreground">{t("overview.deadlinesEmpty")}</p>
               ) : (
                 <ul className="space-y-0.5">
-                  {deadlines.map((x) => {
+                  {deadlines.map(({ x, k }) => {
                     const p = projects.find((pp) => pp.id === x.project_id);
-                    const d = (x.deadline ?? x.due_date)!;
                     return (
                       <li key={x.id}>
-                        <button onClick={() => openTask(x.id)} className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left hover:bg-muted">
-                          <span className={cn("w-16 shrink-0 text-xs font-semibold tnum", d === today ? "text-brand-fg" : "text-muted-foreground")}>{f.relativeDay(d)}</span>
+                        <button onClick={() => openTask(x.id)} className="flex min-h-9 w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left hover:bg-muted">
+                          <KeyDateChip kind={k.kind} date={k.date} className={cn("w-24 shrink-0 text-xs", k.date === today && k.kind === "due" && "text-brand-fg")} />
                           <ProjectDot color={p?.color} size="sm" />
                           <span className="truncate text-13">{x.title}</span>
                         </button>
@@ -169,15 +167,19 @@ export default function OverviewPage() {
                 <Users className="size-4" /> {t("overview.workload")}
               </h2>
               <ul className="space-y-3">
-                {workload.map(({ m, open, overdue, week }) => (
+                {workload.map(({ m, open, overdue, week, todayCount }) => (
                   <li key={m.id} className="flex items-center gap-3">
                     <UserAvatar profile={m} size={30} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between text-13">
                         <span className="truncate font-medium">{m.name}</span>
                         <span className="text-xs text-muted-foreground tnum">
-                          {open} · {t("views.dueWeek").toLowerCase()} {week}
-                          {overdue > 0 && <span className="ml-1 font-semibold text-danger-fg">· {overdue}</span>}
+                          {t("overview.loadToday")} {todayCount} · {t("overview.loadWeek")} {week}
+                          {overdue > 0 && (
+                            <span className="font-semibold text-danger-fg">
+                              {" "}· {t("overview.loadOverdue")} {overdue}
+                            </span>
+                          )}
                         </span>
                       </div>
                       <div className="mt-1 h-1.5 rounded-full bg-muted">
@@ -202,9 +204,7 @@ export default function OverviewPage() {
                 <ul className="space-y-3">
                   {wsGoals.map((g) => {
                     const list = Object.values(krs).filter((k) => k.goal_id === g.id);
-                    const pct = list.length
-                      ? list.reduce((n, k) => n + Math.max(0, Math.min(1, k.target === k.start_value ? 1 : (k.current - k.start_value) / (k.target - k.start_value))), 0) / list.length * 100
-                      : 0;
+                    const pct = goalProgress(list);
                     return (
                       <li key={g.id}>
                         <Link href="/goals" className="block">

@@ -10,7 +10,7 @@ import { ColorPicker } from "@/components/tasks/pickers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { safeColor } from "@/lib/colors";
-import { addDays, eachDay, isoWeekday, startOfWeek } from "@/lib/dates";
+import { addDays, dateIn, eachDay, isoWeekday, startOfWeek } from "@/lib/dates";
 import { useFormat } from "@/lib/format";
 import { bestStreak, currentStreak, scheduledOn } from "@/lib/habits";
 import type { Habit } from "@/lib/types";
@@ -107,6 +107,14 @@ function NewHabit({ onDone }: { onDone: () => void }) {
   );
 }
 
+const HEAT = {
+  future: "bg-transparent",
+  done: "bg-pc",
+  missed: "bg-border-strong/70",
+  off: "bg-muted",
+  before: "border border-dashed border-border-strong bg-transparent",
+} as const;
+
 function HabitCard({ habit, done, today }: { habit: Habit; done: Set<string>; today: string }) {
   const t = useTranslations();
   const tz = useTz();
@@ -119,21 +127,31 @@ function HabitCard({ habit, done, today }: { habit: Habit; done: Set<string>; to
   const cols: string[][] = [];
   for (let w = 0; w < 16; w++) cols.push(eachDay(addDays(heatStart, w * 7), addDays(heatStart, w * 7 + 6)));
   const doneToday = done.has(today);
+  const createdOn = dateIn(tz, habit.created_at);
+  // month label above the first column of each month
+  // a label needs ~3 columns of room, so a month starting right after the first column hides the first label
+  const monthLabels: string[] = [];
+  let lastLabelAt = -10;
+  cols.forEach((col, i) => {
+    const firstOfMonth = col.find((d) => d.endsWith("-01"));
+    const month = i === 0 && !cols.slice(1, 3).some((c) => c.some((d) => d.endsWith("-01"))) ? col[0] : firstOfMonth;
+    if (month && i - lastLabelAt >= 3) {
+      monthLabels.push(f.monthsShort[Number(month.slice(5, 7)) - 1]);
+      lastLabelAt = i;
+    } else monthLabels.push("");
+  });
+  const cellState = (d: string): "future" | "before" | "done" | "missed" | "off" => {
+    if (d > today) return "future";
+    if (done.has(d)) return "done";
+    if (d < createdOn) return "before";
+    return scheduledOn(habit, d) ? "missed" : "off";
+  };
 
   return (
     <article data-color={safeColor(habit.color)} className="rounded-2xl border bg-card p-4 shadow-elev-1">
-      <header className="flex items-center gap-3">
-        <button
-          onClick={() => toggleHabit(habit.id, today)}
-          disabled={!scheduledOn(habit, today) && !doneToday}
-          aria-pressed={doneToday}
-          aria-label={t("habits.checkIn")}
-          className={cn("flex size-11 shrink-0 items-center justify-center rounded-full border-2 border-pc transition-all duration-200 disabled:opacity-40", doneToday ? "bg-pc text-white" : "text-pc hover:bg-pc-soft")}
-        >
-          <Check className="size-5" strokeWidth={3} />
-        </button>
+      <header className="flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1">
-          <h2 className="truncate font-sans text-base font-semibold tracking-normal">{habit.name}</h2>
+          <h2 className="font-sans text-base font-semibold tracking-normal break-words">{habit.name}</h2>
           <p className="flex items-center gap-3 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1"><Flame className="size-3.5 text-pc" /> {t("habits.streak", { count: streak })}</span>
             <span className="inline-flex items-center gap-1"><Trophy className="size-3.5" /> {t("habits.best", { count: best })}</span>
@@ -142,6 +160,19 @@ function HabitCard({ habit, done, today }: { habit: Habit; done: Set<string>; to
         <Button variant="ghost" size="icon-sm" aria-label={t("habits.archive")} onClick={() => updateHabit(habit.id, { archived_at: new Date().toISOString() })}>
           <Archive />
         </Button>
+        <button
+          type="button"
+          onClick={() => toggleHabit(habit.id, today)}
+          disabled={!scheduledOn(habit, today) && !doneToday}
+          aria-pressed={doneToday}
+          className={cn(
+            "inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border-2 border-pc px-4 text-sm font-semibold transition-colors duration-200 disabled:opacity-40",
+            doneToday ? "bg-pc text-white" : "text-pc-fg hover:bg-pc-soft",
+          )}
+        >
+          <Check className="size-4" strokeWidth={3} aria-hidden />
+          {doneToday ? t("habits.doneToday") : scheduledOn(habit, today) ? t("habits.markToday") : t("habits.notToday")}
+        </button>
       </header>
 
       <div className="mt-4">
@@ -174,24 +205,45 @@ function HabitCard({ habit, done, today }: { habit: Habit; done: Set<string>; to
 
       <div className="mt-4">
         <p className="mb-1.5 text-xs font-medium text-muted-foreground">{t("habits.heatmap")}</p>
-        <div className="flex gap-[3px]" role="grid" aria-label={t("habits.heatmap")}>
-          {cols.map((col, i) => (
-            <div key={i} className="flex flex-col gap-[3px]" role="row">
-              {col.map((d) => {
-                const on = done.has(d);
-                return (
-                  <span
-                    key={d}
-                    role="gridcell"
-                    title={`${f.dayMonth(d)}${on ? " ✓" : ""}`}
-                    aria-label={`${f.dayMonth(d)} ${on ? "✓" : "—"}`}
-                    className={cn("size-3 rounded-[3px] sm:size-3.5", d > today ? "bg-transparent" : on ? "bg-pc" : scheduledOn(habit, d) ? "bg-muted" : "bg-muted/40")}
-                  />
-                );
-              })}
+        <div className="flex gap-1.5 overflow-x-auto">
+          <div className="flex flex-col gap-[3px] pt-4 text-[10px] leading-3 text-muted-foreground" aria-hidden>
+            {f.weekdaysShort.map((d, i) => (
+              <span key={d} className="h-3 sm:h-3.5">{i % 2 === 0 ? d : ""}</span>
+            ))}
+          </div>
+          <div>
+            <div className="flex gap-[3px] text-[10px] leading-4 text-muted-foreground" aria-hidden>
+              {monthLabels.map((m, i) => (
+                <span key={i} className="w-3 overflow-visible whitespace-nowrap sm:w-3.5">{m}</span>
+              ))}
             </div>
-          ))}
+            <div className="flex gap-[3px]" role="grid" aria-label={t("habits.heatmap")}>
+              {cols.map((col, i) => (
+                <div key={i} className="flex flex-col gap-[3px]" role="row">
+                  {col.map((d) => {
+                    const state = cellState(d);
+                    return (
+                      <span
+                        key={d}
+                        role="gridcell"
+                        title={`${f.dayMonth(d)} · ${t(`habits.cell.${state}`)}`}
+                        aria-label={`${f.dayMonth(d)}: ${t(`habits.cell.${state}`)}`}
+                        className={cn("size-3 rounded-[3px] sm:size-3.5", HEAT[state])}
+                      />
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
+        <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+          {(["done", "missed", "off", "before"] as const).map((k) => (
+            <li key={k} className="inline-flex items-center gap-1">
+              <span className={cn("size-2.5 rounded-[3px]", HEAT[k])} aria-hidden /> {t(`habits.cell.${k}`)}
+            </li>
+          ))}
+        </ul>
       </div>
     </article>
   );

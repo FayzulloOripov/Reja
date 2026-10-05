@@ -15,7 +15,19 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { safeColor } from "@/lib/colors";
+import { goalPace, goalProgress, krProgress } from "@/lib/goals";
 import { useFormat } from "@/lib/format";
 import type { Goal, KeyResult } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -23,11 +35,6 @@ import { addKeyResult, createGoal, deleteGoal, deleteKeyResult, updateGoal, upda
 import { useCurrentWorkspace, useProjects, useToday, useTz, useWorkspaceRole } from "@/store/hooks";
 import { useStore } from "@/store/store";
 import { isFullMember } from "@/lib/permissions";
-
-function krProgress(k: Pick<KeyResult, "start_value" | "target" | "current">): number {
-  if (k.target === k.start_value) return k.current >= k.target ? 100 : 0;
-  return Math.max(0, Math.min(100, ((k.current - k.start_value) / (k.target - k.start_value)) * 100));
-}
 
 export default function GoalsPage() {
   const t = useTranslations();
@@ -77,7 +84,10 @@ function GoalCard({ goal, krs, writable }: { goal: Goal; krs: KeyResult[]; writa
   const [chartFor, setChartFor] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [kr, setKr] = useState({ title: "", start: "0", target: "", unit: "" });
-  const pct = krs.length ? krs.reduce((n, k) => n + krProgress(k), 0) / krs.length : 0;
+  const [confirmDelete, setConfirmDelete] = useState<KeyResult | null>(null);
+  const pct = goalProgress(krs);
+  const pace = goalPace(goal, krs, today);
+  const value = (v: number, unit?: string | null) => `${f.num(Number(v), Number.isInteger(Number(v)) ? 0 : 1)}${unit ? ` ${unit}` : ""}`;
 
   const chartData = useMemo(() => {
     if (!chartFor) return [];
@@ -90,13 +100,36 @@ function GoalCard({ goal, krs, writable }: { goal: Goal; krs: KeyResult[]; writa
   return (
     <article data-color={safeColor(goal.color)} className="overflow-hidden rounded-2xl border bg-card shadow-elev-1">
       <div className="flex items-start gap-4 p-5">
-        <div className="relative size-14 shrink-0">
+        <Popover>
+          <PopoverTrigger asChild>
+            <button type="button" className="relative size-14 shrink-0 rounded-full" aria-label={t("goals.howCalculated", { percent: Math.round(pct) })}>
           <svg viewBox="0 0 36 36" className="size-14 -rotate-90" aria-hidden>
             <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--muted)" strokeWidth="4" />
             <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--pc)" strokeWidth="4" strokeLinecap="round" strokeDasharray={`${(pct / 100) * 97.4} 97.4`} className="transition-[stroke-dasharray] duration-700" />
           </svg>
           <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold tnum">{Math.round(pct)}%</span>
-        </div>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-80 space-y-2 text-13">
+            <p className="font-semibold">{t("goals.calcTitle")}</p>
+            <p className="text-xs text-muted-foreground">{t("goals.calcBody")}</p>
+            <ul className="space-y-1">
+              {krs.map((k) => (
+                <li key={k.id} className="flex items-baseline justify-between gap-2 tnum">
+                  <span className="min-w-0 truncate">{k.title}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    ({value(k.current)} − {value(k.start_value)}) ÷ ({value(k.target)} − {value(k.start_value)}) = <b className="text-foreground">{f.num(krProgress(k))}%</b>
+                  </span>
+                </li>
+              ))}
+            </ul>
+            {krs.length > 1 && (
+              <p className="border-t pt-2 text-xs tnum">
+                {t("goals.calcAverage")}: ({krs.map((k) => `${f.num(krProgress(k))}%`).join(" + ")}) ÷ {krs.length} = <b>{f.num(pct)}%</b>
+              </p>
+            )}
+          </PopoverContent>
+        </Popover>
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-2">
             <h2 className="flex-1 font-sans text-lg font-semibold tracking-normal">{goal.title}</h2>
@@ -121,16 +154,36 @@ function GoalCard({ goal, krs, writable }: { goal: Goal; krs: KeyResult[]; writa
             </span>
             {project ? <ProjectBadge name={project.name} color={project.color} /> : <span>{t("goals.workspaceGoal")}</span>}
             {goal.target_date && (
-              <span className="inline-flex items-center gap-1 tnum"><CalendarClock className="size-3.5" /> {f.dayMonth(goal.target_date)}</span>
+              <span className="inline-flex items-center gap-1 tnum">
+                <CalendarClock className="size-3.5" aria-hidden /> {goal.start_date ? `${f.dayMonth(goal.start_date)} – ` : ""}
+                {f.dayMonth(goal.target_date)}
+              </span>
             )}
           </div>
+          {pace && goal.status === "active" && (
+            <div className="mt-3 space-y-1">
+              <div className="relative h-2 rounded-full bg-muted" role="img" aria-label={t(`goals.pace.${pace.pace}`, { elapsed: f.num(pace.elapsed), progress: f.num(pace.progress) })}>
+                <div className="h-full rounded-full bg-pc" style={{ width: `${pace.progress}%` }} />
+                <span className="absolute -top-1 h-4 w-0.5 rounded-full bg-foreground" style={{ left: `calc(${pace.elapsed}% - 1px)` }} title={t("goals.timePassed", { percent: f.num(pace.elapsed) })} />
+              </div>
+              <p className={cn("text-xs", pace.pace === "behind" ? "text-danger-fg" : pace.pace === "ahead" ? "text-success-fg" : "text-muted-foreground")}>
+                {t(`goals.pace.${pace.pace}`, { elapsed: f.num(pace.elapsed), progress: f.num(pace.progress) })}
+              </p>
+            </div>
+          )}
         </div>
       </div>
       <ul className="divide-y border-t">
         {krs.map((k) => (
           <li key={k.id} className="px-5 py-3">
             <div className="flex items-center gap-3">
-              <p className="min-w-0 flex-1 truncate text-sm">{k.title}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm break-words">{k.title}</p>
+                <p className="text-xs text-muted-foreground tnum">
+                  {Number(k.start_value) !== 0 && <>{t("goals.krFrom", { value: value(k.start_value) })} → </>}
+                  {value(k.current)} / {value(k.target, k.unit)} · <b className="text-foreground">{f.num(krProgress(k))}%</b>
+                </p>
+              </div>
               <label className="flex items-center gap-1.5 text-13 tnum">
                 <span className="sr-only">{t("goals.krCurrent")}</span>
                 <Input
@@ -145,13 +198,13 @@ function GoalCard({ goal, krs, writable }: { goal: Goal; krs: KeyResult[]; writa
                   onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
                   className="h-7 w-20 text-right"
                 />
-                <span className="text-muted-foreground">/ {k.target} {k.unit}</span>
+                <span className="sr-only">/ {value(k.target, k.unit)}</span>
               </label>
               <Button variant="ghost" size="icon-sm" aria-label={t("goals.history")} aria-pressed={chartFor === k.id} onClick={() => setChartFor(chartFor === k.id ? null : k.id)}>
                 <LineIcon />
               </Button>
               {writable && (
-                <Button variant="ghost" size="icon-sm" aria-label={t("common.delete")} onClick={() => deleteKeyResult(k.id)}>
+                <Button variant="ghost" size="icon-sm" aria-label={t("goals.deleteKr", { title: k.title })} onClick={() => setConfirmDelete(k)}>
                   <X />
                 </Button>
               )}
@@ -166,8 +219,8 @@ function GoalCard({ goal, krs, writable }: { goal: Goal; krs: KeyResult[]; writa
                     <LineChart data={chartData} margin={{ top: 8, right: 12, left: -16, bottom: 0 }}>
                       <CartesianGrid {...gridProps} />
                       <XAxis dataKey="date" tickFormatter={(d) => f.dayMonth(String(d))} {...axisProps} minTickGap={16} />
-                      <YAxis domain={[Math.min(Number(k.start_value), ...chartData.map((d) => d.value)), Math.max(Number(k.target), ...chartData.map((d) => d.value))]} {...axisProps} />
-                      <Tooltip cursor={{ stroke: "var(--border-strong)", strokeWidth: 1 }} content={<ChartTooltip labelFormat={(d) => f.dayMonth(String(d))} format={(v) => `${v} ${k.unit ?? ""}`} />} />
+                      <YAxis domain={[Math.min(Number(k.start_value), ...chartData.map((d) => d.value)), Math.max(Number(k.target), ...chartData.map((d) => d.value))]} tickFormatter={(v: number) => f.num(v)} {...axisProps} />
+                      <Tooltip cursor={{ stroke: "var(--border-strong)", strokeWidth: 1 }} content={<ChartTooltip labelFormat={(d) => f.dayMonth(String(d))} format={(v) => value(v, k.unit)} />} />
                       <Line dataKey="value" name={k.title} stroke={SLOT[0]} {...lineProps} dot={{ r: 3, strokeWidth: 2, stroke: "var(--card)", fill: SLOT[0] }} />
                     </LineChart>
                   </ResponsiveContainer>
@@ -203,6 +256,26 @@ function GoalCard({ goal, krs, writable }: { goal: Goal; krs: KeyResult[]; writa
           )}
         </div>
       )}
+      <AlertDialog open={confirmDelete !== null} onOpenChange={(o) => !o && setConfirmDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("goals.deleteKrTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("goals.deleteKrBody", { title: confirmDelete?.title ?? "" })}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                if (confirmDelete) deleteKeyResult(confirmDelete.id);
+                setConfirmDelete(null);
+              }}
+            >
+              {t("common.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </article>
   );
 }

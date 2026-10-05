@@ -22,15 +22,15 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { safeColor } from "@/lib/colors";
 import { useFormat } from "@/lib/format";
+import { effectiveHealth, healthReason, type HealthResult } from "@/lib/health";
 import { canManage, canWrite, type Access } from "@/lib/permissions";
 import type { Project, ProjectHealth, ProjectTemplateData } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -56,6 +56,84 @@ export function HealthPill({ health, className }: { health: ProjectHealth; class
       <span aria-hidden className="text-[9px]">{shape}</span>
       {t(health)}
     </span>
+  );
+}
+
+/** Health badge plus its plain-language reason ("5 kun qoldi, 50% bajarildi, 1 ta kechikkan"). */
+export function HealthWithReason({ project, result, className }: { project: Project; result: HealthResult; className?: string }) {
+  const t = useTranslations();
+  const reason = healthReason((k, v) => t(k as never, v as never), project, result);
+  return (
+    <span className={cn("inline-flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1", className)}>
+      <HealthPill health={effectiveHealth(project, result.health)} />
+      {reason && <span className="text-xs text-muted-foreground">{reason}</span>}
+    </span>
+  );
+}
+
+/** The owner can override the suggested health and say why. */
+function HealthControl({ project, result, editable }: { project: Project; result: HealthResult & { effective: ProjectHealth }; editable: boolean }) {
+  const t = useTranslations();
+  const [open, setOpen] = useState(false);
+  const [choice, setChoice] = useState<ProjectHealth | "auto">(project.health_manual ? (project.health ?? "auto") : "auto");
+  const [note, setNote] = useState(project.health_note ?? "");
+  if (!editable) return <HealthWithReason project={project} result={result} />;
+  return (
+    <Popover
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (o) {
+          setChoice(project.health_manual ? (project.health ?? "auto") : "auto");
+          setNote(project.health_note ?? "");
+        }
+      }}
+    >
+      <PopoverTrigger asChild>
+        <button type="button" aria-label={t("health.change")} className="rounded-full text-left">
+          <HealthWithReason project={project} result={result} />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-80 space-y-3">
+        <p className="text-xs text-muted-foreground">
+          {t("health.suggested", { health: t(`health.${result.health}`) })}
+          {result.reason.key && <span className="block">{t(`health.${result.reason.key}`, { percent: result.reason.percent ?? 0, days: result.reason.days ?? 0 })}</span>}
+        </p>
+        <div role="radiogroup" aria-label={t("health.label")} className="grid grid-cols-2 gap-1.5">
+          {(["auto", "on_track", "at_risk", "off_track"] as const).map((h) => (
+            <button
+              key={h}
+              type="button"
+              role="radio"
+              aria-checked={choice === h}
+              onClick={() => setChoice(h)}
+              className={cn("min-h-9 rounded-lg border px-2 text-xs font-medium", choice === h ? "border-brand bg-brand-soft text-brand-fg" : "hover:bg-muted")}
+            >
+              {t(h === "auto" ? "health.auto" : `health.${h}`)}
+            </button>
+          ))}
+        </div>
+        {choice !== "auto" && (
+          <label className="block space-y-1">
+            <span className="text-xs font-medium">{t("health.note")}</span>
+            <Textarea value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} rows={2} placeholder={t("health.notePlaceholder")} />
+          </label>
+        )}
+        <Button
+          size="sm"
+          className="w-full"
+          onClick={() => {
+            updateProject(
+              project.id,
+              choice === "auto" ? { health_manual: false, health: null, health_note: null } : { health_manual: true, health: choice, health_note: note.trim() || null },
+            );
+            setOpen(false);
+          }}
+        >
+          {t("health.save")}
+        </Button>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -116,33 +194,12 @@ export function ProjectHeader({ project, access }: { project: Project; access: A
               }}
               onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
               aria-label={t("common.name")}
+              title={name}
               className="min-w-0 flex-1 truncate bg-transparent font-display text-22 font-bold outline-none sm:text-28"
             />
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-13 text-muted-foreground">
-            {health && (
-              <DropdownMenu>
-                <DropdownMenuTrigger disabled={!writable} className="rounded-full">
-                  <HealthPill health={health.effective} />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-64">
-                  <DropdownMenuLabel className="font-normal text-muted-foreground">
-                    {t("health.suggested", { health: t(`health.${health.health}`) })}
-                    {health.reason.key && <span className="block text-xs">{t(`health.${health.reason.key}`, { percent: health.reason.percent ?? 0, days: health.reason.days ?? 0 })}</span>}
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuRadioGroup
-                    value={project.health_manual ? (project.health ?? "auto") : "auto"}
-                    onValueChange={(v) => updateProject(project.id, v === "auto" ? { health_manual: false, health: null } : { health_manual: true, health: v as ProjectHealth })}
-                  >
-                    <DropdownMenuRadioItem value="auto">{t("health.auto")}</DropdownMenuRadioItem>
-                    {(["on_track", "at_risk", "off_track"] as const).map((h) => (
-                      <DropdownMenuRadioItem key={h} value={h}>{t(`health.${h}`)}</DropdownMenuRadioItem>
-                    ))}
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+            {health && <HealthControl project={project} result={health} editable={manager} />}
             {project.target_date && (
               <span className="inline-flex items-center gap-1 tnum">
                 <CalendarClock className="size-3.5" /> {f.dayMonth(project.target_date)}
@@ -175,7 +232,7 @@ export function ProjectHeader({ project, access }: { project: Project; access: A
           )}
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" onClick={() => toggleFavorite(project, !isFav)} aria-pressed={isFav} aria-label={isFav ? t("project.unfavorite") : t("project.favorite")}>
+              <Button tooltip={false} variant="ghost" size="icon" onClick={() => toggleFavorite(project, !isFav)} aria-pressed={isFav} aria-label={isFav ? t("project.unfavorite") : t("project.favorite")}>
                 <Star className={cn(isFav ? "fill-warning text-warning" : "text-muted-foreground")} />
               </Button>
             </TooltipTrigger>

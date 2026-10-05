@@ -34,7 +34,7 @@ describe("report metrics", () => {
       task({ status: "done", completed_at: "2026-10-01T08:00:00Z", due_date: "2026-09-29" }),
       task({ status: "done", completed_at: "2026-10-01T08:00:00Z", due_date: "2026-09-29", deadline: "2026-10-02" }),
     ];
-    expect(onTimeRate(tasks, weeks, TZ)[1]).toEqual({ week: "2026-09-28", rate: 67, total: 3 });
+    expect(onTimeRate(tasks, weeks, TZ)[1]).toEqual({ week: "2026-09-28", rate: 67, total: 3, onTime: 2 });
   });
 
   it("counts tasks that were overdue at the end of each week", () => {

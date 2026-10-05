@@ -2,11 +2,12 @@ import { redirect } from "next/navigation";
 import { AppClient } from "@/components/shell/app-client";
 import { SetupNeeded } from "@/components/shell/setup-needed";
 import { DEMO_USER_ID } from "@/lib/demo/seed";
-import { DEMO_MODE, supabaseConfigured } from "@/lib/env";
+import { isDemoRequest } from "@/lib/demo/server";
+import { supabaseConfigured } from "@/lib/env";
 import { getServerSupabase } from "@/lib/supabase/server";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
-  if (DEMO_MODE) {
+  if (await isDemoRequest()) {
     return (
       <AppClient userId={DEMO_USER_ID} demo>
         {children}

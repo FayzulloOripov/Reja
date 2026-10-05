@@ -345,6 +345,32 @@
 }
 
 /* Motion is decoration: honour the user's preference everywhere. */
+/* Touch screens: every small button gets a hit area of at least 44 × 44 px (the visual size stays). */
+@media (pointer: coarse) {
+  [data-slot="button"],
+  .tap-target {
+    position: relative;
+  }
+  [data-slot="button"]::after,
+  .tap-target::after {
+    content: "";
+    position: absolute;
+    inset: min(0px, calc((100% - 44px) / 2));
+  }
+}
+
+.undo-progress {
+  animation: undo-shrink linear forwards;
+}
+@keyframes undo-shrink {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

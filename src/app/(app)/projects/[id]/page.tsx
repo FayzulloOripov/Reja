@@ -190,7 +190,9 @@ function ProjectPageInner() {
       <div key={view} className="animate-fade-up">
         {view === "list" && <ProjectListView project={project} tasks={tasks} sections={sections} people={people} grouping={grouping} writable={writable} />}
         {view === "board" && <BoardView project={project} tasks={tasks} sections={sections} by={boardBy} writable={writable} />}
-        {view === "calendar" && <CalendarView tasks={tasks} writable={writable} projectColor={project.color} />}
+        {view === "calendar" && (
+          <CalendarView tasks={tasks} writable={writable} projectColor={project.color} projectDeadline={project.target_date ? { date: project.target_date, name: project.name } : null} />
+        )}
         {view === "timeline" && <TimelineView tasks={tasks} sections={sections} writable={writable} color={project.color} />}
         {view === "table" && <TableView project={project} tasks={tasks} sections={sections} people={people} writable={writable} />}
         {view === "overview" && <OverviewTab project={project} tasks={(tasksByProject(allTasks)[id] ?? [])} sections={sections} people={people} writable={writable} />}

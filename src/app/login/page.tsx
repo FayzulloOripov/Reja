@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { LoginForm } from "./login-form";
 import { LogoMark } from "@/components/brand/logo";
-import { APP_NAME, DEMO_MODE } from "@/lib/env";
+import { APP_NAME, FORCED_DEMO } from "@/lib/env";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("auth");
@@ -14,6 +14,7 @@ export default async function LoginPage(props: PageProps<"/login">) {
   const t = await getTranslations();
   const next = typeof sp.next === "string" ? sp.next : undefined;
   const error = typeof sp.error === "string" ? sp.error : undefined;
+  const fromDemo = sp.from === "demo";
 
   return (
     <main className="grid min-h-dvh lg:grid-cols-[1.05fr_1fr]">
@@ -39,7 +40,7 @@ export default async function LoginPage(props: PageProps<"/login">) {
             <LogoMark className="size-9" />
             <span className="font-display text-xl font-bold">{APP_NAME}</span>
           </div>
-          <LoginForm next={next} initialError={error} demo={DEMO_MODE} />
+          <LoginForm next={next} initialError={error} demo={FORCED_DEMO} fromDemo={fromDemo} />
         </div>
       </section>
     </main>

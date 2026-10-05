@@ -10,6 +10,8 @@ import type { ISODate, Project, ProjectHealth, Task } from "./types";
 export interface HealthResult {
   health: ProjectHealth;
   reason: { key: "reasonPassed" | "reasonOverdue" | "reasonDeadline" | null; percent?: number; days?: number };
+  /** days until the target date (negative when passed), null without a target date */
+  daysLeft: number | null;
   total: number;
   done: number;
   open: number;
@@ -40,7 +42,7 @@ export function suggestHealth(
   today: ISODate,
 ): HealthResult {
   const s = projectStats(tasks, today);
-  const base = { ...s };
+  const base = { ...s, daysLeft: project.target_date ? diffDays(today, project.target_date) : null };
   if (project.status === "done" || project.status === "archived") {
     return { ...base, health: "on_track", reason: { key: null } };
   }
@@ -57,6 +59,22 @@ export function suggestHealth(
     }
   }
   return { ...base, health: "on_track", reason: { key: null } };
+}
+
+type Translate = (key: string, values?: Record<string, string | number>) => string;
+
+/**
+ * Plain-language reason shown next to the health badge, e.g. "5 kun qoldi, 50% bajarildi, 1 ta kechikkan".
+ * A manual health shows the owner's note instead.
+ */
+export function healthReason(t: Translate, project: Pick<Project, "health_manual" | "health" | "health_note">, r: HealthResult): string {
+  if (project.health_manual && project.health) return project.health_note?.trim() ? t("health.manualNote", { note: project.health_note.trim() }) : t("health.manualSet");
+  if (r.health === "on_track" && r.overdue === 0) return r.total ? t("health.partDone", { percent: r.percentDone }) : "";
+  const parts: string[] = [];
+  if (r.daysLeft !== null) parts.push(r.daysLeft < 0 ? t("health.partPassed", { days: -r.daysLeft }) : t("health.partLeft", { days: r.daysLeft }));
+  parts.push(t("health.partDone", { percent: r.percentDone }));
+  if (r.overdue > 0) parts.push(t("health.partOverdue", { count: r.overdue }));
+  return parts.join(", ");
 }
 
 /** The health shown in the UI: manual when set manually, otherwise the suggestion. */

@@ -11,7 +11,11 @@
     "installIosBody": "Safari’da «Ulashish» → «Bosh ekranga qoʻshish» ni bosing.",
     "demoBanner": "Demo rejim: maʼlumotlar faqat shu brauzerda saqlanadi",
     "updateReady": "Yangi versiya tayyor",
-    "reload": "Yangilash"
+    "reload": "Yangilash",
+    "demoShort": "Demo",
+    "demoPill": "Demo rejim haqida",
+    "demoHide": "Yashirish",
+    "demoSignUp": "Roʻyxatdan oʻtish"
   },
   "common": {
     "save": "Saqlash",
@@ -89,7 +93,10 @@
     "email": "Email",
     "link": "Havola",
     "expires": "Muddati",
-    "never": "Hech qachon"
+    "never": "Hech qachon",
+    "collapse": "Yigʻish",
+    "expand": "Yoyish",
+    "hoursShort": "{count} soat"
   },
   "nav": {
     "home": "Bugun",
@@ -121,7 +128,9 @@
     "collapse": "Yon panelni yigʻish",
     "expand": "Yon panelni ochish",
     "skipToContent": "Asosiy qismga oʻtish",
-    "mainNav": "Asosiy menyu"
+    "mainNav": "Asosiy menyu",
+    "accountMenu": "Hisob menyusi: {name}",
+    "leaveDemo": "Demodan chiqish va roʻyxatdan oʻtish"
   },
   "auth": {
     "title": "Reja’ga xush kelibsiz",
@@ -140,7 +149,10 @@
     "linkError": "Havola eskirgan yoki notoʻgʻri. Yangisini soʻrang.",
     "terms": "Kirish orqali siz maʼlumotlaringiz shu ilovada saqlanishiga rozilik bildirasiz.",
     "signedOut": "Hisobdan chiqdingiz",
-    "invitedTo": "Sizni «{name}» ga taklif qilishdi. Davom etish uchun kiring."
+    "invitedTo": "Sizni «{name}» ga taklif qilishdi. Davom etish uchun kiring.",
+    "openDemo": "Demoni ochish",
+    "tryDemo": "Avval koʻrib chiqmoqchimisiz?",
+    "fromDemo": "Demoda kiritganlaringiz shu brauzerda saqlanib qoldi. Kirganingizdan soʻng ularni bir bosishda oʻz hisobingizga oʻtkazasiz."
   },
   "greeting": {
     "morning": "Xayrli tong, {name}",
@@ -183,7 +195,10 @@
     "planTomorrowSaved": "Ertangi reja tayyor",
     "allClear": "Barakalla! Bugungi rejaning hammasi bajarildi.",
     "byProject": "Loyihalar boʻyicha",
-    "noProject": "Loyihasiz"
+    "noProject": "Loyihasiz",
+    "completedToday": "Bugun bajarilganlar",
+    "completedTodayHint": "Adashib belgilagan boʻlsangiz, doirachani bosib qaytaring.",
+    "focusThisWeekSessions": "shu hafta · {count, plural, one {# ta seans} other {# ta seans}}"
   },
   "inbox": {
     "title": "Kiruvchi",
@@ -197,7 +212,9 @@
   "upcoming": {
     "title": "Yaqinda",
     "subtitle": "Keyingi 14 kun",
-    "empty": "Rejalashtirilgan vazifalar yoʻq"
+    "empty": "Rejalashtirilgan vazifalar yoʻq",
+    "emptyDays": "{count, plural, one {# ta boʻsh kun} other {# ta boʻsh kun}}",
+    "showEmptyDays": "Boʻsh kunlarni koʻrsatish"
   },
   "priority": {
     "label": "Muhimlik",
@@ -231,7 +248,17 @@
     "suggested": "Tavsiya: {health}",
     "reasonOverdue": "Ochiq vazifalarning {percent}% muddati oʻtgan",
     "reasonDeadline": "Yakunlashga {days} kun qoldi, bajarilgani {percent}%",
-    "reasonPassed": "Yakunlash sanasi oʻtib ketgan"
+    "reasonPassed": "Yakunlash sanasi oʻtib ketgan",
+    "partLeft": "{days} kun qoldi",
+    "partPassed": "muddatdan {days} kun oʻtdi",
+    "partDone": "{percent}% bajarildi",
+    "partOverdue": "{count} ta kechikkan",
+    "manualSet": "Egasi qoʻlda belgilagan",
+    "manualNote": "Egasi izohi: {note}",
+    "note": "Izoh (nima uchun?)",
+    "notePlaceholder": "Masalan: mijoz javobini kutyapmiz",
+    "change": "Holatni oʻzgartirish",
+    "save": "Saqlash"
   },
   "project": {
     "new": "Yangi loyiha",
@@ -273,7 +300,8 @@
     "telegramGroup": "Telegram guruh",
     "telegramGroupHint": "Guruhga botni qoʻshing va quyidagi buyruqni yuboring:",
     "telegramGroupConnected": "Guruh ulangan — vazifa oʻzgarishlari u yerga yuboriladi",
-    "telegramGroupDisconnect": "Guruhni uzish"
+    "telegramGroupDisconnect": "Guruhni uzish",
+    "dropHere": "Vazifani shu yerga tashlang"
   },
   "views": {
     "list": "Roʻyxat",
@@ -288,7 +316,7 @@
     "groupStatus": "Holat",
     "groupPriority": "Muhimlik",
     "groupAssignee": "Ijrochi",
-    "groupDue": "Muddat",
+    "groupDue": "Sana",
     "groupNone": "Guruhsiz",
     "showDone": "Bajarilganlarni koʻrsatish",
     "hideDone": "Bajarilganlarni yashirish",
@@ -297,7 +325,7 @@
     "viewName": "Koʻrinish nomi",
     "filtersActive": "{count, plural, one {# ta filtr} other {# ta filtr}}",
     "clearFilters": "Filtrlarni tozalash",
-    "dueAny": "Istalgan muddat",
+    "dueAny": "Istalgan sana",
     "dueOverdue": "Muddati oʻtgan",
     "dueToday": "Bugun",
     "dueWeek": "Shu hafta",
@@ -311,15 +339,23 @@
     "next": "Keyingi",
     "more": "yana {count}",
     "unscheduled": "Sanasiz vazifalar",
-    "dropHint": "Sanaga sudrab qoʻying"
+    "dropHint": "Sanaga sudrab qoʻying",
+    "agenda": "Roʻyxat",
+    "threeDays": "3 kun",
+    "view": "Koʻrinish",
+    "agendaEmpty": "Bu kunlarda rejalashtirilgan vazifa yoʻq",
+    "nothingToday": "Vazifa yoʻq",
+    "projectDeadline": "Loyiha muddati: {name}"
   },
   "timeline": {
     "zoomDay": "Kun",
     "zoomWeek": "Hafta",
     "zoomMonth": "Oy",
-    "noDates": "Boshlanish va tugash sanasi boʻlmagan vazifalar",
+    "noDates": "Sanasi yoʻq",
     "dependency": "Bogʻliqlik",
-    "today": "Bugun"
+    "today": "Bugun",
+    "showDone": "Bajarilganlarni koʻrsatish ({count})",
+    "noDatesHint": "Vazifani jadvalga sudrab, kunini belgilang"
   },
   "table": {
     "title": "Nomi",
@@ -354,7 +390,7 @@
     "watch": "Kuzatish",
     "unwatch": "Kuzatmaslik",
     "attachments": "Fayllar",
-    "dropFiles": "Fayllarni shu yerga tashlang",
+    "dropFiles": "Fayllarni shu yerga tashlang yoki tanlang",
     "uploading": "Yuklanmoqda…",
     "fileTooBig": "Fayl 25 MB dan katta",
     "comments": "Izohlar",
@@ -363,11 +399,11 @@
     "activity": "Tarix",
     "project": "Loyiha",
     "section": "Boʻlim",
-    "due": "Muddat",
+    "due": "Sana",
     "dueTime": "Vaqti",
     "start": "Boshlanish",
-    "deadline": "Deadline",
-    "deadlineHint": "Qatʼiy muddat (oʻzgarmaydi)",
+    "deadline": "Oxirgi muddat",
+    "deadlineHint": "Qatʼiy muddat: bundan kechikmasligi kerak",
     "estimate": "Taxminiy vaqt",
     "estimatePlaceholder": "daqiqa",
     "repeat": "Takrorlash",
@@ -380,7 +416,7 @@
     "repeatCustom": "Boshqa…",
     "reminders": "Eslatmalar",
     "addReminder": "Eslatma qoʻshish",
-    "reminderAtDue": "Muddat vaqtida",
+    "reminderAtDue": "Belgilangan vaqtda",
     "reminder15m": "15 daqiqa oldin",
     "reminder1h": "1 soat oldin",
     "reminder1d": "1 kun oldin",
@@ -414,7 +450,10 @@
     "bulkAssigned": "{count} ta vazifaga ijrochi tayinlandi",
     "bulkLabeled": "{count} ta vazifaga teg qoʻshildi",
     "swipeDone": "Bajarildi",
-    "swipeLater": "Keyinga"
+    "swipeLater": "Keyinga",
+    "dragHandle": "Sudrab tartibini oʻzgartirish",
+    "dueHint": "Ishni qaysi kuni qilishni rejalashtirgansiz",
+    "chooseFile": "Fayl tanlash"
   },
   "quickAdd": {
     "title": "Tezkor qoʻshish",
@@ -432,7 +471,10 @@
     "chipPerson": "Ijrochi",
     "chipPriority": "Muhimlik",
     "chipTop": "Asosiy",
-    "unknownProject": "«{name}» loyihasi topilmadi"
+    "unknownProject": "«{name}» loyihasi topilmadi",
+    "recognized": "Tanildi",
+    "dismissChip": "«{text}» ni sana/teg sifatida tanimaslik",
+    "restoreChip": "«{text}» ni qayta tanish"
   },
   "palette": {
     "placeholder": "Vazifa, loyiha, qayd yoki buyruqni qidiring…",
@@ -479,7 +521,11 @@
     "goals": "Maqsadlar",
     "goalsEmpty": "Maqsad qoʻshilmagan",
     "openTasks": "{count} ochiq",
-    "noProjects": "Ish maydonida loyiha yoʻq"
+    "noProjects": "Ish maydonida loyiha yoʻq",
+    "loadToday": "Bugun",
+    "loadWeek": "Shu hafta",
+    "loadOverdue": "Kechikkan",
+    "noUpcomingDates": "Yaqin sana yoʻq"
   },
   "activity": {
     "created": "{actor} «{title}» vazifasini yaratdi",
@@ -521,7 +567,7 @@
     "emptyBody": "Sizni belgilashsa, vazifa berishsa yoki muddat yaqinlashsa — shu yerda koʻrasiz.",
     "type": {
       "assigned": "sizga vazifa berdi",
-      "mentioned": "sizni eslatdi",
+      "mentioned": "sizni tilga oldi",
       "due_soon": "Muddat yaqinlashmoqda",
       "overdue": "Muddati oʻtdi",
       "comment": "izoh qoldirdi",
@@ -531,9 +577,10 @@
     },
     "filters": {
       "all": "Hammasi",
-      "mentions": "Eslatishlar",
-      "assigned": "Tayinlangan",
-      "reminders": "Eslatmalar"
+      "mentions": "Tilga olishlar",
+      "assigned": "Menga berilgan",
+      "reminders": "Eslatmalar",
+      "comments": "Izohlar"
     }
   },
   "goals": {
@@ -560,7 +607,21 @@
       "achieved": "Erishildi",
       "missed": "Erishilmadi",
       "archived": "Arxivda"
-    }
+    },
+    "howCalculated": "{percent}% qanday hisoblangan?",
+    "calcTitle": "Foiz qanday hisoblanadi",
+    "calcBody": "Har bir natija uchun: (hozirgi − boshlangʻich) ÷ (maqsad − boshlangʻich). Maqsad foizi — natijalar oʻrtachasi.",
+    "calcAverage": "Oʻrtacha",
+    "krFrom": "{value} dan",
+    "timePassed": "Vaqtning {percent}% oʻtdi",
+    "pace": {
+      "ahead": "Vaqtning {elapsed}% oʻtdi, natija {progress}% — oldindasiz",
+      "on_pace": "Vaqtning {elapsed}% oʻtdi, natija {progress}% — rejadasiz",
+      "behind": "Vaqtning {elapsed}% oʻtdi, natija {progress}% — orqada qolyapsiz"
+    },
+    "deleteKr": "«{title}» natijasini oʻchirish",
+    "deleteKrTitle": "Natijani oʻchirasizmi?",
+    "deleteKrBody": "«{title}» va uning tarixi oʻchiriladi. Buni qaytarib boʻlmaydi."
   },
   "habits": {
     "title": "Odatlar",
@@ -577,7 +638,17 @@
     "empty": "Odatlar yoʻq",
     "emptyBody": "Birinchi odatni qoʻshing — har kuni bir bosish bilan belgilaysiz.",
     "archive": "Arxivlash",
-    "private": "Faqat sizga koʻrinadi"
+    "private": "Faqat sizga koʻrinadi",
+    "doneToday": "Bugun bajarildi ✓",
+    "markToday": "Bugun bajardim",
+    "notToday": "Bugun rejada yoʻq",
+    "cell": {
+      "done": "bajarildi",
+      "missed": "oʻtkazib yuborildi",
+      "off": "rejada yoʻq",
+      "before": "odat hali yoʻq edi",
+      "future": "kelajak"
+    }
   },
   "focus": {
     "title": "Fokus",
@@ -597,7 +668,8 @@
     "breakMinutes": "Tanaffus (daqiqa)",
     "today": "Bugun fokusda",
     "breakTime": "Tanaffus vaqti! Oʻrningizdan turing.",
-    "workTime": "Ishga qaytamiz"
+    "workTime": "Ishga qaytamiz",
+    "thisWeek": "Shu hafta"
   },
   "reports": {
     "title": "Hisobotlar",
@@ -620,7 +692,10 @@
     "minutes": "Daqiqa",
     "rate": "Ulush",
     "totalDone": "Jami bajarilgan",
-    "avgPerWeek": "Haftasiga oʻrtacha"
+    "avgPerWeek": "Haftasiga oʻrtacha",
+    "lastWeeks": "Soʻnggi {count} hafta",
+    "focusTime": "Qayd etilgan vaqt",
+    "focusNoTask": "Vazifasiz fokus"
   },
   "workload": {
     "title": "Yuklama",
@@ -669,8 +744,8 @@
     "pushTitle": "Push bildirishnomalar",
     "pushEnable": "Shu qurilmada yoqish",
     "pushDisable": "Shu qurilmada oʻchirish",
-    "pushEnabled": "Shu qurilmada yoqilgan",
-    "pushDenied": "Brauzer ruxsat bermadi. Sayt sozlamalaridan ruxsat bering.",
+    "pushEnabled": "Yoqilgan — eslatmalar shu qurilmaga keladi",
+    "pushDenied": "Brauzer bildirishnomalarni toʻsib qoʻygan. Manzil satridagi qulf belgisi → «Bildirishnomalar» → «Ruxsat berish», soʻng sahifani yangilang.",
     "pushUnsupported": "Bu brauzer push bildirishnomalarni qoʻllamaydi.",
     "pushIos": "iPhone’da push faqat ilova bosh ekranga oʻrnatilganda ishlaydi (iOS 16.4+). Safari → «Ulashish» → «Bosh ekranga qoʻshish», soʻng ilovani bosh ekrandan oching.",
     "pushDevices": "Ulangan qurilmalar",
@@ -685,7 +760,6 @@
     "telegramCodeExpires": "Kod 15 daqiqa amal qiladi",
     "telegramTest": "Sinov xabari yuborish",
     "telegramTestSent": "Sinov xabari Telegramga yuborildi",
-    "telegramNotConfigured": "Telegram bot hali sozlanmagan (TELEGRAM_BOT_TOKEN).",
     "calendarTitle": "Kalendar obunasi (ICS)",
     "calendarHint": "Sanali vazifalar va vaqt bloklari Google yoki Apple Calendar’da koʻrinadi. Havolani hech kimga bermang.",
     "calendarCopy": "Havolani nusxalash",
@@ -746,7 +820,40 @@
     "saved": "Sozlamalar saqlandi",
     "workspacesTitle": "Ish maydonlari",
     "createWorkspace": "Ish maydoni yaratish",
-    "personalWorkspace": "Shaxsiy"
+    "personalWorkspace": "Shaxsiy",
+    "sectionHints": {
+      "profile": "Ism, til, mavzu, vaqt mintaqasi, ish kunlari",
+      "notifications": "Qaysi xabar qaysi kanalga keladi, sokin soatlar",
+      "integrations": "Telegram bot, push, kalendar",
+      "workspace": "Nomi, aʼzolar va takliflar",
+      "labels": "Umumiy teglar",
+      "templates": "Loyiha shablonlari",
+      "trash": "Oʻchirilganlarni tiklash",
+      "data": "Yuklab olish, import, zaxira"
+    },
+    "events": {
+      "reminder": "Vazifa eslatmasi vaqti keldi",
+      "assigned": "Kimdir sizga vazifa berdi",
+      "mentioned": "Kimdir sizni izohda tilga oldi",
+      "comment": "Siz kuzatayotgan vazifaga izoh yozildi",
+      "status_change": "Siz kuzatayotgan vazifa holati oʻzgardi",
+      "due_soon": "Vazifa muddati yaqinlashdi",
+      "overdue": "Vazifa muddati oʻtib ketdi",
+      "invite": "Kimdir taklifingizni qabul qildi",
+      "digest": "Ertalabki kunlik xulosa",
+      "review": "Haftalik tahlil eslatmasi"
+    },
+    "channelsHint": "Har bir xabar qaysi kanal orqali kelishini tanlang",
+    "notAvailable": "Mavjud emas",
+    "quietFrom": "Sokin soatlar boshlanishi",
+    "quietTo": "Sokin soatlar tugashi",
+    "defaultReminderHint": "Vaqti belgilangan vazifalar uchun. Kun boʻyi vazifalar shu kuni 09:00 da eslatiladi.",
+    "pushThisDevice": "Shu qurilma",
+    "pushOff": "Hozircha oʻchiq",
+    "pushNotReady": "Push bildirishnomalar hali sozlanmagan. Administratorga murojaat qiling.",
+    "telegramUnavailable": "Telegram bot hozircha ishlamayapti. Tez orada yoqiladi — ungacha eslatmalar ilova va push orqali keladi.",
+    "telegramNotLinked": "Hali ulanmagan",
+    "telegramLinkHint": "Tugmani bosing, botga bir martalik kod yuboriladi"
   },
   "invite": {
     "title": "Taklif",

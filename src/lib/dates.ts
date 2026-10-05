@@ -106,3 +106,17 @@ export function minutesToHHMM(min: number): string {
 export function comingSaturday(today: ISODate): ISODate {
   return nextWeekday(today, 6, true);
 }
+
+export type PartOfDay = "morning" | "afternoon" | "evening" | "night";
+
+/** Part of the day for a local hour (0–23): tong 05–11, kun 11–17, kech 17–22, tun 22–05. */
+export function partOfDay(hour: number): PartOfDay {
+  if (hour >= 5 && hour < 11) return "morning";
+  if (hour >= 11 && hour < 17) return "afternoon";
+  if (hour >= 17 && hour < 22) return "evening";
+  return "night";
+}
+
+export function partOfDayIn(tz: string, at: Date = new Date()): PartOfDay {
+  return partOfDay(Number(formatInTimeZone(at, tz, "H")));
+}

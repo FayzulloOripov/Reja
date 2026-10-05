@@ -3,7 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { LogoMark } from "@/components/brand/logo";
 import { safeColor } from "@/lib/colors";
 import { todayIn } from "@/lib/dates";
-import { DEMO_MODE } from "@/lib/env";
+import { FORCED_DEMO } from "@/lib/env";
 import { projectStats } from "@/lib/health";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import type { Project, Section, Task } from "@/lib/types";
@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
  */
 export default async function SharePage(props: PageProps<"/share/[token]">) {
   const { token } = await props.params;
-  if (DEMO_MODE || !/^[a-zA-Z0-9]{32,64}$/.test(token)) notFound();
+  if (FORCED_DEMO || !/^[a-zA-Z0-9]{32,64}$/.test(token)) notFound();
   const t = await getTranslations();
   const locale = await getLocale();
   const admin = getAdminSupabase();

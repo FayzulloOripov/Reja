@@ -8,7 +8,7 @@ const newId = () => `id-${++n}`;
 const base: Task = {
   id: "t1", workspace_id: "w", project_id: "p", section_id: null, parent_id: null, title: "Weekly report",
   description: null, status: "todo", priority: "high", start_date: "2026-10-07", due_date: "2026-10-09",
-  due_at: "2026-10-09T05:00:00.000Z", deadline: null, estimate_min: 30, recurrence: "FREQ=WEEKLY;BYDAY=FR",
+  due_at: "2026-10-09T05:00:00.000Z", deadline: null, estimate_min: 30, recurrence: "FREQ=WEEKLY;BYDAY=FR", recurrence_parent_id: null,
   top_date: "2026-10-09", position: 1, completed_at: null, created_by: "u", source: null,
   created_at: "2026-10-01T00:00:00Z", updated_at: "2026-10-01T00:00:00Z", deleted_at: null,
 };
@@ -48,5 +48,22 @@ describe("planCompletion", () => {
       ["1h", "2026-10-16T04:00:00.000Z", "pending"],
       ["custom", "2026-10-15T15:00:00.000Z", "pending"],
     ]);
+  });
+
+  it("links the next occurrence to the completed task", () => {
+    const plan = planCompletion({ task: base, subtasks: [], checklist: [], labels: [], assignees: [], reminders: [], tz: "Asia/Tashkent", now: new Date("2026-10-09T06:00:00Z"), newId });
+    expect(plan.next?.task.recurrence_parent_id).toBe("t1");
+  });
+
+  it("creates no second occurrence when one already exists (completed twice quickly)", () => {
+    const plan = planCompletion({ task: base, subtasks: [], checklist: [], labels: [], assignees: [], reminders: [], tz: "Asia/Tashkent", now: new Date("2026-10-09T06:00:00Z"), newId, hasNextOccurrence: true });
+    expect(plan.complete.values.status).toBe("done");
+    expect(plan.next).toBeNull();
+  });
+
+  it("schedules the next occurrence after today when completed late, in the user's time zone", () => {
+    // due Friday 9 Oct, completed the next Tuesday late evening Tashkent time (still Tuesday locally)
+    const plan = planCompletion({ task: { ...base, recurrence: "FREQ=DAILY" }, subtasks: [], checklist: [], labels: [], assignees: [], reminders: [], tz: "Asia/Tashkent", now: new Date("2026-10-13T18:30:00Z"), newId });
+    expect(plan.next?.task.due_date ?? "").toMatch(/^2026-10-(1[4-9]|2\d)$/);
   });
 });

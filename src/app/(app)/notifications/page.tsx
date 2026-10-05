@@ -28,7 +28,14 @@ const ICON: Record<NotificationType, typeof Bell> = {
   reminder: Bell,
 };
 
-type Filter = "all" | "mentions" | "assigned" | "reminders";
+type Filter = "all" | "mentions" | "comments" | "assigned" | "reminders";
+
+const FILTERS: { key: Exclude<Filter, "all">; icon: typeof Bell; types: NotificationType[] }[] = [
+  { key: "mentions", icon: AtSign, types: ["mentioned"] },
+  { key: "comments", icon: MessageSquare, types: ["comment"] },
+  { key: "assigned", icon: UserPlus, types: ["assigned"] },
+  { key: "reminders", icon: Bell, types: ["reminder", "due_soon", "overdue"] },
+];
 
 export default function NotificationsPage() {
   const t = useTranslations();
@@ -49,9 +56,7 @@ export default function NotificationsPage() {
       Object.values(all)
         .filter((n) => n.user_id === uid)
         .filter((n) => !unreadOnly || !n.read_at)
-        .filter((n) =>
-          filter === "all" ? true : filter === "mentions" ? n.type === "mentioned" || n.type === "comment" : filter === "assigned" ? n.type === "assigned" : n.type === "reminder" || n.type === "due_soon" || n.type === "overdue",
-        )
+        .filter((n) => filter === "all" || FILTERS.find((x) => x.key === filter)!.types.includes(n.type))
         .sort((a, b) => b.created_at.localeCompare(a.created_at)),
     [all, uid, unreadOnly, filter],
   );
@@ -85,8 +90,10 @@ export default function NotificationsPage() {
           <ToggleGroupItem value="unread">{t("notifications.unread")}</ToggleGroupItem>
         </ToggleGroup>
         <ToggleGroup type="single" value={filter === "all" ? "" : filter} onValueChange={(v) => setFilter((v || "all") as Filter)} size="sm" aria-label={t("common.filter")}>
-          {(["mentions", "assigned", "reminders"] as const).map((k) => (
-            <ToggleGroupItem key={k} value={k}>{t(`notifications.filters.${k}`)}</ToggleGroupItem>
+          {FILTERS.map(({ key, icon: Icon }) => (
+            <ToggleGroupItem key={key} value={key} className="gap-1.5">
+              <Icon className="size-3.5" aria-hidden /> {t(`notifications.filters.${key}`)}
+            </ToggleGroupItem>
           ))}
         </ToggleGroup>
       </div>

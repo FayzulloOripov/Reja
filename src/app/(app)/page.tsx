@@ -9,23 +9,16 @@ import { EmptyState, Illustration } from "@/components/common/empty-state";
 import { DayTimeline, TASK_DRAG_TYPE } from "@/components/home/day-timeline";
 import { HabitsRow, PlanTomorrow, StatsCards } from "@/components/home/widgets";
 import { PageContainer } from "@/components/shell/app-client";
-import { TaskList, type TaskGroup } from "@/components/tasks/task-list";
+import { InlineAdd, TaskList, type TaskGroup } from "@/components/tasks/task-list";
 import { TaskRow } from "@/components/tasks/task-row";
 import { Button } from "@/components/ui/button";
-import { addDays, eachDay } from "@/lib/dates";
+import { addDays, dateIn, eachDay, partOfDay } from "@/lib/dates";
 import { byDueThenPriority } from "@/lib/filters";
 import { capitalize, useFormat } from "@/lib/format";
 import { isOpen } from "@/lib/health";
 import { rescheduleTasks } from "@/store/actions";
 import { useMe, useMyTasks, useNowMinutes, useProjects, useToday, useTz } from "@/store/hooks";
 import { useUI } from "@/store/ui";
-
-function greetingKey(minutes: number) {
-  if (minutes < 5 * 60) return "night";
-  if (minutes < 12 * 60) return "morning";
-  if (minutes < 18 * 60) return "afternoon";
-  return "evening";
-}
 
 export default function HomePage() {
   const t = useTranslations();
@@ -38,6 +31,14 @@ export default function HomePage() {
   const projects = useProjects(undefined, { includeArchived: true });
   const openQuickAdd = useUI((s) => s.openQuickAdd);
   const projectById = useMemo(() => Object.fromEntries(projects.map((p) => [p.id, p])), [projects]);
+
+  const completedToday = useMemo(
+    () =>
+      mine
+        .filter((x) => x.status === "done" && x.completed_at && dateIn(tz, x.completed_at) === today)
+        .sort((a, b) => (b.completed_at ?? "").localeCompare(a.completed_at ?? "")),
+    [mine, tz, today],
+  );
 
   const { top, todayTasks, overdue, upcoming, doneToday, plannedToday } = useMemo(() => {
     const top = mine.filter((x) => x.top_date === today && x.status !== "cancelled").sort(byDueThenPriority);
@@ -82,7 +83,7 @@ export default function HomePage() {
         <div className="min-w-0 space-y-8">
           <header className="space-y-2">
             <p className="text-13 font-medium text-brand-fg">{f.longDay(today)}</p>
-            <h1 className="text-28 font-bold sm:text-36">{t(`greeting.${greetingKey(now)}`, { name: firstName || "👋" })}</h1>
+            <h1 className="text-28 font-bold sm:text-36">{t(`greeting.${partOfDay(Math.floor(now / 60))}`, { name: firstName || "👋" })}</h1>
             <div className="flex items-center gap-3">
               <p className="text-sm text-muted-foreground">{plannedToday ? t("home.subtitleDone", { percent }) : t("home.subtitleEmpty")}</p>
               {plannedToday > 0 && (
@@ -161,7 +162,9 @@ export default function HomePage() {
               />
             ) : (
               <div className="rounded-2xl border bg-card p-1.5 shadow-elev-1">
-                <TaskList groups={todayGroups} allowAdd nativeDragType={TASK_DRAG_TYPE} />
+                <TaskList groups={todayGroups} nativeDragType={TASK_DRAG_TYPE} />
+                {/* one add row for the whole section, not one per project group */}
+                <InlineAdd defaults={{ dueDate: today }} />
               </div>
             )}
           </Section>
@@ -181,6 +184,13 @@ export default function HomePage() {
               <TaskList groups={upcomingGroups} showProject />
             )}
           </Section>
+
+          {completedToday.length > 0 && (
+            <Section title={t("home.completedToday")} count={completedToday.length}>
+              <p className="px-1 text-xs text-muted-foreground">{t("home.completedTodayHint")}</p>
+              <TaskList groups={[{ key: "done-today", tasks: completedToday }]} showProject />
+            </Section>
+          )}
         </div>
 
         <aside className="space-y-6 lg:sticky lg:top-6 lg:self-start">

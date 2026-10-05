@@ -23,7 +23,7 @@ Supabase                                        └─────────�
 
 **Server-only work** (service role, never shipped to the client): scheduler (reminders, digest, weekly review, overdue nudge, notification fan-out to Telegram/Push/email, Telegram group posts), Telegram bot, ICS feed, public share page, invitation acceptance, import.
 
-**Demo mode** (`NEXT_PUBLIC_DEMO_MODE=true`, local development only): the same store runs against an in-browser adapter with clearly fake seed data and a fake user, so the whole UI can be exercised without Supabase. Server features are disabled in this mode.
+**Demo mode**: the same store runs against an in-browser adapter with clearly fake seed data and a fake user, so the whole UI can be exercised without Supabase. The real backend is the default; a visitor opens the demo at `/demo` (cookie `reja_demo`, left with `/demo/exit`), and `NEXT_PUBLIC_DEMO=1` forces the whole deployment into demo mode for local development and tests. Server features are disabled in the demo; what was typed there can be imported after sign-up.
 
 ## Database schema (supabase/migrations)
 
@@ -115,3 +115,23 @@ All helpers are `security definer`, `stable`, `search_path = ''`, take an explic
 - Tasks have both `due_date` (the day it is planned for) and `deadline` (hard date). The planner import needs both: `bucket/day` → due date, `due` → deadline.
 - Due time is stored as `due_at timestamptz` (UTC) alongside the local `due_date`.
 - Projects have a `visibility` flag so a personal project can live in a workspace shared with a partner without the partner seeing it.
+
+## Round 2 — fix prompt (user testing)
+
+AUDIT.md tracks every item. Phases:
+
+- [x] 1 Audit and bugs — AUDIT.md; section 1 items 3–4, 7–15, 17–22, 24–29 fixed with tests (`e2e/demo`, `tests/unit/testing-fixes.test.ts`, `tests/db/testing-fixes.test.ts`); migration `20261006000001_testing_fixes.sql`
+- [ ] 2 Backend — Supabase as default (keys needed), demo separation, demo-data import, first-run wizard
+- [ ] 3 Projects and areas — Projects page, areas, workload, activity log, delegated view
+- [ ] 4 Check list — everything in «not tested yet», fixed and tested
+- [ ] 5 Organisation — waiting-for, contacts, meetings, weekly review, daily shutdown, routines
+- [ ] 6 Business modules — pipeline, money, docs, goals fed by data
+- [ ] 7 Communication and personal — Telegram group digests and replies, email digest, Google Calendar, PWA, prayer times, energy labels
+- [ ] 8 Data, trust, ship — import, backups, sessions, audit log, deploy, Lighthouse, Playwright
+
+Decisions in round 2:
+- Demo is a runtime mode (`/demo` cookie) instead of a build flag, so one production build serves both and the demo e2e suite runs in CI without keys.
+- Numbers are formatted by hand (`formatNumber`): Chrome's ICU formats `uz` like English.
+- Focus sessions are `time_entries` with `source = 'focus'` (task optional); Home and Focus read the same rows.
+- Deadlines use a signpost icon in violet; flags are reserved for priority.
+- Recurring occurrences link to their source (`tasks.recurrence_parent_id`, unique while live), which makes completion idempotent and undo exact.

@@ -44,6 +44,7 @@ export function newTask(p: Partial<Task> & Pick<Task, "workspace_id" | "title">)
     deadline: null,
     estimate_min: null,
     recurrence: null,
+    recurrence_parent_id: null,
     top_date: null,
     position: Date.now(),
     completed_at: null,
@@ -70,6 +71,7 @@ export function newProject(p: Partial<Project> & Pick<Project, "workspace_id" | 
     goal: null,
     health: null,
     health_manual: false,
+    health_note: null,
     owner_id: null,
     position: Date.now(),
     share_token: null,
@@ -137,6 +139,7 @@ export function newGoal(p: Partial<Goal> & Pick<Goal, "workspace_id" | "title">)
     project_id: null,
     description: null,
     owner_id: null,
+    start_date: null,
     target_date: null,
     status: "active",
     color: "violet",
@@ -174,7 +177,7 @@ export function newTimeBlock(p: Partial<TimeBlock> & Pick<TimeBlock, "user_id" |
 }
 
 export function newTimeEntry(p: Partial<TimeEntry> & Pick<TimeEntry, "task_id" | "workspace_id" | "user_id" | "minutes">): TimeEntry {
-  return { id: uuid(), started_at: now(), note: null, created_at: now(), ...p };
+  return { id: uuid(), started_at: now(), note: null, source: "manual", created_at: now(), ...p };
 }
 
 export function newSavedView(p: Partial<SavedView> & Pick<SavedView, "workspace_id" | "name">): SavedView {

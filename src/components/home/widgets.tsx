@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { safeColor } from "@/lib/colors";
 import { addDays, dateIn, startOfWeek } from "@/lib/dates";
+import { focusSummary } from "@/lib/focus-stats";
 import { useFormat } from "@/lib/format";
 import { currentStreak, scheduledOn } from "@/lib/habits";
 import { isOpen, suggestHealth, effectiveHealth } from "@/lib/health";
@@ -99,9 +100,7 @@ export function StatsCards() {
       if (d >= weekStart) thisWeek++;
       else if (d >= lastWeekStart) lastWeek++;
     }
-    const focus = Object.values(entries)
-      .filter((e) => e.user_id === uid && dateIn(tz, e.started_at) >= weekStart)
-      .reduce((n, e) => n + e.minutes, 0);
+    const focus = focusSummary(Object.values(entries), uid, tz, weekStart, today);
     const byProject = tasksByProject(tasks);
     const atRisk = projects
       .filter((p) => p.status === "active")
@@ -132,8 +131,8 @@ export function StatsCards() {
         <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
           <Timer className="size-3.5 text-violet-500" style={{ color: "var(--pc-violet)" }} /> {t("home.focusTime")}
         </p>
-        <p className="mt-1.5 font-display text-28 leading-none font-bold tnum">{stats.focus ? f.duration(stats.focus) : "0"}</p>
-        <p className="mt-1 text-xs text-muted-foreground">{t("home.focusThisWeek")}</p>
+        <p className="mt-1.5 font-display text-28 leading-none font-bold tnum">{stats.focus.minutes ? f.duration(stats.focus.minutes) : "0"}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{t("home.focusThisWeekSessions", { count: stats.focus.sessions })}</p>
       </Link>
       <div className="col-span-2 rounded-2xl border bg-card p-4 shadow-elev-1 lg:col-span-1 xl:col-span-2">
         <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">

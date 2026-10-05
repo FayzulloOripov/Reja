@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { LogoMark } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
-import { DEMO_MODE } from "@/lib/env";
+import { FORCED_DEMO } from "@/lib/env";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { AcceptButton } from "./accept-button";
 
@@ -22,7 +22,7 @@ export default async function InvitePage(props: PageProps<"/invite/[token]">) {
   const t = await getTranslations();
   let info: InvitationInfo | null = null;
   let signedIn = false;
-  if (!DEMO_MODE && /^[a-zA-Z0-9]{20,80}$/.test(token)) {
+  if (!FORCED_DEMO && /^[a-zA-Z0-9]{20,80}$/.test(token)) {
     const supabase = await getServerSupabase();
     const [{ data }, { data: auth }] = await Promise.all([supabase.rpc("get_invitation", { p_token: token }), supabase.auth.getUser()]);
     info = data as InvitationInfo | null;

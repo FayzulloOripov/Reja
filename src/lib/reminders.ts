@@ -26,9 +26,10 @@ export function computeRemindAt(
   tz: string,
   offset: Exclude<ReminderOffset, "custom">,
 ): Date | null {
-  const base = dueMoment(dueDate, dueAt, tz);
-  if (!base) return null;
-  return new Date(base.getTime() - OFFSET_MINUTES[offset] * 60_000);
+  if (dueAt) return new Date(new Date(dueAt).getTime() - OFFSET_MINUTES[offset] * 60_000);
+  if (!dueDate) return null;
+  // all-day tasks: 09:00 on the day; "1 day before" is 09:00 the day before (mirrors public.reminder_moment)
+  return zonedToUtc(offset === "1d" ? addDays(dueDate, -1) : dueDate, ALL_DAY_REMINDER_TIME, tz);
 }
 
 export interface QuietHours {

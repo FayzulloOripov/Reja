@@ -2,14 +2,11 @@
 
 import {
   AlarmClock,
-  ArrowDown,
-  ArrowUp,
   CalendarClock,
-  ChevronsUp,
   CircleDashed,
-  Equal,
   Flag,
   Hourglass,
+  Milestone,
   Repeat,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -98,22 +95,25 @@ export function AvatarStack({ people, max = 3, size = 22 }: { people: Pick<Profi
   );
 }
 
-const PRIORITY_STYLE: Record<TaskPriority, { icon: typeof Flag; className: string }> = {
-  urgent: { icon: ChevronsUp, className: "text-prio-urgent" },
-  high: { icon: ArrowUp, className: "text-prio-high" },
-  medium: { icon: Equal, className: "text-prio-medium" },
-  low: { icon: ArrowDown, className: "text-prio-low" },
-  none: { icon: Flag, className: "text-subtle-foreground" },
+const PRIORITY_STYLE: Record<TaskPriority, { icon: typeof Flag; className: string; fill: boolean }> = {
+  urgent: { icon: Flag, className: "text-prio-urgent", fill: true },
+  high: { icon: Flag, className: "text-prio-high", fill: true },
+  medium: { icon: Flag, className: "text-prio-medium", fill: false },
+  low: { icon: Flag, className: "text-prio-low", fill: false },
+  none: { icon: Flag, className: "text-subtle-foreground", fill: false },
 };
 
-/** Priority is shown by shape (arrows) and colour, so it reads without colour vision. */
+/**
+ * Priority is a coloured flag (filled for urgent/high) with its word as the accessible name; the
+ * priority picker and the filter show flag + word side by side, which is where it is explained.
+ */
 export function PriorityIcon({ priority, className, withLabel }: { priority: TaskPriority; className?: string; withLabel?: boolean }) {
   const t = useTranslations("priority");
-  const { icon: Icon, className: tone } = PRIORITY_STYLE[priority];
+  const { icon: Icon, className: tone, fill } = PRIORITY_STYLE[priority];
   return (
-    <span className={cn("inline-flex items-center gap-1", tone, className)} title={t(priority)}>
-      <Icon className="size-3.5" strokeWidth={2.5} aria-hidden />
-      {withLabel ? <span className="text-xs font-medium">{t(priority)}</span> : <span className="sr-only">{t(priority)}</span>}
+    <span className={cn("inline-flex items-center gap-1", tone, className)} {...(withLabel ? {} : { role: "img", "aria-label": t(priority) })}>
+      <Icon className={cn("size-3.5", fill && "fill-current")} strokeWidth={2.25} aria-hidden />
+      {withLabel && <span className="text-xs font-medium">{t(priority)}</span>}
     </span>
   );
 }
@@ -142,15 +142,19 @@ export function StatusIcon({ status, className }: { status: TaskStatus; classNam
       </svg>
     ),
   };
+  // one accessible name only (no title + hidden text, which screen readers would read twice)
   return (
-    <span className={cn("inline-flex", className)} title={t(status)}>
+    <span className={cn("inline-flex", className)} role="img" aria-label={t(status)}>
       {map[status]}
-      <span className="sr-only">{t(status)}</span>
     </span>
   );
 }
 
-/** Due date chip: overdue is red with an alarm icon, today is warm, future is neutral. */
+/**
+ * Date chips. The planned day (due date) uses a calendar icon: red with an alarm when overdue, warm
+ * when today. The hard deadline always uses a signpost in violet, so the two never look alike
+ * (flags are reserved for priority).
+ */
 export function DueChip({
   date,
   dueAt,
@@ -166,6 +170,7 @@ export function DueChip({
   done?: boolean;
   className?: string;
 }) {
+  const t = useTranslations("task");
   const today = useToday();
   const tz = useTz();
   const f = useFormat(today, tz);
@@ -173,28 +178,65 @@ export function DueChip({
   const diff = date ? diffDays(today, date) : null;
   const overdue = !done && diff !== null && diff < 0;
   const isToday = diff === 0;
-  const deadlineSoon = !done && deadline && diffDays(today, deadline) <= 2;
+  const deadlineDiff = deadline ? diffDays(today, deadline) : null;
+  const deadlinePassed = !done && deadlineDiff !== null && deadlineDiff < 0;
+  const deadlineSoon = !done && deadlineDiff !== null && deadlineDiff <= 2;
+  const dueText = date ? `${f.relativeDay(date)}${dueAt ? ` ${f.time(dueAt)}` : ""}` : "";
   return (
     <span className={cn("inline-flex items-center gap-1.5 text-xs tnum", className)}>
       {date && (
         <span
+          title={`${t("due")}: ${f.weekdayDate(date)}${dueAt ? ` ${f.time(dueAt)}` : ""}`}
           className={cn(
             "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-medium",
             overdue ? "bg-danger-soft text-danger-fg" : isToday ? "bg-brand-soft text-brand-fg" : "text-muted-foreground",
           )}
         >
           {overdue ? <AlarmClock className="size-3" aria-hidden /> : <CalendarClock className="size-3" aria-hidden />}
-          {f.relativeDay(date)}
-          {dueAt ? ` ${f.time(dueAt)}` : ""}
-          {recurring && <Repeat className="size-3 opacity-70" aria-label="↻" />}
+          <span className="sr-only">{t("due")}:</span>
+          {dueText}
+          {recurring && (
+            <>
+              <Repeat className="size-3 opacity-70" aria-hidden />
+              <span className="sr-only">{t("recurring")}</span>
+            </>
+          )}
         </span>
       )}
       {deadline && (
-        <span className={cn("inline-flex items-center gap-1 font-medium", deadlineSoon ? "text-danger-fg" : "text-muted-foreground")}>
-          <Flag className="size-3" aria-hidden />
+        <span
+          title={`${t("deadline")}: ${f.weekdayDate(deadline)}`}
+          data-color="violet"
+          className={cn(
+            "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-medium",
+            deadlinePassed ? "bg-danger-soft text-danger-fg" : deadlineSoon ? "bg-pc-soft text-pc-fg" : "text-pc-fg",
+          )}
+        >
+          <Milestone className="size-3" aria-hidden />
+          <span className="sr-only">{t("deadline")}:</span>
           {f.dayMonth(deadline)}
         </span>
       )}
+    </span>
+  );
+}
+
+/** "Next date" chip (see lib/tasks/key-dates): signpost for a deadline, calendar for a planned day. */
+export function KeyDateChip({ kind, date, className }: { kind: "due" | "deadline"; date: string; className?: string }) {
+  const t = useTranslations("task");
+  const today = useToday();
+  const tz = useTz();
+  const f = useFormat(today, tz);
+  const Icon = kind === "deadline" ? Milestone : CalendarClock;
+  return (
+    <span
+      title={`${t(kind === "deadline" ? "deadline" : "due")}: ${f.weekdayDate(date)}`}
+      data-color={kind === "deadline" ? "violet" : undefined}
+      className={cn("inline-flex items-center gap-1 font-medium tnum", kind === "deadline" ? "text-pc-fg" : "text-foreground", className)}
+    >
+      <Icon className="size-3.5" aria-hidden />
+      <span className="sr-only">{t(kind === "deadline" ? "deadline" : "due")}:</span>
+      {f.relativeDay(date)}
     </span>
   );
 }

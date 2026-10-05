@@ -12,7 +12,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { DEMO_MODE, VAPID_PUBLIC_KEY } from "@/lib/env";
+import { VAPID_PUBLIC_KEY } from "@/lib/env";
+import { isDemo } from "@/hooks/use-demo";
 import { useFormat } from "@/lib/format";
 import type { Channel, NotificationType, Profile } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -121,16 +122,23 @@ export function NotificationsSection() {
   if (!me) return null;
   const prefs = me.notify_prefs;
   const setPref = (ch: Channel, ev: string, on: boolean) => updateProfile({ notify_prefs: { ...prefs, [ch]: { ...(prefs[ch] ?? {}), [ev]: on } } });
-  const label = (ev: string) => (ev === "digest" ? t("settings.digest") : ev === "review" ? t("settings.weeklyReview") : t(`notifications.type.${ev}` as never));
+  // full phrases ("Kimdir sizga vazifa berdi"), not notification fragments
+  const label = (ev: string) => t(`settings.events.${ev}` as never);
+  const channelLabel = (c: Channel) => t(`settings.channel${c === "in_app" ? "InApp" : c[0].toUpperCase() + c.slice(1)}` as never);
 
   return (
     <div className="space-y-5">
       <SettingsCard title={t("settings.notifications")}>
         <SettingsRow label={t("settings.quietHours")} description={t("settings.quietHoursHint")}>
           <Switch checked={me.quiet_enabled} onCheckedChange={(v) => updateProfile({ quiet_enabled: v })} aria-label={t("settings.quietHours")} />
-          <Input type="time" className="w-28 tnum" value={timeValue(me.quiet_start)} disabled={!me.quiet_enabled} onChange={(e) => e.target.value && updateProfile({ quiet_start: e.target.value })} aria-label={t("settings.from")} />
-          <span className="text-xs text-muted-foreground">–</span>
-          <Input type="time" className="w-28 tnum" value={timeValue(me.quiet_end)} disabled={!me.quiet_enabled} onChange={(e) => e.target.value && updateProfile({ quiet_end: e.target.value })} aria-label={t("settings.to")} />
+          <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Input type="time" className="w-28 tnum" value={timeValue(me.quiet_start) || "22:00"} disabled={!me.quiet_enabled} onChange={(e) => e.target.value && updateProfile({ quiet_start: e.target.value })} aria-label={t("settings.quietFrom")} />
+            {t("settings.from")}
+          </label>
+          <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Input type="time" className="w-28 tnum" value={timeValue(me.quiet_end) || "07:00"} disabled={!me.quiet_enabled} onChange={(e) => e.target.value && updateProfile({ quiet_end: e.target.value })} aria-label={t("settings.quietTo")} />
+            {t("settings.to")}
+          </label>
         </SettingsRow>
         <SettingsRow label={t("settings.digest")} description={t("settings.digestHint")}>
           <Switch checked={me.digest_enabled} onCheckedChange={(v) => updateProfile({ digest_enabled: v })} aria-label={t("settings.digest")} />
@@ -149,9 +157,9 @@ export function NotificationsSection() {
         <SettingsRow label={t("settings.overdueNudge")}>
           <Switch checked={me.overdue_nudge_enabled} onCheckedChange={(v) => updateProfile({ overdue_nudge_enabled: v })} aria-label={t("settings.overdueNudge")} />
         </SettingsRow>
-        <SettingsRow label={t("settings.defaultReminder")}>
+        <SettingsRow label={t("settings.defaultReminder")} description={t("settings.defaultReminderHint")}>
           <Select value={me.default_reminder} onValueChange={(v) => updateProfile({ default_reminder: v as Profile["default_reminder"] })}>
-            <SelectTrigger aria-label={t("settings.defaultReminder")} className="w-48"><SelectValue /></SelectTrigger>
+            <SelectTrigger aria-label={t("settings.defaultReminder")} className="w-56"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="none">{t("settings.defaultReminderNone")}</SelectItem>
               <SelectItem value="at_due">{t("task.reminderAtDue")}</SelectItem>
@@ -163,14 +171,15 @@ export function NotificationsSection() {
         </SettingsRow>
       </SettingsCard>
 
-      <SettingsCard title={t("settings.channels")}>
-        <div className="overflow-x-auto px-5 py-3">
-          <table className="w-full min-w-[480px] text-13">
+      <SettingsCard title={t("settings.channels")} description={t("settings.channelsHint")}>
+        {/* desktop: event × channel table */}
+        <div className="hidden px-5 py-3 md:block">
+          <table className="w-full text-13">
             <thead>
               <tr className="text-xs text-muted-foreground">
                 <th scope="col" className="py-2 text-left font-medium">{t("settings.eventType")}</th>
                 {CHANNELS.map((c) => (
-                  <th key={c} scope="col" className="px-2 py-2 text-center font-medium">{t(`settings.channel${c === "in_app" ? "InApp" : c[0].toUpperCase() + c.slice(1)}` as never)}</th>
+                  <th key={c} scope="col" className="px-2 py-2 text-center font-medium">{channelLabel(c)}</th>
                 ))}
               </tr>
             </thead>
@@ -183,9 +192,9 @@ export function NotificationsSection() {
                     return (
                       <td key={c} className="px-2 py-2 text-center">
                         {na ? (
-                          <span className="text-muted-foreground">—</span>
+                          <span className="text-muted-foreground" aria-label={t("settings.notAvailable")}>—</span>
                         ) : (
-                          <Checkbox checked={Boolean(prefs[c]?.[ev])} onCheckedChange={(v) => setPref(c, ev, Boolean(v))} aria-label={`${label(ev)} · ${c}`} />
+                          <Checkbox checked={Boolean(prefs[c]?.[ev])} onCheckedChange={(v) => setPref(c, ev, Boolean(v))} aria-label={`${label(ev)}: ${channelLabel(c)}`} />
                         )}
                       </td>
                     );
@@ -195,6 +204,22 @@ export function NotificationsSection() {
             </tbody>
           </table>
         </div>
+        {/* phones: one card per event with labelled switches */}
+        <ul className="divide-y md:hidden">
+          {EVENTS.map((ev) => (
+            <li key={ev} className="px-4 py-3">
+              <p className="mb-2 text-sm font-medium">{label(ev)}</p>
+              <div className="grid grid-cols-2 gap-2">
+                {CHANNELS.filter((c) => !(c === "in_app" && (ev === "digest" || ev === "review"))).map((c) => (
+                  <label key={c} className="flex min-h-11 items-center justify-between gap-2 rounded-xl border px-3 text-13">
+                    {channelLabel(c)}
+                    <Switch checked={Boolean(prefs[c]?.[ev])} onCheckedChange={(v) => setPref(c, ev, v)} aria-label={`${label(ev)}: ${channelLabel(c)}`} />
+                  </label>
+                ))}
+              </div>
+            </li>
+          ))}
+        </ul>
       </SettingsCard>
 
       <PushCard />
@@ -231,10 +256,12 @@ export function PushCard() {
   const [current, setCurrent] = useState<string | null>(null);
   const [devices, setDevices] = useState<PushRow[]>([]);
   const [busy, setBusy] = useState(false);
+  // only explain a refusal after the user has tried on this page
+  const [tried, setTried] = useState(false);
   const ios = typeof navigator !== "undefined" && /iphone|ipad/i.test(navigator.userAgent);
 
   const loadDevices = useCallback(async () => {
-    if (DEMO_MODE) return;
+    if (isDemo()) return;
     const { data } = await getBrowserSupabase().from("push_subscriptions").select("id, endpoint, device_label, created_at").eq("user_id", uid);
     setDevices((data as PushRow[]) ?? []);
   }, [uid]);
@@ -242,7 +269,7 @@ export function PushCard() {
   useEffect(() => {
     if (!supported) return;
     void navigator.serviceWorker.getRegistration().then((r) => r?.pushManager.getSubscription()).then((s) => setCurrent(s?.endpoint ?? null));
-    if (!DEMO_MODE) {
+    if (!isDemo()) {
       void getBrowserSupabase()
         .from("push_subscriptions")
         .select("id, endpoint, device_label, created_at")
@@ -253,6 +280,7 @@ export function PushCard() {
 
   async function enable() {
     setBusy(true);
+    setTried(true);
     try {
       const perm = await Notification.requestPermission();
       setPermission(perm);
@@ -260,12 +288,12 @@ export function PushCard() {
       const reg = (await navigator.serviceWorker.getRegistration()) ?? (await navigator.serviceWorker.register("/sw.js"));
       await navigator.serviceWorker.ready;
       if (!VAPID_PUBLIC_KEY) {
-        toast.error("VAPID key missing");
+        toast.error(t("settings.pushNotReady"));
         return;
       }
       const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) });
       const json = sub.toJSON() as { endpoint: string; keys: { p256dh: string; auth: string } };
-      if (!DEMO_MODE) {
+      if (!isDemo()) {
         const { error } = await getBrowserSupabase()
           .from("push_subscriptions")
           .upsert(
@@ -302,14 +330,19 @@ export function PushCard() {
 
   return (
     <SettingsCard title={t("settings.pushTitle")} description={ios ? t("settings.pushIos") : undefined}>
-      <SettingsRow label={current ? t("settings.pushEnabled") : t("settings.pushEnable")} description={!supported ? t("settings.pushUnsupported") : permission === "denied" ? t("settings.pushDenied") : undefined}>
+      <SettingsRow
+        label={t("settings.pushThisDevice")}
+        description={
+          !supported ? t("settings.pushUnsupported") : current ? t("settings.pushEnabled") : tried && permission === "denied" ? t("settings.pushDenied") : t("settings.pushOff")
+        }
+      >
         {current ? (
           <>
             <Button variant="outline" size="sm" onClick={test}><BellRing /> {t("settings.pushTest")}</Button>
             <Button variant="ghost" size="sm" onClick={disable}>{t("settings.pushDisable")}</Button>
           </>
         ) : (
-          <Button size="sm" onClick={enable} disabled={!supported || permission === "denied" || busy}>
+          <Button size="sm" onClick={enable} disabled={!supported || busy || (tried && permission === "denied")}>
             {busy ? <Loader2 className="animate-spin" /> : <BellRing />} {t("settings.pushEnable")}
           </Button>
         )}

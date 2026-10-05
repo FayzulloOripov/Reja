@@ -206,7 +206,7 @@ function TaskDetailBody({ task, onClose, fullPage }: { task: Task; onClose?: () 
         {writable && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon-sm" onClick={() => setTop(task, !isTop)} aria-pressed={isTop} aria-label={isTop ? t("home.top3Remove") : t("home.top3Add")}>
+              <Button tooltip={false} variant="ghost" size="icon-sm" onClick={() => setTop(task, !isTop)} aria-pressed={isTop} aria-label={isTop ? t("home.top3Remove") : t("home.top3Add")}>
                 <Star className={cn(isTop ? "fill-warning text-warning" : "text-muted-foreground")} />
               </Button>
             </TooltipTrigger>

@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Clock, Flag, Inbox, Repeat, Star, User, AlertTriangle } from "lucide-react";
+import { AlertTriangle, CalendarDays, Clock, Flag, Inbox, Repeat, Star, Undo2, User, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useOnChange } from "@/hooks/use-synced-state";
@@ -63,11 +63,14 @@ export function QuickAddDialog() {
 
   const [text, setText] = useState("");
   const [manual, setManual] = useState<{ projectId?: string | null; sectionId?: string | null; dueDate?: string | null; dueTime?: string | null; priority?: TaskPriority }>({});
+  // parsed parts the user tapped away: their words stay in the title and are not interpreted
+  const [dismissed, setDismissed] = useState<ChipKind[]>([]);
 
   useOnChange(open, (o) => {
     if (!o) return;
     setText("");
     setManual({});
+    setDismissed([]);
   });
 
   useEffect(() => {
@@ -86,7 +89,7 @@ export function QuickAddDialog() {
     return [...ids].map((id) => profiles[id]).filter(Boolean).map((p) => ({ id: p.id, name: p.name }));
   }, [members, profiles, ws?.id]);
 
-  const parsed = useMemo(
+  const raw = useMemo(
     () =>
       parseQuickAdd(text, {
         today,
@@ -97,6 +100,29 @@ export function QuickAddDialog() {
       }),
     [text, today, nowMinutes, projects, people, me?.work_days],
   );
+  const parsed = useMemo(() => {
+    if (dismissed.length === 0) return raw;
+    const off = new Set(dismissed);
+    let cursor = 0;
+    let title = "";
+    for (const c of raw.chips) {
+      title += text.slice(cursor, c.start) + (off.has(c.kind) ? text.slice(c.start, c.end) : " ");
+      cursor = c.end;
+    }
+    title = (title + text.slice(cursor)).replace(/\s+/g, " ").trim();
+    return {
+      ...raw,
+      title,
+      chips: raw.chips.filter((c) => !off.has(c.kind)),
+      dueDate: off.has("date") ? null : raw.dueDate,
+      dueTime: off.has("time") || off.has("date") ? null : raw.dueTime,
+      recurrence: off.has("repeat") ? null : raw.recurrence,
+      projectId: off.has("project") ? null : raw.projectId,
+      assigneeIds: off.has("person") ? [] : raw.assigneeIds,
+      priority: off.has("priority") ? null : raw.priority,
+      top: off.has("top") ? false : raw.top,
+    };
+  }, [raw, dismissed, text]);
 
   const projectId = manual.projectId !== undefined ? manual.projectId : (parsed.projectId ?? defaults?.projectId ?? null);
   const project = projects.find((p) => p.id === projectId);
@@ -124,6 +150,7 @@ export function QuickAddDialog() {
     toast.success(navigator.onLine ? t("quickAdd.added") : t("quickAdd.addedOffline"));
     if (keepOpen) {
       setText("");
+      setDismissed([]);
       setManual({ projectId: manual.projectId });
       inputRef.current?.focus();
     } else {
@@ -192,9 +219,41 @@ export function QuickAddDialog() {
             aria-label={t("quickAdd.title")}
             autoComplete="off"
             spellCheck={false}
-            className="relative h-11 w-full bg-transparent text-[17px] leading-[44px] outline-none placeholder:text-subtle-foreground"
+            className="relative h-11 w-full bg-transparent pr-10 text-[17px] leading-[44px] outline-none placeholder:text-subtle-foreground"
           />
+          <button
+            type="button"
+            onClick={close}
+            aria-label={t("common.close")}
+            className="absolute top-4 right-2 flex size-11 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <X className="size-4" aria-hidden />
+          </button>
         </div>
+        {raw.chips.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5 px-4 pt-2" aria-label={t("quickAdd.recognized")}>
+            <span className="text-xs text-muted-foreground">{t("quickAdd.recognized")}:</span>
+            {raw.chips.map((c) => {
+              const off = dismissed.includes(c.kind);
+              return (
+                <button
+                  key={`${c.kind}-${c.start}`}
+                  type="button"
+                  onClick={() => setDismissed((d) => (off ? d.filter((k) => k !== c.kind) : [...d, c.kind]))}
+                  aria-pressed={!off}
+                  aria-label={off ? t("quickAdd.restoreChip", { text: text.slice(c.start, c.end) }) : t("quickAdd.dismissChip", { text: text.slice(c.start, c.end) })}
+                  className={cn(
+                    "inline-flex h-7 items-center gap-1 rounded-md px-2 text-xs font-medium",
+                    off ? "bg-muted text-muted-foreground line-through" : CHIP_STYLE[c.kind],
+                  )}
+                >
+                  {text.slice(c.start, c.end).trim()}
+                  {off ? <Undo2 className="size-3" aria-hidden /> : <X className="size-3" aria-hidden />}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         <div className="flex min-h-10 flex-wrap items-center gap-1.5 px-4 pt-2 pb-3">
           <ProjectPicker value={projectId} onChange={(p, s) => setManual((m) => ({ ...m, projectId: p, sectionId: s }))}>

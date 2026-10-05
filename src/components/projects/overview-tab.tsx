@@ -1,21 +1,22 @@
 "use client";
 
-import { AlarmClock, CheckCircle2, CircleDot, Flag, ListTodo, Target } from "lucide-react";
+import { AlarmClock, CheckCircle2, CircleDot, ListTodo, Milestone, Target } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ProgressBar, UserAvatar } from "@/components/common/bits";
+import { KeyDateChip, ProgressBar, UserAvatar } from "@/components/common/bits";
 import { RichEditor } from "@/components/editor/rich-editor";
 import { ActivityList } from "@/components/tasks/task-detail-sections";
 import { diffDays } from "@/lib/dates";
 import { useFormat } from "@/lib/format";
 import { isOpen, isOverdue } from "@/lib/health";
+import { nextKeyDate, type KeyDate } from "@/lib/tasks/key-dates";
 import type { ActivityEntry, Profile, Project, Section, Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { updateProject } from "@/store/actions";
 import { assigneesByTask, useProjectHealth, useToday, useTz } from "@/store/hooks";
 import { useStore } from "@/store/store";
 import { useUI } from "@/store/ui";
-import { HealthPill } from "./project-header";
+import { HealthWithReason } from "./project-header";
 
 function Card({ title, icon, children, className }: { title: string; icon?: React.ReactNode; children: React.ReactNode; className?: string }) {
   return (
@@ -72,8 +73,10 @@ export function OverviewTab({ project, tasks, sections, people, writable }: { pr
   const milestones = useMemo(
     () =>
       top
-        .filter((x) => isOpen(x) && (x.deadline || x.due_date) && (x.deadline ?? x.due_date)! >= today)
-        .sort((a, b) => (a.deadline ?? a.due_date)!.localeCompare((b.deadline ?? b.due_date)!))
+        .filter(isOpen)
+        .map((x) => ({ x, k: nextKeyDate(x, today) }))
+        .filter((r): r is { x: (typeof r)["x"]; k: KeyDate } => r.k !== null)
+        .sort((a, b) => a.k.date.localeCompare(b.k.date))
         .slice(0, 6),
     [top, today],
   );
@@ -87,13 +90,10 @@ export function OverviewTab({ project, tasks, sections, people, writable }: { pr
       <div className="space-y-4 lg:col-span-2">
         <section className="rounded-2xl border bg-card p-5 shadow-elev-1">
           <div className="flex flex-wrap items-center gap-3">
-            <HealthPill health={health.effective} />
-            {health.reason.key && (
-              <span className="text-13 text-muted-foreground">{t(`health.${health.reason.key}`, { percent: health.reason.percent ?? 0, days: health.reason.days ?? 0 })}</span>
-            )}
+            <HealthWithReason project={project} result={health} />
             {project.target_date && (
               <span className="ml-auto text-13 text-muted-foreground tnum">
-                <Flag className="mr-1 inline size-3.5" />
+                <Milestone className="mr-1 inline size-3.5" aria-hidden />
                 {f.dayMonth(project.target_date)} · {diffDays(today, project.target_date) >= 0 ? t("time.inDays", { count: diffDays(today, project.target_date) }) : t("health.reasonPassed")}
               </span>
             )}
@@ -155,17 +155,16 @@ export function OverviewTab({ project, tasks, sections, people, writable }: { pr
       </div>
 
       <div className="space-y-4">
-        <Card title={t("project.nextDeadline")} icon={<Flag />}>
+        <Card title={t("project.nextDeadline")} icon={<Milestone />}>
           {milestones.length === 0 ? (
             <p className="text-13 text-muted-foreground">{t("overview.deadlinesEmpty")}</p>
           ) : (
             <ul className="space-y-1">
-              {milestones.map((m) => (
+              {milestones.map(({ x: m, k }) => (
                 <li key={m.id}>
-                  <button onClick={() => openTask(m.id)} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-13 hover:bg-muted">
-                    <span className="w-14 shrink-0 text-xs font-semibold text-brand-fg tnum">{f.dayMonth((m.deadline ?? m.due_date)!)}</span>
+                  <button onClick={() => openTask(m.id)} className="flex min-h-9 w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-13 hover:bg-muted">
+                    <KeyDateChip kind={k.kind} date={k.date} className="w-24 shrink-0 text-xs" />
                     <span className="truncate">{m.title}</span>
-                    {m.deadline && <Flag className="ml-auto size-3 shrink-0 text-destructive" />}
                   </button>
                 </li>
               ))}

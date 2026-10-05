@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DEMO_MODE } from "@/lib/env";
+import { isDemo } from "@/hooks/use-demo";
 import type { Project, ProjectRole } from "@/lib/types";
 import { updateProject } from "@/store/actions";
 import { uuid } from "@/store/factories";
@@ -50,7 +50,7 @@ export function ShareDialog({ project, open, onOpenChange, manager }: { project:
   async function invite(withEmail: boolean) {
     setBusy(true);
     try {
-      if (DEMO_MODE) {
+      if (isDemo()) {
         const token = uuid().replace(/-/g, "");
         setLastLink(`${window.location.origin}/invite/${token}`);
         toast.success(withEmail ? t("settings.inviteSent") : t("settings.inviteLinkCreated"));

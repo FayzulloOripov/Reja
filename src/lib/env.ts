@@ -2,7 +2,15 @@
 
 export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "Reja";
 
-export const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+/**
+ * The whole deployment runs as a demo (local development and tests only): NEXT_PUBLIC_DEMO=1.
+ * Otherwise the real backend is the default and the demo lives behind /demo (a cookie).
+ * NEXT_PUBLIC_DEMO_MODE=true is the older name and still works.
+ */
+export const FORCED_DEMO = process.env.NEXT_PUBLIC_DEMO === "1" || process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+
+/** Set by /demo, cleared by /demo/exit. */
+export const DEMO_COOKIE = "reja_demo";
 
 export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 

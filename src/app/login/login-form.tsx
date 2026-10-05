@@ -12,7 +12,7 @@ import { getBrowserSupabase } from "@/lib/supabase/client";
 import { sendMagicLink } from "@/server/actions/auth";
 import { setLocaleCookie } from "@/server/actions/locale";
 
-export function LoginForm({ next, initialError, demo }: { next?: string; initialError?: string; demo: boolean }) {
+export function LoginForm({ next, initialError, demo, fromDemo }: { next?: string; initialError?: string; demo: boolean; fromDemo?: boolean }) {
   const t = useTranslations("auth");
   const locale = useLocale();
   const router = useRouter();
@@ -90,9 +90,13 @@ export function LoginForm({ next, initialError, demo }: { next?: string; initial
         </div>
       </div>
 
+      {fromDemo && !demo && (
+        <p role="status" className="rounded-xl bg-info-soft px-3 py-2.5 text-13 text-info-fg">{t("fromDemo")}</p>
+      )}
+
       {demo ? (
         <Button asChild size="lg" className="h-11 w-full text-base">
-          <Link href="/">Demo →</Link>
+          <Link href="/">{t("openDemo")} →</Link>
         </Button>
       ) : (
         <>
@@ -135,6 +139,15 @@ export function LoginForm({ next, initialError, demo }: { next?: string; initial
             {google ? <Loader2 className="animate-spin" /> : <GoogleIcon />}
             {t("google")}
           </Button>
+
+          {!fromDemo && (
+            <p className="text-center text-13 text-muted-foreground">
+              {t("tryDemo")}{" "}
+              <a href="/demo" className="font-medium text-brand-fg underline-offset-4 hover:underline">
+                {t("openDemo")}
+              </a>
+            </p>
+          )}
         </>
       )}
 

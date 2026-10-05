@@ -2,7 +2,7 @@
 
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
-import { DEMO_MODE } from "@/lib/env";
+import { isDemo } from "@/hooks/use-demo";
 import { getBrowserSupabase } from "@/lib/supabase/client";
 import type { Profile, Task } from "@/lib/types";
 import { useProfiles, useUserId } from "@/store/hooks";
@@ -58,7 +58,7 @@ function usePresenceState(projectId: string | null | undefined): PresenceMeta[] 
   const uid = useUserId();
   const [state, setState] = useState<PresenceMeta[]>([]);
   useEffect(() => {
-    if (!projectId || !uid || DEMO_MODE) return;
+    if (!projectId || !uid || isDemo()) return;
     const l: Listener = (s) => setState(s);
     join(projectId, uid, l);
     return () => leave(projectId, l);
@@ -85,7 +85,7 @@ export function useTaskPresence(task: Pick<Task, "id" | "project_id">, editing: 
 
   useEffect(() => {
     const entry = task.project_id ? channels.get(task.project_id) : undefined;
-    if (!entry || DEMO_MODE) return;
+    if (!entry || isDemo()) return;
     entry.me = { user_id: uid, task_id: editing ? task.id : null, at: Date.now() };
     void entry.ch.track(entry.me);
     return () => {
