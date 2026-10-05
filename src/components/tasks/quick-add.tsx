@@ -3,6 +3,7 @@
 import { CalendarDays, Clock, Flag, Inbox, Repeat, Star, User, AlertTriangle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useOnChange } from "@/hooks/use-synced-state";
 import { toast } from "sonner";
 import { PriorityIcon, ProjectDot, UserAvatar, Kbd } from "@/components/common/bits";
 import { Button } from "@/components/ui/button";
@@ -63,10 +64,14 @@ export function QuickAddDialog() {
   const [text, setText] = useState("");
   const [manual, setManual] = useState<{ projectId?: string | null; sectionId?: string | null; dueDate?: string | null; dueTime?: string | null; priority?: TaskPriority }>({});
 
+  useOnChange(open, (o) => {
+    if (!o) return;
+    setText("");
+    setManual({});
+  });
+
   useEffect(() => {
     if (open) {
-      setText("");
-      setManual({});
       const id = requestAnimationFrame(() => inputRef.current?.focus());
       const late = setTimeout(() => inputRef.current?.focus(), 120);
       return () => {

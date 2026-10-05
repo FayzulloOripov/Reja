@@ -617,3 +617,39 @@ export function createWorkspace(name: string, color = "indigo"): Workspace {
 export function updateWorkspace(id: string, values: Partial<Workspace>) {
   mutate([{ table: "workspaces", kind: "update", row: { id }, values }]);
 }
+
+// ------------------------------------------------------------------ import
+
+/** Create the projects and tasks of an import plan in one optimistic batch. */
+export function runImport(plan: import("@/lib/import/planner").ImportPlan, workspaceId: string): number {
+  const projectIds: Record<string, string> = { ...plan.existing };
+  const ops: MutationInput[] = [];
+  let pos = Date.now();
+  for (const p of plan.newProjects) {
+    const project = newProject({ workspace_id: workspaceId, name: p.name, color: p.color, owner_id: uid(), position: pos++ });
+    projectIds[p.key] = project.id;
+    ops.push({ table: "projects", kind: "insert", row: project });
+  }
+  for (const t of plan.tasks) {
+    const projectId = t.projectKey ? (projectIds[t.projectKey] ?? null) : null;
+    const project = projectId ? S().data.projects[projectId] : undefined;
+    const task = newTask({
+      workspace_id: project?.workspace_id ?? workspaceId,
+      project_id: projectId,
+      title: t.title,
+      priority: t.priority,
+      status: t.status,
+      completed_at: t.status === "done" ? nowIso() : null,
+      due_date: t.dueDate,
+      deadline: t.deadline,
+      top_date: t.topDate,
+      description: t.note ? { type: "doc", content: t.note.split(/\n+/).map((line) => ({ type: "paragraph", content: [{ type: "text", text: line }] })) } : null,
+      created_by: uid(),
+      source: "import",
+      position: pos++,
+    });
+    ops.push({ table: "tasks", kind: "insert", row: task });
+  }
+  mutate(ops);
+  return plan.tasks.length;
+}

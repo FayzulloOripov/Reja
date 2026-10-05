@@ -77,6 +77,7 @@ import {
 import { ensureTaskDetail, useStore } from "@/store/store";
 import { useUI } from "@/store/ui";
 import { useRecurrenceLabel } from "./quick-add";
+import { useSyncedState } from "@/hooks/use-synced-state";
 import { AssigneePicker, DatePicker, LabelPicker, PriorityPicker, ProjectPicker, StatusPicker } from "./pickers";
 import { TaskCheckbox } from "./task-row";
 import { AttachmentsSection, ChecklistSection, CommentsAndActivity, DependenciesSection, SubtasksSection } from "./task-detail-sections";
@@ -146,9 +147,8 @@ function TaskDetailBody({ task, onClose, fullPage }: { task: Task; onClose?: () 
   const openTask = useUI((s) => s.openTask);
   const editors = useTaskPresence(task, true);
 
-  const [title, setTitle] = useState(task.title);
+  const [title, setTitle] = useSyncedState(task.title);
   const titleRef = useRef<HTMLTextAreaElement>(null);
-  useEffect(() => setTitle(task.title), [task.title]);
   useEffect(() => {
     const el = titleRef.current;
     if (el) {
@@ -469,8 +469,7 @@ function RepeatPicker({ task, disabled, label }: { task: Task; disabled: boolean
 
 function EstimateInput({ task, disabled }: { task: Task; disabled: boolean }) {
   const t = useTranslations("task");
-  const [v, setV] = useState(task.estimate_min ? String(task.estimate_min) : "");
-  useEffect(() => setV(task.estimate_min ? String(task.estimate_min) : ""), [task.estimate_min]);
+  const [v, setV] = useSyncedState(task.estimate_min ? String(task.estimate_min) : "");
   return (
     <label className="inline-flex items-center gap-1.5">
       <Input

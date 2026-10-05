@@ -11,7 +11,7 @@ import { safeColor } from "@/lib/colors";
 import { addDays, addMonths, eachDay, isoWeekday, parseISODate, startOfMonth, startOfWeek } from "@/lib/dates";
 import { byDueThenPriority } from "@/lib/filters";
 import { useFormat } from "@/lib/format";
-import type { Project, Task } from "@/lib/types";
+import type { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { rescheduleTasks } from "@/store/actions";
 import { useToday, useTz } from "@/store/hooks";

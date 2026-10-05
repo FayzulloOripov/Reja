@@ -150,11 +150,13 @@ export function RichEditor({
   editorRef?: React.RefObject<Editor | null>;
 }) {
   const peopleRef = useRef<MentionPerson[]>(mentions ?? []);
-  peopleRef.current = mentions ?? [];
   const submitRef = useRef(onSubmit);
-  submitRef.current = onSubmit;
   const changeRef = useRef(onChange);
-  changeRef.current = onChange;
+  useEffect(() => {
+    peopleRef.current = mentions ?? [];
+    submitRef.current = onSubmit;
+    changeRef.current = onChange;
+  });
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -170,6 +172,8 @@ export function RichEditor({
         ? [
             Mention.configure({
               HTMLAttributes: { class: "mention" },
+              // the getter runs later, when the user types "@" — not during render
+              // eslint-disable-next-line react-hooks/refs
               suggestion: mentionSuggestion(() => peopleRef.current) as never,
             }),
           ]

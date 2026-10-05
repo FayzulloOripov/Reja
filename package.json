@@ -6,7 +6,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:unit": "vitest run tests/unit",
+    "test:db": "vitest run tests/db",
+    "test:e2e": "playwright test",
+    "seed:demo": "tsx scripts/seed-demo.ts",
+    "icons": "node scripts/icons.mjs",
+    "db:push": "npx supabase db push"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

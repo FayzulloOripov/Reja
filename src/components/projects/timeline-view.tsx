@@ -105,19 +105,17 @@ export function TimelineView({ tasks, sections, writable, color }: { tasks: Task
     setDrag(null);
   }
 
-  const months = useMemo(() => {
-    const out: { label: string; left: number; w: number }[] = [];
-    for (const d of days) {
-      const key = d.slice(0, 7);
-      const last = out.at(-1);
-      if (!last || last.label !== key) out.push({ label: key, left: diffDays(from, d) * px, w: px });
-      else last.w += px;
-    }
-    return out.map((m) => {
-      const dt = parseISODate(`${m.label}-01`);
-      return { ...m, label: `${f.months[dt.getUTCMonth()]} ${dt.getUTCFullYear()}` };
-    });
-  }, [days, from, px, f.months]);
+  const monthSpans: { label: string; left: number; w: number }[] = [];
+  for (const d of days) {
+    const key = d.slice(0, 7);
+    const last = monthSpans.at(-1);
+    if (!last || last.label !== key) monthSpans.push({ label: key, left: diffDays(from, d) * px, w: px });
+    else last.w += px;
+  }
+  const months = monthSpans.map((m) => {
+    const dt = parseISODate(`${m.label}-01`);
+    return { ...m, label: `${f.months[dt.getUTCMonth()]} ${dt.getUTCFullYear()}` };
+  });
 
   if (rows.length === 0 && undated.length === 0) {
     return <EmptyState illustration="calendar" title={t("empty.timelineEmpty")} />;

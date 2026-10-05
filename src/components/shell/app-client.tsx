@@ -6,13 +6,12 @@ import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useMounted, useTheme } from "@/components/providers/theme";
 import { useEffect, useRef, type ReactNode } from "react";
-import { toast } from "sonner";
 import { setLocaleCookie } from "@/server/actions/locale";
 import { useMe } from "@/store/hooks";
-import { createDemoAdapter } from "@/store/demo-adapter";
-import { bootstrap, setOpErrorListener, useStore } from "@/store/store";
-import { createSupabaseAdapter } from "@/store/supabase-adapter";
+import { useStore } from "@/store/store";
+import { useBootstrap } from "@/hooks/use-bootstrap";
 import { MobileTabBar, MobileTopBar } from "./mobile-nav";
+import { FocusPill } from "./focus-pill";
 import { PwaManager } from "./pwa";
 import { Sidebar } from "./sidebar";
 import { useGlobalShortcuts } from "./shortcuts";
@@ -33,16 +32,7 @@ export function AppClient({ userId, demo, children }: { userId: string; demo?: b
   const synced = useRef({ theme: false, lang: false });
   const mounted = useMounted();
 
-  useEffect(() => {
-    void bootstrap(userId, demo ? createDemoAdapter(locale === "en" ? "en" : "uz") : createSupabaseAdapter());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId, demo]);
-
-  useEffect(() => {
-    setOpErrorListener((err) => {
-      toast.error(err.code === "42501" || /row-level security|permission/i.test(err.message) ? t("errors.permission") : t("errors.saveFailed", { message: err.message }));
-    });
-  }, [t]);
+  useBootstrap(userId, demo);
 
   // keep theme and language in line with the profile (once per session)
   useEffect(() => {
@@ -99,7 +89,8 @@ export function AppClient({ userId, demo, children }: { userId: string; demo?: b
       </div>
       <MobileTabBar />
       <Overlays />
-      <PwaManager />
+      {mounted && <PwaManager />}
+      <FocusPill />
     </div>
   );
 }

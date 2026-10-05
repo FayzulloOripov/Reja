@@ -83,8 +83,12 @@ export function useTz(): string {
 export function useToday(): string {
   const tz = useTz();
   const [today, setToday] = useState(() => todayIn(tz));
-  useEffect(() => {
+  const [prevTz, setPrevTz] = useState(tz);
+  if (prevTz !== tz) {
+    setPrevTz(tz);
     setToday(todayIn(tz));
+  }
+  useEffect(() => {
     const id = setInterval(() => setToday(todayIn(tz)), 60_000);
     return () => clearInterval(id);
   }, [tz]);

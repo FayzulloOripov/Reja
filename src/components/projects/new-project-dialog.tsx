@@ -3,7 +3,8 @@
 import { Globe, Lock, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useOnChange } from "@/hooks/use-synced-state";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -38,18 +39,17 @@ export function NewProjectDialog() {
   const [target, setTarget] = useState("");
   const [template, setTemplate] = useState<string>("blank");
 
-  useEffect(() => {
-    if (open) {
-      setName("");
-      setColor(PROJECT_COLORS[Math.floor(Math.random() * PROJECT_COLORS.length)]);
-      setVisibility(ws?.is_personal ? "private" : "workspace");
-      setArea("");
-      setGoal("");
-      setStart("");
-      setTarget("");
-      setTemplate("blank");
-    }
-  }, [open, ws?.is_personal]);
+  useOnChange(open, (o) => {
+    if (!o) return;
+    setName("");
+    setColor(PROJECT_COLORS[Math.floor(Math.random() * PROJECT_COLORS.length)]);
+    setVisibility(ws?.is_personal ? "private" : "workspace");
+    setArea("");
+    setGoal("");
+    setStart("");
+    setTarget("");
+    setTemplate("blank");
+  });
 
   const options = useMemo(() => {
     const own = Object.values(templates)

@@ -4,6 +4,7 @@ import { CalendarDays, FileText, GanttChart, KanbanSquare, LayoutDashboard, List
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Suspense, useEffect, useMemo, useState } from "react";
+import { useOnChange } from "@/hooks/use-synced-state";
 import { EmptyState } from "@/components/common/empty-state";
 import { BoardView } from "@/components/projects/board-view";
 import { CalendarView } from "@/components/projects/calendar-view";
@@ -65,14 +66,15 @@ function ProjectPageInner() {
   const today = useToday();
   const uid = useUserId();
 
-  const [filters, setFilters] = useState<TaskFilters>({});
-  const [grouping, setGrouping] = useState<Grouping>("section");
-  const [boardBy, setBoardBy] = useState<"section" | "status">("section");
-  useEffect(() => {
-    setFilters(readLocal(`reja:filters:${id}`, {}));
-    setGrouping(readLocal(`reja:grouping:${id}`, "section"));
-    setBoardBy(readLocal(`reja:board:${id}`, "section"));
-  }, [id]);
+  // app pages render only after mount (see AppClient), so localStorage is safe to read here
+  const [filters, setFilters] = useState<TaskFilters>(() => readLocal(`reja:filters:${id}`, {}));
+  const [grouping, setGrouping] = useState<Grouping>(() => readLocal(`reja:grouping:${id}`, "section"));
+  const [boardBy, setBoardBy] = useState<"section" | "status">(() => readLocal(`reja:board:${id}`, "section"));
+  useOnChange(id, (next) => {
+    setFilters(readLocal(`reja:filters:${next}`, {}));
+    setGrouping(readLocal(`reja:grouping:${next}`, "section"));
+    setBoardBy(readLocal(`reja:board:${next}`, "section"));
+  });
   useEffect(() => {
     try {
       localStorage.setItem(`reja:filters:${id}`, JSON.stringify(filters));

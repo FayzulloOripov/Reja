@@ -3,7 +3,8 @@
 import { FileText, Plus, Trash2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
+import { useSyncedState } from "@/hooks/use-synced-state";
 import { EmptyState } from "@/components/common/empty-state";
 import { RichEditor } from "@/components/editor/rich-editor";
 import { Button } from "@/components/ui/button";
@@ -79,9 +80,8 @@ export function NotesTab({ project, writable }: { project: Project; writable: bo
 
 function NoteEditor({ note, writable }: { note: Note; writable: boolean }) {
   const t = useTranslations();
-  const [title, setTitle] = useState(note.title);
+  const [title, setTitle] = useSyncedState(note.title);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => setTitle(note.title), [note.title]);
   return (
     <article className="min-h-[50vh] rounded-2xl border bg-card p-5 shadow-elev-1 sm:p-8">
       <div className="flex items-start gap-2">

@@ -72,12 +72,18 @@
   --elev-3: 0 2px 4px hsl(var(--shadow-color) / 0.05), 0 12px 28px -6px hsl(var(--shadow-color) / 0.14);
   --elev-4: 0 4px 8px hsl(var(--shadow-color) / 0.06), 0 24px 56px -12px hsl(var(--shadow-color) / 0.22);
 
-  /* charts use the project palette */
-  --chart-1: var(--pc-tangerine);
-  --chart-2: var(--pc-sky);
-  --chart-3: var(--pc-emerald);
-  --chart-4: var(--pc-violet);
-  --chart-5: var(--pc-rose);
+  /* categorical chart slots, fixed order — validated with the dataviz palette checker
+     (lightness band, chroma floor, CVD ΔE ≥ 8 adjacent, normal-vision ≥ 15) */
+  --chart-1: oklch(0.66 0.17 50);
+  --chart-2: oklch(0.63 0.13 240);
+  --chart-3: oklch(0.62 0.14 160);
+  --chart-4: oklch(0.58 0.18 305);
+  --chart-5: oklch(0.74 0.15 80);
+  --chart-6: oklch(0.62 0.18 358);
+  --chart-7: oklch(0.55 0.17 275);
+  --chart-8: oklch(0.63 0.11 195);
+  --chart-grid: oklch(0.93 0.006 75);
+  --chart-axis: var(--muted-foreground);
 
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);
@@ -153,6 +159,17 @@
   --elev-4: 0 8px 16px hsl(var(--shadow-color) / 0.4), 0 28px 64px -12px hsl(var(--shadow-color) / 0.65);
 
   --sidebar-accent: oklch(0.24 0.012 60);
+
+  /* dark chart slots sit inside the dark lightness band (0.48–0.67) */
+  --chart-1: oklch(0.66 0.16 50);
+  --chart-2: oklch(0.64 0.13 240);
+  --chart-3: oklch(0.64 0.14 160);
+  --chart-4: oklch(0.63 0.17 305);
+  --chart-5: oklch(0.66 0.14 82);
+  --chart-6: oklch(0.64 0.18 358);
+  --chart-7: oklch(0.6 0.16 275);
+  --chart-8: oklch(0.64 0.12 195);
+  --chart-grid: oklch(1 0 0 / 0.07);
 
   --pc-tomato: oklch(0.7 0.17 28);       --pc-tomato-soft: oklch(0.3 0.06 28);      --pc-tomato-fg: oklch(0.85 0.09 28);
   --pc-tangerine: oklch(0.74 0.15 52);   --pc-tangerine-soft: oklch(0.31 0.06 52);  --pc-tangerine-fg: oklch(0.86 0.09 55);

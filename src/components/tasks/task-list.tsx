@@ -85,7 +85,6 @@ function GroupDrop({ id, children }: { id: string; children: ReactNode }) {
 }
 
 export function TaskList({ groups, showProject, sortable, readOnly, allowAdd, onMove, empty, className, triage, nativeDragType }: TaskListProps) {
-  const t = useTranslations();
   const selection = useUI((s) => s.selection);
   const toggleSelect = useUI((s) => s.toggleSelect);
   const setSelection = useUI((s) => s.setSelection);

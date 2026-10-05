@@ -33,22 +33,22 @@ function safeSet(key: string, value: string) {
 export function PwaManager() {
   const t = useTranslations("app");
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
-  const [showIos, setShowIos] = useState(false);
-  const [dismissed, setDismissed] = useState(true);
+  // rendered only after mount (see AppClient), so these read browser state directly
+  const [showIos] = useState(() => {
+    const standalone = window.matchMedia("(display-mode: standalone)").matches || (navigator as { standalone?: boolean }).standalone;
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !/crios|fxios/i.test(navigator.userAgent);
+    return Boolean(ios && !standalone);
+  });
+  const [dismissed, setDismissed] = useState(() => {
+    const visits = Number(safeGet(VISITS_KEY) ?? 0) + 1;
+    safeSet(VISITS_KEY, String(visits));
+    return Boolean(safeGet(DISMISS_KEY)) || visits < 2;
+  });
 
   useEffect(() => {
     if ("serviceWorker" in navigator && (process.env.NODE_ENV === "production" || location.search.includes("sw=1"))) {
       navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {});
     }
-    const visits = Number(safeGet(VISITS_KEY) ?? 0) + 1;
-    safeSet(VISITS_KEY, String(visits));
-    const wasDismissed = Boolean(safeGet(DISMISS_KEY));
-    setDismissed(wasDismissed || visits < 2);
-
-    const standalone = window.matchMedia("(display-mode: standalone)").matches || (navigator as { standalone?: boolean }).standalone;
-    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !/crios|fxios/i.test(navigator.userAgent);
-    if (ios && !standalone) setShowIos(true);
-
     const onPrompt = (e: Event) => {
       e.preventDefault();
       setDeferred(e as BeforeInstallPromptEvent);

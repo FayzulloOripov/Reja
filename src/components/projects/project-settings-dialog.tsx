@@ -2,7 +2,8 @@
 
 import { Copy, Send, Unplug } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useOnChange } from "@/hooks/use-synced-state";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -19,9 +20,7 @@ import { ColorPicker } from "../tasks/pickers";
 export function ProjectSettingsDialog({ project, open, onOpenChange, manager }: { project: Project; open: boolean; onOpenChange: (o: boolean) => void; manager: boolean }) {
   const t = useTranslations();
   const [form, setForm] = useState(project);
-  useEffect(() => {
-    if (open) setForm(project);
-  }, [open, project]);
+  useOnChange(open, (o) => o && setForm(project));
 
   function save() {
     const values: Partial<Project> = {
