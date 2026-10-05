@@ -3,6 +3,7 @@
 
 import { addDays, addMonths, startOfMonth, startOfWeek, zonedToUtc } from "../dates";
 import type {
+  Area,
   ChecklistItem,
   Goal,
   Habit,
@@ -31,6 +32,7 @@ const GUEST = "00000000-0000-4000-8000-000000000003";
 
 export interface DemoData {
   profiles: Profile[];
+  areas: Area[];
   workspaces: Workspace[];
   workspace_members: WorkspaceMember[];
   projects: Project[];
@@ -93,6 +95,12 @@ export function buildDemoData(userId: string, today: string, tz = "Asia/Tashkent
     ics_token: "demo-token",
     onboarded_at: ts,
     current_workspace_id: null,
+    work_start: "10:00:00",
+    work_end: "19:00:00",
+    day_start: "07:00:00",
+    day_end: "22:00:00",
+    daily_capacity_tasks: null,
+    daily_capacity_minutes: null,
     pomodoro_work: 25,
     pomodoro_break: 5,
     last_digest_on: null,
@@ -132,6 +140,7 @@ export function buildDemoData(userId: string, today: string, tz = "Asia/Tashkent
     health: null,
     health_manual: false,
     health_note: null,
+    area_id: null,
     owner_id: userId,
     position: n,
     share_token: null,
@@ -142,17 +151,37 @@ export function buildDemoData(userId: string, today: string, tz = "Asia/Tashkent
     ...extra,
   });
 
+  const area = (ws: string, name: string, color: string, pos: number): Area => ({
+    id: id(),
+    workspace_id: ws,
+    name,
+    color,
+    icon: null,
+    visibility: "workspace",
+    owner_id: userId,
+    position: pos,
+    archived_at: null,
+    deleted_at: null,
+    ...stamp,
+  });
+  const aJob = area(wsTeam.id, uz ? "Asosiy ish (demo)" : "Day job (demo)", "tangerine", 1);
+  const aAgency = area(wsTeam.id, uz ? "Agentlik" : "Agency", "indigo", 2);
+  const aPersonal = area(wsPersonal.id, uz ? "Shaxsiy" : "Personal", "rose", 3);
+  const areas = [aJob, aAgency, aPersonal];
+
   const pSales = proj(wsTeam.id, uz ? "Sotuv boʻlimi (demo)" : "Sales team (demo)", "tangerine", {
+    area_id: aJob.id,
     goal: uz ? "Oylik reja: 120 mln soʻm tushum" : "Monthly plan: 120M revenue",
     target_date: addDays(today, 26),
   });
   const pAgency = proj(wsTeam.id, uz ? "Agentlik mijozlari" : "Agency clients", "indigo", {
+    area_id: aAgency.id,
     goal: uz ? "3 ta yangi mijoz bilan shartnoma" : "Sign 3 new clients",
     target_date: addDays(today, 5),
   });
-  const pClinic = proj(wsTeam.id, uz ? "Demo klinika" : "Demo clinic", "emerald");
-  const pHome = proj(wsPersonal.id, uz ? "Uy va oila" : "Home & family", "rose");
-  const pHealth = proj(wsPersonal.id, uz ? "Sogʻliq" : "Health", "lime", { visibility: "private" });
+  const pClinic = proj(wsTeam.id, uz ? "Demo klinika" : "Demo clinic", "emerald", { area_id: aAgency.id });
+  const pHome = proj(wsPersonal.id, uz ? "Uy va oila" : "Home & family", "rose", { area_id: aPersonal.id });
+  const pHealth = proj(wsPersonal.id, uz ? "Sogʻliq" : "Health", "lime", { visibility: "private", area_id: aPersonal.id });
   const projects = [pSales, pAgency, pClinic, pHome, pHealth];
 
   const project_members: ProjectMember[] = [{ project_id: pClinic.id, user_id: GUEST, workspace_id: wsTeam.id, role: "member", created_at: ts }];
@@ -344,6 +373,7 @@ export function buildDemoData(userId: string, today: string, tz = "Asia/Tashkent
     profiles: [me, partner, guest],
     workspaces: [wsPersonal, wsTeam],
     workspace_members: members,
+    areas,
     projects,
     project_members,
     sections,

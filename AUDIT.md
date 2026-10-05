@@ -5,13 +5,13 @@ Status of every feature in the original spec and in the fix prompt.
 
 Tests: `tests/unit` (Vitest), `tests/db` (Postgres/RLS on PGlite), `e2e/demo` (Playwright against the in-browser demo, runs anywhere), `e2e/*.spec.ts` (Playwright against a real Supabase project, needs keys).
 
-_Last updated: phase 1 (audit and bugs)._
+_Last updated: phase 2 (backend prep)._
 
 ## 1. Bugs from user testing
 
 | # | Bug | Status | Fix (files) | Test |
 |---|---|---|---|---|
-| 1 | Demo mode only, nothing reaches a server | partial | Supabase is the default; demo is `/demo` (cookie) or `NEXT_PUBLIC_DEMO=1` — `src/app/demo`, `src/lib/demo/server.ts`, `src/proxy.ts`. Live Supabase project still needs keys (phase 2). | e2e/demo (all tests enter through `/demo`) |
+| 1 | Demo mode only, nothing reaches a server | blocked (keys) | Supabase is the default; the demo is `/demo` (cookie) or `NEXT_PUBLIC_DEMO=1` — `src/app/demo`, `src/lib/demo/server.ts`, `src/proxy.ts`; «Roʻyxatdan oʻtish» from the demo; after sign-up «Demodagi maʼlumotlaringiz» moves what was typed (`lib/demo/import.ts`, `settings/demo-import.tsx`, onboarding import step). Connecting the live project needs the Supabase keys. | unit `demo-import` · e2e `backend.spec` |
 | 2 | No projects page | missing | phase 3 | — |
 | 3 | Broken initials «H(» | done | `src/lib/text.ts` `initials()` | unit `testing-fixes` · e2e `initials skip brackets` |
 | 4 | Upcoming «12-okt · 12-okt», empty-day headers | done | `src/app/(app)/upcoming/page.tsx`, `TaskList` gap rows, `useFormat().weekdayDate` | unit `format` · e2e `upcoming shows weekday…` |
@@ -41,6 +41,10 @@ _Last updated: phase 1 (audit and bugs)._
 | 28 | Developer text shown to users | done | friendly «Telegram bot hozircha ishlamayapti…», single connect button | e2e `Telegram settings…` |
 | 29 | Small polish | done | quick-add close button; tooltips off on touch and row toolbar hidden on touch; subtask input stays open; «Fayl tanlash» on phones; mention list opens above when there is no room; palette reads status once; one add row on Home today; search shows dates; overdue group has no add row | e2e `quick add…`, `subtask input…`, `file area…`, `search results…` |
 
+### Also fixed in phase 2
+
+- Demo data could be lost on a quick reload: the IndexedDB snapshot is now saved on the first change at once (throttled, not debounced) and again on `pagehide`. Covered by e2e `planner JSON import … survives a reload`.
+
 ## 2. Worked in testing — keep working
 
 | Item | Status | Test |
@@ -62,7 +66,7 @@ All items in section 2 «Not tested yet» of the fix prompt: pending.
 
 | Feature | Status |
 |---|---|
-| Areas above projects | missing |
+| Areas above projects | partial — table, RLS, picker, wizard; sidebar/Home/reports grouping in phase 3 |
 | Waiting-for list | missing |
 | Outside contacts | missing |
 | Meetings and agenda | missing |
@@ -77,8 +81,8 @@ All items in section 2 «Not tested yet» of the fix prompt: pending.
 | Email digest fallback | partial (digest by email exists when the channel is on) |
 | Prayer-aware planning | missing |
 | Energy labels | missing |
-| Planner JSON import with real file | partial |
-| CSV import mapping/preview/duplicates/summary | missing |
+| Planner JSON import with real file | done — each planner area → area + project (or existing/inbox), confirmed in a preview; `created` kept; tested against the real file (30 tasks, 5 areas) |
+| CSV import mapping/preview/duplicates/summary | done — `settings/import.tsx`, `lib/import/planner.ts`; unit + e2e |
 | Export download button in demo | done (built in the browser) |
 | Weekly backups to owner | missing |
 | Session/device list | missing |
@@ -86,7 +90,7 @@ All items in section 2 «Not tested yet» of the fix prompt: pending.
 | Two-way Google Calendar | missing |
 | Goals fed by real data | missing |
 | PWA badge, share target | missing |
-| First-run wizard (full) | partial |
+| First-run wizard (full) | done — name/time zone, work days and hours (Mon–Sat, 10:00–19:00), areas + first projects, Telegram + push, import (planner/CSV/demo), invite a partner; every step skippable, reopen from Settings → Profile |
 
 ## 5. Original spec
 
@@ -115,6 +119,6 @@ All items in section 2 «Not tested yet» of the fix prompt: pending.
 | Digest, weekly review prompt, overdue nudge | done in code, blocked live | `server/scheduler/core.ts` |
 | Goals, habits, focus, reports | done | `src/app/(app)/*` |
 | Settings | done | `components/settings/*` |
-| CSV + planner import | partial | `lib/import/planner.ts` (phase 8) |
-| Onboarding | partial | `src/app/onboarding` (phase 2) |
+| CSV + planner import | done | `lib/import/planner.ts`, `components/settings/import.tsx` |
+| Onboarding | done | `src/app/onboarding/onboarding-client.tsx` |
 | Lighthouse ≥ 90 | not run | phase 8 |

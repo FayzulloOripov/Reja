@@ -35,8 +35,16 @@ async function fetchAllPages<T>(build: () => Query): Promise<T[]> {
   return out;
 }
 
+/** Loaders for tables added after the first release (kept separate so the list above stays readable). */
+function EXTRA_LOADERS(sb: SupabaseClient, userId: string): Partial<Record<TableName, () => Query>> {
+  void userId;
+  void sb;
+  return {};
+}
+
 // Tables kept in sync per workspace (all carry workspace_id).
 const WORKSPACE_TABLES: TableName[] = [
+  "areas",
   "projects",
   "project_members",
   "sections",
@@ -69,104 +77,51 @@ export function createSupabaseAdapter(): DataAdapter {
       const since120 = new Date(Date.now() - 120 * 86_400_000).toISOString();
       const since400 = new Date(Date.now() - 400 * 86_400_000).toISOString().slice(0, 10);
       const since60 = new Date(Date.now() - 60 * 86_400_000).toISOString().slice(0, 10);
+      const all = (t: string) => () => sb.from(t).select("*");
+      const live = (t: string) => () => sb.from(t).select("*").is("deleted_at", null);
+      const own = (t: string) => () => sb.from(t).select("*").eq("user_id", userId);
 
-      const sel = (t: string) => () => sb.from(t).select("*");
-      const [
-        profiles,
-        workspaces,
-        workspace_members,
-        projects,
-        project_members,
-        project_favorites,
-        sections,
-        tasks,
-        task_assignees,
-        task_watchers,
-        task_dependencies,
-        labels,
-        task_labels,
-        checklist_items,
-        reminders,
-        notifications,
-        goals,
-        key_results,
-        key_result_history,
-        notes,
-        habits,
-        habit_logs,
-        time_blocks,
-        time_entries,
-        saved_views,
-        templates,
-        invitations,
-      ] = await Promise.all([
-        fetchAllPages(sel("profiles")),
-        fetchAllPages(() => sb.from("workspaces").select("*").is("deleted_at", null)),
-        fetchAllPages(sel("workspace_members")),
-        fetchAllPages(() => sb.from("projects").select("*").is("deleted_at", null)),
-        fetchAllPages(sel("project_members")),
-        fetchAllPages(() => sb.from("project_favorites").select("*").eq("user_id", userId)),
-        fetchAllPages(() => sb.from("sections").select("*").is("deleted_at", null)),
+      // what the client keeps in memory; RLS decides which rows each user receives
+      const loaders: Partial<Record<TableName, () => Query>> = {
+        profiles: all("profiles"),
+        workspaces: live("workspaces"),
+        workspace_members: all("workspace_members"),
+        areas: live("areas"),
+        projects: live("projects"),
+        project_members: all("project_members"),
+        project_favorites: own("project_favorites"),
+        sections: live("sections"),
         // open tasks plus everything completed recently (reports look back 16 weeks)
-        fetchAllPages(() =>
+        tasks: () =>
           sb
             .from("tasks")
             .select("*")
             .is("deleted_at", null)
             .or(`status.in.(todo,in_progress,waiting),completed_at.gte.${since120},updated_at.gte.${since120}`),
-        ),
-        fetchAllPages(sel("task_assignees")),
-        fetchAllPages(sel("task_watchers")),
-        fetchAllPages(sel("task_dependencies")),
-        fetchAllPages(() => sb.from("labels").select("*").is("deleted_at", null)),
-        fetchAllPages(sel("task_labels")),
-        fetchAllPages(sel("checklist_items")),
-        fetchAllPages(() => sb.from("reminders").select("*").eq("user_id", userId).in("status", ["pending", "snoozed", "sending", "sent"])),
-        fetchAllPages(() => sb.from("notifications").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(200)),
-        fetchAllPages(() => sb.from("goals").select("*").is("deleted_at", null)),
-        fetchAllPages(sel("key_results")),
-        fetchAllPages(sel("key_result_history")),
-        fetchAllPages(() => sb.from("notes").select("*").is("deleted_at", null)),
-        fetchAllPages(() => sb.from("habits").select("*").eq("user_id", userId)),
-        fetchAllPages(() => sb.from("habit_logs").select("*").eq("user_id", userId).gte("date", since400)),
-        fetchAllPages(() => sb.from("time_blocks").select("*").eq("user_id", userId).gte("date", since60)),
-        fetchAllPages(() => sb.from("time_entries").select("*").gte("started_at", since120)),
-        fetchAllPages(sel("saved_views")),
-        fetchAllPages(sel("templates")),
-        fetchAllPages(() => sb.from("invitations").select("*").is("revoked_at", null)),
-      ]);
-
-      const rows = {
-        profiles,
-        workspaces,
-        workspace_members,
-        projects,
-        project_members,
-        project_favorites,
-        sections,
-        tasks,
-        task_assignees,
-        task_watchers,
-        task_dependencies,
-        labels,
-        task_labels,
-        checklist_items,
-        reminders,
-        notifications,
-        goals,
-        key_results,
-        key_result_history,
-        notes,
-        habits,
-        habit_logs,
-        time_blocks,
-        time_entries,
-        saved_views,
-        templates,
-        invitations,
-      } as Record<string, Record<string, unknown>[]>;
-
-      return indexRows(rows);
+        task_assignees: all("task_assignees"),
+        task_watchers: all("task_watchers"),
+        task_dependencies: all("task_dependencies"),
+        labels: live("labels"),
+        task_labels: all("task_labels"),
+        checklist_items: all("checklist_items"),
+        reminders: () => sb.from("reminders").select("*").eq("user_id", userId).in("status", ["pending", "snoozed", "sending", "sent"]),
+        notifications: () => sb.from("notifications").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(200),
+        goals: live("goals"),
+        key_results: all("key_results"),
+        key_result_history: all("key_result_history"),
+        notes: live("notes"),
+        habits: own("habits"),
+        habit_logs: () => sb.from("habit_logs").select("*").eq("user_id", userId).gte("date", since400),
+        time_blocks: () => sb.from("time_blocks").select("*").eq("user_id", userId).gte("date", since60),
+        time_entries: () => sb.from("time_entries").select("*").gte("started_at", since120),
+        saved_views: all("saved_views"),
+        templates: all("templates"),
+        invitations: () => sb.from("invitations").select("*").is("revoked_at", null),
+        ...EXTRA_LOADERS(sb, userId),
+      };
+      const entries = Object.entries(loaders) as [TableName, () => Query][];
+      const results = await Promise.all(entries.map(([, build]) => fetchAllPages<Record<string, unknown>>(build)));
+      return indexRows(Object.fromEntries(entries.map(([table], i) => [table, results[i]])));
     },
 
     async exec(op: Op) {

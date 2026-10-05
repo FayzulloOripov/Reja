@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Copy, Download, FileJson, Link2, Loader2, LogOut, Mail, RefreshCw, Send, Sparkles, Trash2, Undo2, Upload, X } from "lucide-react";
+import { CalendarDays, Copy, Download, FileJson, Link2, Loader2, LogOut, Mail, RefreshCw, Send, Sparkles, Trash2, Undo2, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -16,15 +16,16 @@ import { isDemo, useIsDemo } from "@/hooks/use-demo";
 import { downloadText, toCSV } from "@/lib/csv";
 import { EXPORT_TABLES, exportFileName, taskCsvRows } from "@/lib/export";
 import { useFormat } from "@/lib/format";
-import { mapCsvImport, mapPlannerImport, type ImportPlan } from "@/lib/import/planner";
 import { isWorkspaceAdmin } from "@/lib/permissions";
 import type { Note, Project, ProjectTemplateData, Task, WorkspaceRole } from "@/lib/types";
-import { createLabel, createProject, createWorkspace, deleteLabel, deleteTaskForever, restoreProject, restoreTask, runImport, updateLabel, updateProfile, updateWorkspace } from "@/store/actions";
-import { useCurrentWorkspace, useLabels, useMe, useMembers, useProjects, useToday, useTz, useUserId, useWorkspaceRole, useWorkspaces } from "@/store/hooks";
+import { createLabel, createProject, createWorkspace, deleteLabel, deleteTaskForever, restoreProject, restoreTask, updateLabel, updateProfile, updateWorkspace } from "@/store/actions";
+import { useCurrentWorkspace, useLabels, useMe, useMembers, useToday, useTz, useUserId, useWorkspaceRole, useWorkspaces } from "@/store/hooks";
 import { mergeRows, mutate, useStore } from "@/store/store";
 import { createInvitation } from "@/server/actions/invitations";
 import { integrationStatus, sendTestNotification, type IntegrationStatus } from "@/server/actions/notifications";
 import { SettingsCard, SettingsRow } from "./common";
+import { DemoImportCard } from "./demo-import";
+import { ImportPanel } from "./import";
 import { useSyncedState } from "@/hooks/use-synced-state";
 
 /** Export the workspace from the data loaded in this browser (used by the demo). */
@@ -504,24 +505,6 @@ export function DataSection() {
   const t = useTranslations();
   const demo = useIsDemo();
   const ws = useCurrentWorkspace();
-  const projects = useProjects(ws?.id, { includeArchived: true });
-  const today = useToday();
-  const [plan, setPlan] = useState<ImportPlan | null>(null);
-  const [fileName, setFileName] = useState("");
-  const fileRef = useRef<HTMLInputElement>(null);
-
-  async function onFile(file: File) {
-    setFileName(file.name);
-    try {
-      const text = await file.text();
-      const existing = projects.map((p) => ({ id: p.id, name: p.name }));
-      const next = file.name.toLowerCase().endsWith(".json") || text.trim().startsWith("{") ? mapPlannerImport(JSON.parse(text), { today, existingProjects: existing }) : mapCsvImport(text, { existingProjects: existing });
-      setPlan(next);
-    } catch (e) {
-      setPlan(null);
-      toast.error(t("settings.importError", { message: (e as Error).message.slice(0, 200) }));
-    }
-  }
 
   if (!ws) return null;
   return (
@@ -542,36 +525,10 @@ export function DataSection() {
           )}
         </div>
       </SettingsCard>
+      <DemoImportCard />
       <SettingsCard title={t("settings.importTitle")} description={t("settings.importHint")}>
-        <div className="space-y-3 px-5 py-4">
-          <input ref={fileRef} type="file" accept=".json,.csv,application/json,text/csv" hidden onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
-          <Button variant="outline" onClick={() => fileRef.current?.click()}><Upload /> {t("settings.importChoose")}</Button>
-          {fileName && <p className="text-xs text-muted-foreground">{fileName}</p>}
-          {plan && (
-            <div className="space-y-3 rounded-xl border bg-muted/40 p-3">
-              <p className="text-sm font-medium">{t("settings.importPreview", { tasks: plan.tasks.length, projects: plan.newProjects.length })}</p>
-              {plan.newProjects.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {plan.newProjects.map((p) => (
-                    <span key={p.key} className="inline-flex items-center gap-1.5 rounded-md bg-card px-2 py-1 text-xs"><ProjectDot color={p.color} size="sm" /> {p.name}</span>
-                  ))}
-                </div>
-              )}
-              <ul className="max-h-40 space-y-0.5 overflow-y-auto text-xs text-muted-foreground">
-                {plan.tasks.slice(0, 12).map((x, i) => <li key={i} className="truncate">• {x.title}{x.dueDate ? ` — ${x.dueDate}` : ""}</li>)}
-              </ul>
-              <Button
-                onClick={() => {
-                  const n = runImport(plan, ws.id);
-                  toast.success(t("settings.importDone", { count: n }));
-                  setPlan(null);
-                  setFileName("");
-                }}
-              >
-                {t("settings.importRun")}
-              </Button>
-            </div>
-          )}
+        <div className="px-5 py-4">
+          <ImportPanel />
         </div>
       </SettingsCard>
     </div>

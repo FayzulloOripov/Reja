@@ -6,6 +6,7 @@ import { DEFAULT_TIMEZONE } from "@/lib/env";
 import { suggestHealth, effectiveHealth, isOpen } from "@/lib/health";
 import { projectAccess, type Access } from "@/lib/permissions";
 import type {
+  Area,
   ChecklistItem,
   Label,
   Profile,
@@ -167,6 +168,19 @@ export function useProjectPeople(project: Project | undefined): Profile[] {
 
 export function useProfiles(): Record<string, Profile> {
   return useStore((s) => s.data.profiles);
+}
+
+// ------------------------------------------------------------------ areas
+
+export function useAreas(workspaceId?: string): Area[] {
+  const areas = useStore((s) => s.data.areas);
+  return useMemo(
+    () =>
+      Object.values(areas)
+        .filter((a) => !a.deleted_at && !a.archived_at && (!workspaceId || a.workspace_id === workspaceId))
+        .sort((a, b) => a.position - b.position || a.name.localeCompare(b.name)),
+    [areas, workspaceId],
+  );
 }
 
 // ------------------------------------------------------------------ projects

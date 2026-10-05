@@ -19,12 +19,14 @@ import { useCurrentWorkspace, useToday } from "@/store/hooks";
 import { useStore } from "@/store/store";
 import { useUI } from "@/store/ui";
 import { ColorPicker } from "../tasks/pickers";
+import { AreaPicker } from "./area-picker";
 import { PROJECT_COLORS } from "@/lib/colors";
 
 export function NewProjectDialog() {
   const t = useTranslations();
   const locale = useLocale() as "uz" | "en";
   const open = useUI((s) => s.newProjectOpen);
+  const defaults = useUI((s) => s.newProjectDefaults);
   const setOpen = useUI((s) => s.setNewProject);
   const router = useRouter();
   const ws = useCurrentWorkspace();
@@ -33,7 +35,7 @@ export function NewProjectDialog() {
   const [name, setName] = useState("");
   const [color, setColor] = useState<string>("sky");
   const [visibility, setVisibility] = useState<"workspace" | "private">("workspace");
-  const [area, setArea] = useState("");
+  const [areaId, setAreaId] = useState<string | null>(null);
   const [goal, setGoal] = useState("");
   const [start, setStart] = useState("");
   const [target, setTarget] = useState("");
@@ -44,7 +46,7 @@ export function NewProjectDialog() {
     setName("");
     setColor(PROJECT_COLORS[Math.floor(Math.random() * PROJECT_COLORS.length)]);
     setVisibility(ws?.is_personal ? "private" : "workspace");
-    setArea("");
+    setAreaId(defaults?.areaId ?? null);
     setGoal("");
     setStart("");
     setTarget("");
@@ -69,7 +71,7 @@ export function NewProjectDialog() {
         name,
         color,
         visibility,
-        area: area || null,
+        area_id: areaId,
         goal: goal || null,
         start_date: start || (chosen ? today : null),
         target_date: target || null,
@@ -161,7 +163,7 @@ export function NewProjectDialog() {
             <Label htmlFor="p-area">
               {t("project.area")} <span className="font-normal text-muted-foreground">({t("common.optional")})</span>
             </Label>
-            <Input id="p-area" value={area} onChange={(e) => setArea(e.target.value)} placeholder={t("project.areaPlaceholder")} />
+            {ws && <AreaPicker id="p-area" workspaceId={ws.id} value={areaId} onChange={setAreaId} />}
           </div>
 
           <div className="space-y-1.5">

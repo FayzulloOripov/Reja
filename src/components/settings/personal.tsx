@@ -106,7 +106,60 @@ export function ProfileSection() {
           })}
         </div>
       </SettingsRow>
+      <SettingsRow label={t("settings.workHours")} description={t("settings.workHoursHint")}>
+        <TimeRange start={me.work_start} end={me.work_end} fallback={["10:00", "19:00"]} onChange={(work_start, work_end) => updateProfile({ work_start, work_end })} label={t("settings.workHours")} />
+      </SettingsRow>
+      <SettingsRow label={t("settings.dayHours")} description={t("settings.dayHoursHint")}>
+        <TimeRange start={me.day_start} end={me.day_end} fallback={["07:00", "22:00"]} onChange={(day_start, day_end) => updateProfile({ day_start, day_end })} label={t("settings.dayHours")} />
+      </SettingsRow>
+      <SettingsRow label={t("settings.capacity")} description={t("settings.capacityHint")}>
+        <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Input
+            type="number"
+            min={1}
+            max={100}
+            className="w-20 tnum"
+            defaultValue={me.daily_capacity_tasks ?? ""}
+            key={`ct-${me.daily_capacity_tasks}`}
+            onBlur={(e) => updateProfile({ daily_capacity_tasks: e.target.value ? Math.max(1, Math.min(100, Number(e.target.value))) : null })}
+            aria-label={t("settings.capacityTasks")}
+          />
+          {t("settings.capacityTasksUnit")}
+        </label>
+        <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Input
+            type="number"
+            min={0.5}
+            max={24}
+            step={0.5}
+            className="w-20 tnum"
+            defaultValue={me.daily_capacity_minutes ? me.daily_capacity_minutes / 60 : ""}
+            key={`cm-${me.daily_capacity_minutes}`}
+            onBlur={(e) => updateProfile({ daily_capacity_minutes: e.target.value ? Math.round(Math.max(0.25, Math.min(24, Number(e.target.value))) * 60) : null })}
+            aria-label={t("settings.capacityHours")}
+          />
+          {t("settings.capacityHoursUnit")}
+        </label>
+      </SettingsRow>
+      <SettingsRow label={t("onboarding.reopen")}>
+        <Button variant="outline" size="sm" onClick={() => router.push("/onboarding")}>
+          {t("onboarding.reopen")}
+        </Button>
+      </SettingsRow>
     </SettingsCard>
+  );
+}
+
+function TimeRange({ start, end, fallback, onChange, label }: { start: string | null; end: string | null; fallback: [string, string]; onChange: (start: string, end: string) => void; label: string }) {
+  const t = useTranslations("settings");
+  const s = timeValue(start) || fallback[0];
+  const e = timeValue(end) || fallback[1];
+  return (
+    <>
+      <Input type="time" className="w-28 tnum" value={s} onChange={(ev) => ev.target.value && onChange(ev.target.value, e)} aria-label={`${label}: ${t("from")}`} />
+      <span className="text-xs text-muted-foreground">–</span>
+      <Input type="time" className="w-28 tnum" value={e} onChange={(ev) => ev.target.value && onChange(s, ev.target.value)} aria-label={`${label}: ${t("to")}`} />
+    </>
   );
 }
 

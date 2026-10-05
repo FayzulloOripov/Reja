@@ -1,0 +1,8 @@
+{
+  "tasks": [
+    { "title": "Oylik hisobotni yakunlash (namuna)", "area": "topcoach", "pri": 3, "top": true, "done": false, "note": "Sariq kataklar", "due": null, "bucket": "kun", "day": "2026-10-05" },
+    { "title": "Mijozga taklif yuborish (namuna)", "area": "agentlik", "pri": 2, "top": false, "done": false, "note": "", "due": "2026-10-10", "bucket": "hafta", "day": null },
+    { "title": "Kitob oʻqish (namuna)", "area": "shaxsiy", "pri": 1, "top": false, "done": true, "note": "", "due": null, "bucket": "keyin", "day": null },
+    { "title": "", "area": "shaxsiy", "pri": 1, "top": false, "done": false, "note": "", "due": null, "bucket": "keyin", "day": null }
+  ]
+}

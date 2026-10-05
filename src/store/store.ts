@@ -66,15 +66,38 @@ const SNAPSHOT_VERSION = 4;
 const snapshotKey = (uid: string) => `reja:snapshot:v${SNAPSHOT_VERSION}:${uid}`;
 let persistTimer: ReturnType<typeof setTimeout> | null = null;
 
-function schedulePersist() {
+function persistNow() {
   if (persistTimer) clearTimeout(persistTimer);
-  persistTimer = setTimeout(() => {
-    const { userId, data, outbox, lastSyncedAt } = getState();
-    if (!userId) return;
-    // comments/attachments/activity are fetched on demand and not needed offline
-    const slim = { ...data, comments: {}, comment_reactions: {}, attachments: {}, activity_log: {} };
-    void set(snapshotKey(userId), { data: slim, outbox, lastSyncedAt }).catch(() => {});
-  }, 400);
+  persistTimer = null;
+  lastPersist = Date.now();
+  const { userId, data, outbox, lastSyncedAt } = getState();
+  if (!userId) return;
+  // comments/attachments/activity are fetched on demand and not needed offline
+  const slim = { ...data, comments: {}, comment_reactions: {}, attachments: {}, activity_log: {} };
+  void set(snapshotKey(userId), { data: slim, outbox, lastSyncedAt }).catch(() => {});
+}
+
+let lastPersist = 0;
+
+/**
+ * Throttled with a leading edge: the first change is saved at once (a reload right after an import
+ * keeps it), and a burst of further changes is saved again at most every 150 ms.
+ */
+function schedulePersist() {
+  if (persistTimer) return;
+  const wait = lastPersist + 150 - Date.now();
+  if (wait <= 0) {
+    // after the current synchronous updates (one mutate can touch many tables)
+    persistTimer = setTimeout(persistNow, 0);
+  } else {
+    persistTimer = setTimeout(persistNow, wait);
+  }
+}
+
+// save right away when the page is hidden or closed, so a quick reload never loses a change
+if (typeof window !== "undefined") {
+  window.addEventListener("pagehide", () => persistTimer && persistNow());
+  document.addEventListener("visibilitychange", () => document.visibilityState === "hidden" && persistTimer && persistNow());
 }
 
 useStore.subscribe((s, prev) => {
@@ -83,6 +106,23 @@ useStore.subscribe((s, prev) => {
 
 export async function clearSnapshot(uid: string) {
   await del(snapshotKey(uid)).catch(() => {});
+}
+
+/** Another user's saved data in this browser (used to import what was typed in the demo). */
+export async function readSnapshot(uid: string): Promise<StoreData | null> {
+  for (let v = SNAPSHOT_VERSION; v >= 3; v--) {
+    try {
+      const snap = (await get(`reja:snapshot:v${v}:${uid}`)) as { data?: StoreData } | undefined;
+      if (snap?.data) return snap.data;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+export async function deleteSnapshots(uid: string) {
+  for (let v = SNAPSHOT_VERSION; v >= 3; v--) await del(`reja:snapshot:v${v}:${uid}`).catch(() => {});
 }
 
 // ------------------------------------------------------------------ local apply

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AreaPicker } from "./area-picker";
 import { Textarea } from "@/components/ui/textarea";
 import { TELEGRAM_BOT_USERNAME } from "@/lib/env";
 import type { Project, ProjectStatus } from "@/lib/types";
@@ -30,7 +31,7 @@ export function ProjectSettingsDialog({ project, open, onOpenChange, manager }: 
       start_date: form.start_date || null,
       target_date: form.target_date || null,
       goal: form.goal || null,
-      area: form.area || null,
+      area_id: form.area_id,
     };
     if (manager) values.visibility = form.visibility;
     updateProject(project.id, values);
@@ -103,7 +104,7 @@ export function ProjectSettingsDialog({ project, open, onOpenChange, manager }: 
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="ps-area">{t("project.area")}</Label>
-            <Input id="ps-area" value={form.area ?? ""} onChange={(e) => setForm({ ...form, area: e.target.value })} placeholder={t("project.areaPlaceholder")} />
+            <AreaPicker id="ps-area" workspaceId={project.workspace_id} value={form.area_id} onChange={(area_id) => setForm({ ...form, area_id })} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="ps-goal">{t("project.goal")}</Label>

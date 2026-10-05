@@ -56,6 +56,14 @@ export interface Profile {
   ics_token: string | null;
   onboarded_at: ISODateTime | null;
   current_workspace_id: UUID | null;
+  /** working hours (wizard default 10:00–19:00) and the visible day on timelines */
+  work_start: string;
+  work_end: string;
+  day_start: string;
+  day_end: string;
+  /** optional daily capacity for the workload view */
+  daily_capacity_tasks: number | null;
+  daily_capacity_minutes: number | null;
   pomodoro_work: number;
   pomodoro_break: number;
   last_digest_on: ISODate | null;
@@ -108,7 +116,9 @@ export interface Project {
   description: RichDoc;
   color: string;
   icon: string | null;
+  /** legacy free-text area (kept for old exports); areas are rows now */
   area: string | null;
+  area_id: UUID | null;
   status: ProjectStatus;
   visibility: "workspace" | "private";
   start_date: ISODate | null;
@@ -152,6 +162,21 @@ export interface Section {
   created_at: ISODateTime;
   updated_at: ISODateTime;
   deleted_at: ISODateTime | null;
+}
+
+export interface Area {
+  id: UUID;
+  workspace_id: UUID;
+  name: string;
+  color: string;
+  icon: string | null;
+  visibility: "workspace" | "private";
+  owner_id: UUID;
+  position: number;
+  archived_at: ISODateTime | null;
+  deleted_at: ISODateTime | null;
+  created_at: ISODateTime;
+  updated_at: ISODateTime;
 }
 
 export interface Task {

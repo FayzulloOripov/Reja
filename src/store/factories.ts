@@ -2,6 +2,7 @@
 // local copy is complete before the server echoes it back.
 
 import type {
+  Area,
   ChecklistItem,
   Comment,
   Goal,
@@ -72,6 +73,7 @@ export function newProject(p: Partial<Project> & Pick<Project, "workspace_id" | 
     health: null,
     health_manual: false,
     health_note: null,
+    area_id: null,
     owner_id: null,
     position: Date.now(),
     share_token: null,
@@ -198,4 +200,8 @@ export function newSavedView(p: Partial<SavedView> & Pick<SavedView, "workspace_
 
 export function newTemplate(p: Partial<Template> & Pick<Template, "workspace_id" | "name" | "kind" | "data">): Template {
   return { id: uuid(), description: null, created_by: null, created_at: now(), updated_at: now(), ...p };
+}
+
+export function newArea(p: Partial<Area> & Pick<Area, "workspace_id" | "name" | "owner_id">): Area {
+  return { id: uuid(), color: "sky", icon: null, visibility: "workspace", position: Date.now(), archived_at: null, deleted_at: null, created_at: now(), updated_at: now(), ...p };
 }

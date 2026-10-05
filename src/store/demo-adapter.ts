@@ -28,7 +28,7 @@ export function createDemoAdapter(lang: "uz" | "en"): DataAdapter {
     },
 
     async exec() {
-      await new Promise((r) => setTimeout(r, 30));
+      // nothing to send: the change is already in the store and the snapshot
     },
 
     subscribe() {

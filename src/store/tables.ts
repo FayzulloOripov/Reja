@@ -1,5 +1,6 @@
 import type {
   ActivityEntry,
+  Area,
   Attachment,
   ChecklistItem,
   Comment,
@@ -37,6 +38,7 @@ export interface Tables {
   workspaces: Workspace;
   workspace_members: WorkspaceMember;
   invitations: Invitation;
+  areas: Area;
   projects: Project;
   project_members: ProjectMember;
   project_favorites: ProjectFavorite;
@@ -75,6 +77,7 @@ export const PK: { [T in TableName]: (keyof Tables[T] & string)[] } = {
   workspaces: ["id"],
   workspace_members: ["workspace_id", "user_id"],
   invitations: ["id"],
+  areas: ["id"],
   projects: ["id"],
   project_members: ["project_id", "user_id"],
   project_favorites: ["user_id", "project_id"],
@@ -129,6 +132,12 @@ export const PROFILE_EDITABLE = [
   "current_workspace_id",
   "pomodoro_work",
   "pomodoro_break",
+  "work_start",
+  "work_end",
+  "day_start",
+  "day_end",
+  "daily_capacity_tasks",
+  "daily_capacity_minutes",
 ] as const;
 
 export type StoreData = { [T in TableName]: Record<string, Row<T>> };

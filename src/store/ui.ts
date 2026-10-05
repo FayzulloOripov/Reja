@@ -10,6 +10,8 @@ interface UIState {
   paletteOpen: boolean;
   shortcutsOpen: boolean;
   newProjectOpen: boolean;
+  /** prefilled values for the new-project dialog (e.g. created from an area group) */
+  newProjectDefaults: { areaId?: string | null } | null;
   selection: string[];
   sidebarCollapsed: boolean;
   openTask: (id: string | null) => void;
@@ -17,7 +19,7 @@ interface UIState {
   closeQuickAdd: () => void;
   setPalette: (open: boolean) => void;
   setShortcuts: (open: boolean) => void;
-  setNewProject: (open: boolean) => void;
+  setNewProject: (open: boolean, defaults?: { areaId?: string | null }) => void;
   toggleSelect: (id: string, range?: string[]) => void;
   setSelection: (ids: string[]) => void;
   clearSelection: () => void;
@@ -32,6 +34,7 @@ export const useUI = create<UIState>()(
       paletteOpen: false,
       shortcutsOpen: false,
       newProjectOpen: false,
+      newProjectDefaults: null,
       selection: [],
       sidebarCollapsed: false,
       openTask: (id) => set({ taskPanelId: id }),
@@ -39,7 +42,7 @@ export const useUI = create<UIState>()(
       closeQuickAdd: () => set({ quickAdd: { open: false } }),
       setPalette: (open) => set({ paletteOpen: open }),
       setShortcuts: (open) => set({ shortcutsOpen: open }),
-      setNewProject: (open) => set({ newProjectOpen: open }),
+      setNewProject: (open, defaults) => set({ newProjectOpen: open, newProjectDefaults: open ? (defaults ?? null) : null }),
       toggleSelect: (id, range) =>
         set((s) => {
           if (range?.length) return { selection: Array.from(new Set([...s.selection, ...range])) };

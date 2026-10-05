@@ -8,8 +8,11 @@ import { showUndo } from "@/components/common/undo-toast";
 import { addDays, todayIn, zonedToUtc } from "@/lib/dates";
 import { formatter, tr } from "@/lib/i18n-client";
 import { computeRemindAt } from "@/lib/reminders";
+import { finalizePlan, type ImportPlan, type Skipped } from "@/lib/import/planner";
 import { planCompletion } from "@/lib/tasks/complete";
+import { fold } from "@/lib/text";
 import type {
+  Area,
   Comment,
   Goal,
   Habit,
@@ -27,6 +30,7 @@ import type {
   Workspace,
 } from "@/lib/types";
 import {
+  newArea,
   newChecklistItem,
   newComment,
   newGoal,
@@ -445,6 +449,28 @@ export function deleteAttachment(id: string) {
   undoToast(tr("common.deleted"), inverse);
 }
 
+// ------------------------------------------------------------------ areas
+
+export function createArea(input: { workspaceId: string; name: string; color?: string; visibility?: "workspace" | "private" }): Area {
+  const area = newArea({ workspace_id: input.workspaceId, name: input.name.trim(), color: input.color ?? "sky", visibility: input.visibility ?? "workspace", owner_id: uid() });
+  mutate([{ table: "areas", kind: "insert", row: area }]);
+  return area;
+}
+
+export function updateArea(id: string, values: Partial<Area>) {
+  mutate([{ table: "areas", kind: "update", row: { id }, values }]);
+}
+
+/** Deleting an area keeps its projects (they simply have no area). */
+export function deleteArea(area: Area) {
+  const d = S().data;
+  const ops: MutationInput[] = Object.values(d.projects)
+    .filter((p) => p.area_id === area.id)
+    .map((p) => ({ table: "projects" as const, kind: "update" as const, row: { id: p.id }, values: { area_id: null } }));
+  ops.push({ table: "areas", kind: "update", row: { id: area.id }, values: { deleted_at: nowIso() } });
+  undoToast(tr("common.deleted"), mutate(ops));
+}
+
 // ------------------------------------------------------------------ projects & sections
 
 export function createProject(input: Partial<Project> & { name: string; workspace_id: string }, template?: { sections: string[]; tasks: TemplateTask[] }): Project {
@@ -655,21 +681,43 @@ export function updateWorkspace(id: string, values: Partial<Workspace>) {
 
 // ------------------------------------------------------------------ import
 
-/** Create the projects and tasks of an import plan in one optimistic batch. */
-export function runImport(plan: import("@/lib/import/planner").ImportPlan, workspaceId: string): number {
-  const projectIds: Record<string, string> = { ...plan.existing };
+/**
+ * Create the areas, projects and tasks of an import plan in one optimistic batch.
+ * Returns how many tasks were added and which rows were skipped (with the reason).
+ */
+export function runImport(plan: ImportPlan, workspaceId: string, opts: { skipDuplicates: boolean } = { skipDuplicates: true }): { added: number; skipped: Skipped[] } {
+  const { rows, skipped } = finalizePlan(plan, opts);
   const ops: MutationInput[] = [];
+  const areaIds: Record<string, string> = {};
+  const projectIds: Record<string, string | null> = {};
+  const usedGroups = new Set(rows.map((r) => (r.group ? fold(r.group) : "")));
   let pos = Date.now();
-  for (const p of plan.newProjects) {
-    const project = newProject({ workspace_id: workspaceId, name: p.name, color: p.color, owner_id: uid(), position: pos++ });
-    projectIds[p.key] = project.id;
-    ops.push({ table: "projects", kind: "insert", row: project });
+  for (const g of plan.groups) {
+    if (!usedGroups.has(g.key)) continue;
+    const target = g.target;
+    if (target.kind === "existing") projectIds[g.key] = target.projectId;
+    else if (target.kind === "inbox") projectIds[g.key] = null;
+    else {
+      let areaId: string | null = null;
+      if (target.area?.kind === "existing") areaId = target.area.areaId;
+      else if (target.area?.kind === "new") {
+        const k = fold(target.area.name);
+        if (!areaIds[k]) {
+          const area = newArea({ workspace_id: workspaceId, name: target.area.name, color: target.area.color || target.color, owner_id: uid(), position: pos++ });
+          ops.push({ table: "areas", kind: "insert", row: area });
+          areaIds[k] = area.id;
+        }
+        areaId = areaIds[k];
+      }
+      const project = newProject({ workspace_id: workspaceId, name: target.projectName, color: target.color, owner_id: uid(), area_id: areaId, position: pos++ });
+      ops.push({ table: "projects", kind: "insert", row: project });
+      projectIds[g.key] = project.id;
+    }
   }
-  for (const t of plan.tasks) {
-    const projectId = t.projectKey ? (projectIds[t.projectKey] ?? null) : null;
-    const project = projectId ? S().data.projects[projectId] : undefined;
+  for (const t of rows) {
+    const projectId = t.group ? (projectIds[fold(t.group)] ?? null) : null;
     const task = newTask({
-      workspace_id: project?.workspace_id ?? workspaceId,
+      workspace_id: workspaceId,
       project_id: projectId,
       title: t.title,
       priority: t.priority,
@@ -678,13 +726,19 @@ export function runImport(plan: import("@/lib/import/planner").ImportPlan, works
       due_date: t.dueDate,
       deadline: t.deadline,
       top_date: t.topDate,
-      description: t.note ? { type: "doc", content: t.note.split(/\n+/).map((line) => ({ type: "paragraph", content: [{ type: "text", text: line }] })) } : null,
+      description: textDoc(t.note),
       created_by: uid(),
       source: "import",
       position: pos++,
+      ...(t.createdAt ? { created_at: t.createdAt } : {}),
     });
     ops.push({ table: "tasks", kind: "insert", row: task });
   }
-  mutate(ops);
-  return plan.tasks.length;
+  if (ops.length) mutate(ops);
+  return { added: rows.length, skipped };
+}
+
+function textDoc(text: string | null): RichDoc {
+  if (!text) return null;
+  return { type: "doc", content: text.split(/\n+/).map((line) => ({ type: "paragraph", content: line ? [{ type: "text", text: line }] : [] })) };
 }
