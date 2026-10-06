@@ -19,6 +19,7 @@ const TABLES = [
   "task_labels", "checklist_items", "comments", "comment_reactions", "attachments", "time_entries", "reminders", "notifications",
   "activity_log", "goals", "key_results", "key_result_history", "notes", "habits", "habit_logs", "time_blocks", "saved_views",
   "templates", "rate_limits", "areas",
+  "contacts", "meetings", "meeting_attendees", "meeting_items", "weekly_reviews", "daily_shutdowns", "routines", "routine_runs",
 ] as const;
 type Table = (typeof TABLES)[number];
 
@@ -59,10 +60,21 @@ const FIXTURE: Record<Table, () => string> = {
   templates: () => `workspace_id = '${ids.W}'`,
   rate_limits: () => `key = 'matrix:${owner.id}'`,
   areas: () => `workspace_id = '${ids.W}'`,
+  contacts: () => `workspace_id = '${ids.W}'`,
+  meetings: () => `workspace_id = '${ids.W}'`,
+  meeting_attendees: () => `workspace_id = '${ids.W}'`,
+  meeting_items: () => `workspace_id = '${ids.W}'`,
+  weekly_reviews: () => `user_id = '${owner.id}'`,
+  daily_shutdowns: () => `user_id = '${owner.id}'`,
+  routines: () => `workspace_id = '${ids.W}'`,
+  routine_runs: () => `workspace_id = '${ids.W}'`,
 };
 
 /** Rows only the owner may ever see (partner, viewer and outsider see none). */
-const PRIVATE: Table[] = ["push_subscriptions", "telegram_link_codes", "project_favorites", "reminders", "notifications", "habits", "habit_logs", "time_blocks"];
+const PRIVATE: Table[] = [
+  "push_subscriptions", "telegram_link_codes", "project_favorites", "reminders", "notifications", "habits", "habit_logs", "time_blocks",
+  "weekly_reviews", "daily_shutdowns", "routines", "routine_runs",
+];
 /** Writes a project viewer must not be able to make. */
 const VIEWER_READ_ONLY: Table[] = ["projects", "sections", "tasks", "checklist_items", "task_labels", "task_assignees", "notes"];
 
@@ -113,6 +125,16 @@ beforeAll(async () => {
     await tx.query(`insert into saved_views (workspace_id, user_id, name) values ($1, $2, 'Mine')`, [ids.W, owner.id]);
     await tx.query(`insert into templates (workspace_id, kind, name, data) values ($1, 'project', 'Tpl', '{}')`, [ids.W]);
     await tx.query(`insert into push_subscriptions (user_id, endpoint, p256dh, auth) values ($1, $2, 'k', 'a')`, [owner.id, `https://push.example/${owner.id}`]);
+    ids.CT = await one(`insert into contacts (workspace_id, name) values ($1, 'CTO') returning id`, [ids.W]);
+    await tx.query(`update tasks set waiting_on_contact_id = $1, follow_up_date = '2030-01-12' where id = $2`, [ids.CT, ids.T]);
+    ids.M = await one(`insert into meetings (workspace_id, title, starts_at) values ($1, 'Weekly', '2030-01-11T14:30:00Z') returning id`, [ids.W]);
+    await tx.query(`insert into meeting_attendees (meeting_id, contact_id) values ($1, $2)`, [ids.M, ids.CT]);
+    await tx.query(`insert into meeting_attendees (meeting_id, user_id) values ($1, $2)`, [ids.M, owner.id]);
+    await tx.query(`insert into meeting_items (meeting_id, kind, text, task_id) values ($1, 'agenda', 'Numbers', $2), ($1, 'decision', 'Hire', null)`, [ids.M, ids.T]);
+    await tx.query(`insert into weekly_reviews (user_id, week_start, data) values ($1, '2030-01-06', '{}')`, [owner.id]);
+    await tx.query(`insert into daily_shutdowns (user_id, date, data) values ($1, '2030-01-10', '{}')`, [owner.id]);
+    ids.R = await one(`insert into routines (workspace_id, owner_id, name, items) values ($1, $2, 'Morning', '["Water","Plan"]') returning id`, [ids.W, owner.id]);
+    await tx.query(`insert into routine_runs (routine_id, user_id, date, checked) values ($1, $2, '2030-01-10', '[0]')`, [ids.R, owner.id]);
   });
   // rows that only the server writes
   await asService(db, async (tx) => {
@@ -158,7 +180,7 @@ describe("RLS matrix (every table)", () => {
       // a profile is visible only to people who share a workspace with it
       expect(visible, `${table} visible to outsider`).toBe(0);
     }
-    for (const table of ["workspaces", "projects", "sections", "tasks", "labels", "checklist_items", "comments", "goals", "key_results", "notes", "saved_views", "templates", "areas", "invitations", "attachments", "time_entries", "habits", "time_blocks", "reminders"] as Table[]) {
+    for (const table of ["workspaces", "projects", "sections", "tasks", "labels", "checklist_items", "comments", "goals", "key_results", "notes", "saved_views", "templates", "areas", "invitations", "attachments", "time_entries", "habits", "time_blocks", "reminders", "contacts", "meetings", "meeting_items", "weekly_reviews", "daily_shutdowns", "routines", "routine_runs"] as Table[]) {
       expect(await updated(outsider, table, "created_at"), `${table} update by outsider`).toBe(0);
       expect(await deleted(outsider, table), `${table} delete by outsider`).toBe(0);
     }
@@ -169,7 +191,7 @@ describe("RLS matrix (every table)", () => {
 
   it("a full member (partner) sees shared work but never the owner's private rows", async () => {
     for (const table of PRIVATE) expect(await count(partner, table), `${table} visible to partner`).toBe(0);
-    for (const table of ["projects", "tasks", "comments", "notes", "goals", "areas", "labels", "time_entries", "activity_log"] as Table[]) {
+    for (const table of ["projects", "tasks", "comments", "notes", "goals", "areas", "labels", "time_entries", "activity_log", "contacts", "meetings", "meeting_items", "meeting_attendees"] as Table[]) {
       expect(await count(partner, table), `${table} hidden from partner`).toBeGreaterThan(0);
     }
     // a personal saved view stays personal
@@ -194,5 +216,7 @@ describe("RLS matrix (every table)", () => {
     // and sees nothing of the owner's private rows or other projects
     for (const table of PRIVATE) expect(await count(viewer, table), `${table} visible to viewer`).toBe(0);
     expect(await count(viewer, "invitations")).toBe(0);
+    // guests never see the address book or workspace meetings
+    for (const table of ["contacts", "meetings", "meeting_items", "meeting_attendees"] as Table[]) expect(await count(viewer, table), `${table} visible to viewer`).toBe(0);
   });
 });
