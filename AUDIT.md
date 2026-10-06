@@ -5,7 +5,7 @@ Status of every feature in the original spec and in the fix prompt.
 
 Tests: `tests/unit` (Vitest) · `tests/db` (Postgres/RLS — on PGlite by default, and against the Supabase project with `npm run test:db:remote`) · `e2e/demo` (Playwright — against the in-browser demo with `npm run test:e2e:demo`, and the same tests against the real Supabase backend with `npm run test:e2e:real`, each test signing in a freshly seeded real account).
 
-_Last updated: switch to the real backend (before phase 5)._
+_Last updated: phase 4 (checklist)._
 
 **Telegram is postponed** (no bot token): every Telegram item below is marked *postponed*, its controls are hidden or shown as «Tez orada», and reminders, the daily digest, the weekly review and the overdue nudge go out by web push (and email once Resend is set up). The app runs fully without `TELEGRAM_BOT_TOKEN`.
 **Email is waiting** for the Resend key and a verified domain: email sending is skipped while `RESEND_API_KEY` is empty.
@@ -73,9 +73,26 @@ _Last updated: switch to the real backend (before phase 5)._
 | Recurring task creates next occurrence | done | unit `complete` |
 | Light theme, desktop sidebar | done | visual check |
 
-## 3. Not tested yet (phase 4)
+## 3. «Not tested yet» — tested in phase 4
 
-All items in section 2 «Not tested yet» of the fix prompt: pending.
+Every row runs in the demo and against the real backend (`e2e/demo/checklist.spec.ts`, unit tests as noted).
+
+| Item | Status | Test / fix |
+|---|---|---|
+| Quick add: bugun, indinga, dushanba, har hafta, har kuni 7:00, tomorrow 5pm, !2…!4, apostrophe variants | done | unit `quick-add` (27 cases incl. the tester's sentence) |
+| A wrong parse removed with one tap | done | e2e `quick add: … removable parsed chips` |
+| Task panel: inline editing, autosave, nothing lost when closing fast | done — fixed: a title typed without leaving the field and a description inside its 600 ms save delay were lost on a fast close; both now save when the panel closes | e2e `task panel: … kept when the panel closes at once` |
+| Estimate accepts hours («1,5 soat», «90 daq», «1:30») | done — `lib/parse/duration.ts` | unit `duration` (15 cases) · e2e |
+| Checklist, dependencies, attachments, history | done — checklist inputs got accessible names | e2e `demo-import`, `activity feed` |
+| Board on touch: long-press drag; order kept after reload | done — fixed: moving a card down within a column did nothing; the drag preview (and its collision box) was offset by the page because a transformed ancestor contained it (now portalled to `<body>`); keyboard dragging stays within the column | e2e `board: order … kept after reload` |
+| Calendar/timeline: drag to reschedule, resize, today marker, project deadline | done — timeline bars are keyboard-operable (arrows move, Shift+arrows resize) and labelled with their dates | e2e `timeline …`, `calendar …` |
+| Swipe left reschedules, swipe right completes, both with undo | done | e2e `phone gestures` (real touch events) |
+| Undo restores exactly (complete, delete, move, bulk; recurring removes the generated occurrence) | done | e2e `recurring: undoing a completion…`, `undo toast…`; unit `complete` |
+| Recurring: exactly one next occurrence in the user's zone, also late or twice quickly | done | unit `complete` · db `recurring tasks` |
+| Home day timeline: right times, hours outside the user's day hidden | done — visible hours from Settings (default 07:00–22:00), growing to fit anything planned outside; task times and planned blocks labelled differently | e2e `Home day timeline…` |
+| Offline: lists readable, quick add queues and syncs | done | real e2e `offline: …` (service worker + outbox → row in Supabase) |
+| Empty, loading and error states on every page | done — new error screen with retry when the first load fails | real e2e `a brand-new empty account…` |
+| Performance: Lighthouse ≥ 90, no layout shift | pending (phase 8, on the deployed site) | — |
 
 ## 4. Missing features (phases 3, 5–8)
 

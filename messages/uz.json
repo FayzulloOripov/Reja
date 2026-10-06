@@ -15,7 +15,9 @@
     "demoShort": "Demo",
     "demoPill": "Demo rejim haqida",
     "demoHide": "Yashirish",
-    "demoSignUp": "Roʻyxatdan oʻtish"
+    "demoSignUp": "Roʻyxatdan oʻtish",
+    "loadErrorTitle": "Maʼlumotlarni yuklab boʻlmadi",
+    "loadErrorBody": "Internet aloqasini tekshiring va qayta urinib koʻring. Kiritganlaringiz yoʻqolmaydi."
   },
   "common": {
     "save": "Saqlash",
@@ -200,7 +202,10 @@
     "noProject": "Loyihasiz",
     "completedToday": "Bugun bajarilganlar",
     "completedTodayHint": "Adashib belgilagan boʻlsangiz, doirachani bosib qaytaring.",
-    "focusThisWeekSessions": "shu hafta · {count, plural, one {# ta seans} other {# ta seans}}"
+    "focusThisWeekSessions": "shu hafta · {count, plural, one {# ta seans} other {# ta seans}}",
+    "timelineDue": "vazifa vaqti",
+    "timelineBlock": "rejalashtirilgan vaqt bloki",
+    "timelineDeleteBlock": "«{title}» blokini oʻchirish"
   },
   "inbox": {
     "title": "Kiruvchi",
@@ -357,7 +362,8 @@
     "dependency": "Bogʻliqlik",
     "today": "Bugun",
     "showDone": "Bajarilganlarni koʻrsatish ({count})",
-    "noDatesHint": "Vazifani jadvalga sudrab, kunini belgilang"
+    "noDatesHint": "Vazifani jadvalga sudrab, kunini belgilang",
+    "barLabel": "{title}: {from} – {to}. Strelkalar — surish, Shift + strelkalar — muddatni oʻzgartirish"
   },
   "table": {
     "title": "Nomi",
@@ -407,7 +413,6 @@
     "deadline": "Oxirgi muddat",
     "deadlineHint": "Qatʼiy muddat: bundan kechikmasligi kerak",
     "estimate": "Taxminiy vaqt",
-    "estimatePlaceholder": "daqiqa",
     "repeat": "Takrorlash",
     "repeatNone": "Takrorlanmaydi",
     "repeatDaily": "Har kuni",
@@ -458,7 +463,9 @@
     "chooseFile": "Fayl tanlash",
     "createdByYou": "Siz yaratgansiz · {date}",
     "checklistItem": "Nazorat bandi: {text}",
-    "deleteChecklistItem": "«{text}» bandini oʻchirish"
+    "deleteChecklistItem": "«{text}» bandini oʻchirish",
+    "estimateHint": "masalan 1,5 soat yoki 90 daq",
+    "estimateInvalid": "Vaqtni tushunmadim: 1,5 soat, 90 daq yoki 1:30 deb yozing"
   },
   "quickAdd": {
     "title": "Tezkor qoʻshish",

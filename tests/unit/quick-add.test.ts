@@ -178,3 +178,38 @@ describe("projects, people, priority, top", () => {
     expect(r.title).toBe("Write to asila@example.com");
   });
 });
+
+describe("fix-prompt checklist", () => {
+  it("parses the tester's sentence: ertaga 10:00 #Agentlik @Hamkor !1 *", () => {
+    const r = parseQuickAdd("Asila bilan uchrashuv ertaga 10:00 #Agentlik @Hamkor !1 *", { ...ctx, people: [{ id: "u-h", name: "Hamkor (demo)" }] });
+    expect(r).toMatchObject({ title: "Asila bilan uchrashuv", dueDate: "2026-10-06", dueTime: "10:00", projectId: "p-ag", priority: "urgent", top: true });
+    expect(r.assigneeIds).toEqual(["u-h"]);
+  });
+
+  it("har kuni 7:00 → daily at 07:00, starting tomorrow when 07:00 has passed", () => {
+    const r = parse("Yugurish har kuni 7:00");
+    expect(r.recurrence).toBe("FREQ=DAILY");
+    expect(r.dueTime).toBe("07:00");
+    expect(r.dueDate).toBe("2026-10-06");
+    expect(r.title).toBe("Yugurish");
+  });
+
+  it("dushanba means next Monday when today is Monday", () => {
+    expect(parse("Reja dushanba").dueDate).toBe("2026-10-12");
+  });
+
+  it("!2, !3, !4 map to high, medium, low", () => {
+    expect(parse("a !2").priority).toBe("high");
+    expect(parse("b !3").priority).toBe("medium");
+    expect(parse("c !4").priority).toBe("low");
+  });
+
+  it("treats ' ’ ʻ ʼ the same in project names", () => {
+    for (const a of ["'", "’", "ʻ", "ʼ"]) expect(parse(`Yugurish #Sog${a}liq`).projectId).toBe("p-sog");
+  });
+
+  it("English: tomorrow 5pm, every week", () => {
+    expect(parse("Call tomorrow 5pm")).toMatchObject({ dueDate: "2026-10-06", dueTime: "17:00", title: "Call" });
+    expect(parse("Review every week").recurrence).toMatch(/^FREQ=WEEKLY/);
+  });
+});

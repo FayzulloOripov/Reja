@@ -345,6 +345,14 @@
 }
 
 /* Motion is decoration: honour the user's preference everywhere. */
+/* Phones: focus and in-page scrolling keep items clear of the sticky top bar and the fixed tab bar */
+@media (max-width: 767px) {
+  html {
+    scroll-padding-top: 64px;
+    scroll-padding-bottom: calc(env(safe-area-inset-bottom) + 96px);
+  }
+}
+
 /* Touch screens: every small button gets a hit area of at least 44 × 44 px (the visual size stays). */
 @media (pointer: coarse) {
   [data-slot="button"],

@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  closestCenter,
   closestCorners,
   DndContext,
   DragOverlay,
@@ -10,7 +11,10 @@ import {
   useDroppable,
   useSensor,
   useSensors,
+  type CollisionDetection,
   type DragEndEvent,
+  type KeyboardCoordinateGetter,
+  type UniqueIdentifier,
 } from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -18,7 +22,7 @@ import { CheckSquare, MessageSquare, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo, useRef, useState } from "react";
 import { AvatarStack, DueChip, PriorityIcon, StatusIcon } from "@/components/common/bits";
-import { InlineAdd, positionBetween } from "@/components/tasks/task-list";
+import { BodyPortal, InlineAdd, positionBetween } from "@/components/tasks/task-list";
 import { TaskCheckbox } from "@/components/tasks/task-row";
 import { byPosition } from "@/lib/filters";
 import { isOverdue } from "@/lib/health";
@@ -29,6 +33,25 @@ import { assigneesByTask, checklistByTask, commentsByTask, labelsByTask, useToda
 import { useStore } from "@/store/store";
 import { useUI } from "@/store/ui";
 import { STATUSES } from "../tasks/pickers";
+
+/**
+ * Keyboard dragging on the board: ↑/↓ move a card within its own column (the default would jump to
+ * the nearest card below in any column), ←/→ move it to the next column.
+ */
+const boardKeyboardCoordinates: KeyboardCoordinateGetter = (event, args) => {
+  const { context } = args;
+  if ((event.code === "ArrowDown" || event.code === "ArrowUp") && context.active) {
+    const containerOf = (id: UniqueIdentifier) => (context.droppableContainers.get(id)?.data.current as { sortable?: { containerId: string } } | undefined)?.sortable?.containerId;
+    const containerId = containerOf(context.over?.id ?? context.active.id) ?? containerOf(context.active.id);
+    const same = context.droppableContainers.getEnabled().filter((entry) => entry && containerOf(entry.id) === containerId);
+    const droppableContainers = { getEnabled: () => same, get: (id: UniqueIdentifier) => context.droppableContainers.get(id) };
+    return sortableKeyboardCoordinates(event, { ...args, context: { ...context, droppableContainers } as unknown as typeof context });
+  }
+  return sortableKeyboardCoordinates(event, args);
+};
+
+/** Mouse/touch: closest corners (works with empty columns). Keyboard (no pointer): closest centre, so a picked-up card starts over itself. */
+const boardCollision: CollisionDetection = (args) => (args.pointerCoordinates ? closestCorners(args) : closestCenter(args));
 
 interface Column {
   key: string;
@@ -60,7 +83,7 @@ export function BoardView({ project, tasks, sections, by, writable }: { project:
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    useSensor(KeyboardSensor, { coordinateGetter: boardKeyboardCoordinates }),
   );
   const scroller = useRef<HTMLDivElement>(null);
   const [visibleCol, setVisibleCol] = useState(0);
@@ -79,10 +102,15 @@ export function BoardView({ project, tasks, sections, by, writable }: { project:
     const col = overId.startsWith("col:") ? columns.find((c) => `col:${c.key}` === overId) : columns.find((c) => c.tasks.some((x) => x.id === overId));
     if (!col) return;
     const list = col.tasks.filter((x) => x.id !== task.id);
-    let index = overId.startsWith("col:") ? list.length : list.findIndex((x) => x.id === overId);
-    if (index < 0) index = list.length;
-    const oldIndex = col.tasks.findIndex((x) => x.id === task.id);
-    if (oldIndex >= 0 && oldIndex < index) index += 1;
+    let index: number;
+    if (overId.startsWith("col:")) index = list.length;
+    else {
+      // dropping on a card below the card's old place puts it after that card, above it before it
+      const overInList = list.findIndex((x) => x.id === overId);
+      const oldIndex = col.tasks.findIndex((x) => x.id === task.id);
+      const overIndex = col.tasks.findIndex((x) => x.id === overId);
+      index = overInList < 0 ? list.length : oldIndex >= 0 && oldIndex < overIndex ? overInList + 1 : overInList;
+    }
     const position = positionBetween(list[index - 1]?.position, list[index]?.position);
     if (by === "status") {
       if (col.status === "done" && task.status !== "done") toggleComplete(task);
@@ -95,7 +123,7 @@ export function BoardView({ project, tasks, sections, by, writable }: { project:
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCorners}
+      collisionDetection={boardCollision}
       onDragStart={(e) => setActive((e.active.data.current?.task as Task) ?? null)}
       onDragEnd={onDragEnd}
       onDragCancel={() => setActive(null)}
@@ -150,9 +178,11 @@ export function BoardView({ project, tasks, sections, by, writable }: { project:
           </div>
         )}
       </div>
-      <DragOverlay dropAnimation={{ duration: 200, easing: "cubic-bezier(0.22, 0.8, 0.24, 1)" }}>
-        {active ? <BoardCard task={active} lifted /> : null}
-      </DragOverlay>
+      <BodyPortal>
+        <DragOverlay dropAnimation={{ duration: 200, easing: "cubic-bezier(0.22, 0.8, 0.24, 1)" }}>
+          {active ? <BoardCard task={active} lifted /> : null}
+        </DragOverlay>
+      </BodyPortal>
     </DndContext>
   );
 }

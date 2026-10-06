@@ -1,22 +1,20 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { AlarmClock, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { safeColor } from "@/lib/colors";
-import { minutesOfDay, minutesToHHMM } from "@/lib/dates";
+import { hhmmToMinutes, minutesOfDay, minutesToHHMM } from "@/lib/dates";
 import type { Task, TimeBlock } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { createTimeBlock, deleteTimeBlock, updateTimeBlock } from "@/store/actions";
-import { useNowMinutes, useTz, useUserId } from "@/store/hooks";
+import { useMe, useNowMinutes, useTz, useUserId } from "@/store/hooks";
 import { useStore } from "@/store/store";
 import { useUI } from "@/store/ui";
 
-const START = 6 * 60;
-const END = 23 * 60;
 const PX_PER_MIN = 0.8; // 48px per hour
 const SNAP = 15;
 
@@ -36,6 +34,7 @@ export function DayTimeline({ date, candidates }: { date: string; candidates: Ta
   const [adding, setAdding] = useState<number | null>(null);
   const [title, setTitle] = useState("");
   const [drag, setDrag] = useState<{ id: string; y0: number; delta: number; mode: "move" | "resize" } | null>(null);
+  const me = useMe();
 
   const items = useMemo(() => {
     const out: { id: string; kind: "block" | "task"; start: number; end: number; title: string; color: string; taskId?: string | null; block?: TimeBlock }[] = [];
@@ -55,13 +54,17 @@ export function DayTimeline({ date, candidates }: { date: string; candidates: Ta
     }
     for (const task of candidates) {
       if (!task.due_at) continue;
-      const blocked = out.some((o) => o.taskId === task.id);
-      if (blocked) continue;
       const start = minutesOfDay(tz, task.due_at);
+      // a block planned for the task that covers its due time already shows it
+      if (out.some((o) => o.taskId === task.id && o.start <= start && o.end > start)) continue;
       out.push({ id: `task-${task.id}`, kind: "task", start, end: start + (task.estimate_min ?? 30), title: task.title, color: projects[task.project_id ?? ""]?.color ?? "tangerine", taskId: task.id });
     }
     return out.sort((a, b) => a.start - b.start);
   }, [blocks, uid, date, tasks, tz, projects, candidates]);
+
+  // the visible day comes from Settings (default 07:00–22:00) and grows to fit anything planned outside it
+  const START = Math.min(Math.floor(hhmmToMinutes(me?.day_start ?? "07:00") / 60) * 60, ...items.map((i) => Math.floor(i.start / 60) * 60));
+  const END = Math.max(Math.ceil(hhmmToMinutes(me?.day_end ?? "22:00") / 60) * 60, ...items.map((i) => Math.ceil(Math.min(i.end, 24 * 60) / 60) * 60));
 
   const minuteAt = (clientY: number) => {
     const rect = ref.current!.getBoundingClientRect();
@@ -169,8 +172,12 @@ export function DayTimeline({ date, candidates }: { date: string; candidates: Ta
                 d && "shadow-elev-3",
               )}
             >
-              <p className="truncate font-semibold">{it.title}</p>
-              {height > 30 && <p className="text-2xs opacity-75 tnum">{minutesToHHMM(start)}–{minutesToHHMM(end)}</p>}
+              <p className="flex items-center gap-1 truncate font-semibold">
+                {it.kind === "task" ? <AlarmClock className="size-3 shrink-0" aria-label={t("home.timelineDue")} /> : null}
+                <span className="shrink-0 font-normal opacity-80 tnum">{it.kind === "task" ? minutesToHHMM(start) : `${minutesToHHMM(start)}–${minutesToHHMM(end)}`}</span>
+                <span className="truncate">{it.title}</span>
+              </p>
+              {height > 30 && <p className="text-2xs opacity-75">{it.kind === "task" ? t("home.timelineDue") : t("home.timelineBlock")}</p>}
               {it.kind === "block" && (
                 <>
                   <button
@@ -179,8 +186,8 @@ export function DayTimeline({ date, candidates }: { date: string; candidates: Ta
                       e.stopPropagation();
                       deleteTimeBlock(it.id);
                     }}
-                    aria-label={t("common.delete")}
-                    className="absolute top-1 right-1 rounded p-0.5 opacity-0 hover:bg-black/10 [div:hover>&]:opacity-100"
+                    aria-label={t("home.timelineDeleteBlock", { title: it.title })}
+                    className="absolute top-1 right-1 rounded p-0.5 opacity-0 hover:bg-black/10 focus-visible:opacity-100 [div:hover>&]:opacity-100 [@media(hover:none)]:opacity-100"
                   >
                     <Trash2 className="size-3" />
                   </button>

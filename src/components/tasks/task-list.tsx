@@ -17,6 +17,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { ChevronRight, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useMemo, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { ProjectDot } from "@/components/common/bits";
 import { addDays } from "@/lib/dates";
 import { parseQuickAdd } from "@/lib/parse/quick-add";
@@ -56,6 +57,15 @@ export interface TaskListProps {
   triage?: boolean;
   /** make rows draggable with the HTML5 API (e.g. onto the day timeline) */
   nativeDragType?: string;
+}
+
+/**
+ * Drag previews are position: fixed. Rendered inside the page, an ancestor with a transform (the
+ * view's fade-in) becomes their containing block and shifts them — and their collision box — by the
+ * page's offset. Rendering them on <body> keeps them under the pointer.
+ */
+export function BodyPortal({ children }: { children: ReactNode }) {
+  return typeof document === "undefined" ? null : createPortal(children, document.body);
 }
 
 /** Position between two neighbours for fractional ordering. */
@@ -309,13 +319,15 @@ export function TaskList({ groups, showProject, sortable, readOnly, allowAdd, on
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setActiveTask(null)}>
       {content}
-      <DragOverlay dropAnimation={{ duration: 180, easing: "cubic-bezier(0.22, 0.8, 0.24, 1)" }}>
-        {activeTask ? (
-          <div className="rotate-[0.6deg] scale-[1.02] rounded-lg bg-card shadow-elev-4 ring-1 ring-border">
-            <TaskRow task={activeTask} showProject={showProject} />
-          </div>
-        ) : null}
-      </DragOverlay>
+      <BodyPortal>
+        <DragOverlay dropAnimation={{ duration: 180, easing: "cubic-bezier(0.22, 0.8, 0.24, 1)" }}>
+          {activeTask ? (
+            <div className="rotate-[0.6deg] scale-[1.02] rounded-lg bg-card shadow-elev-4 ring-1 ring-border">
+              <TaskRow task={activeTask} showProject={showProject} />
+            </div>
+          ) : null}
+        </DragOverlay>
+      </BodyPortal>
     </DndContext>
   );
 }

@@ -45,7 +45,8 @@ import { canWrite } from "@/lib/permissions";
 import { zonedToUtc } from "@/lib/dates";
 import { PRESET_RULES, upcomingOccurrences } from "@/lib/recurrence";
 import { useFormat } from "@/lib/format";
-import type { ReminderOffset, Task } from "@/lib/types";
+import { parseDuration } from "@/lib/parse/duration";
+import type { ReminderOffset, RichDoc, Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import {
   addReminder,
@@ -167,6 +168,25 @@ function TaskDetailBody({ task, onClose, fullPage }: { task: Task; onClose?: () 
   const isTop = task.top_date === today;
 
   const descTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingDesc = useRef<{ doc: RichDoc } | null>(null);
+  const latestTitle = useRef(title);
+  useEffect(() => {
+    latestTitle.current = title;
+  }, [title]);
+
+  // closing the panel quickly must not lose typing: save what is pending when it unmounts
+  useEffect(() => {
+    const id = task.id;
+    const original = task.title;
+    return () => {
+      if (descTimer.current) clearTimeout(descTimer.current);
+      if (pendingDesc.current) updateTask(id, { description: pendingDesc.current.doc });
+      const v = latestTitle.current.trim();
+      if (v && v !== original && v !== useStore.getState().data.tasks[id]?.title) updateTask(id, { title: v });
+    };
+    // runs once per task panel
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task.id]);
 
   function saveTitle() {
     const v = title.trim();
@@ -403,7 +423,11 @@ function TaskDetailBody({ task, onClose, fullPage }: { task: Task; onClose?: () 
             ariaLabel={t("common.description")}
             onChange={(doc) => {
               if (descTimer.current) clearTimeout(descTimer.current);
-              descTimer.current = setTimeout(() => updateTask(task.id, { description: doc }), 600);
+              pendingDesc.current = { doc };
+              descTimer.current = setTimeout(() => {
+                pendingDesc.current = null;
+                updateTask(task.id, { description: doc });
+              }, 600);
             }}
           />
         </div>
@@ -471,25 +495,41 @@ function RepeatPicker({ task, disabled, label }: { task: Task; disabled: boolean
 
 function EstimateInput({ task, disabled }: { task: Task; disabled: boolean }) {
   const t = useTranslations("task");
-  const [v, setV] = useSyncedState(task.estimate_min ? String(task.estimate_min) : "");
+  const today = useToday();
+  const tz = useTz();
+  const f = useFormat(today, tz);
+  const shown = task.estimate_min ? f.duration(task.estimate_min) : "";
+  const [v, setV] = useSyncedState(shown);
+  const [invalid, setInvalid] = useState(false);
+  const commit = () => {
+    if (!v.trim()) {
+      setInvalid(false);
+      if (task.estimate_min !== null) updateTask(task.id, { estimate_min: null });
+      return;
+    }
+    const n = parseDuration(v);
+    if (n === null || n > 10_000) {
+      setInvalid(true);
+      return;
+    }
+    setInvalid(false);
+    if (n !== task.estimate_min) updateTask(task.id, { estimate_min: n });
+    setV(f.duration(n));
+  };
   return (
-    <label className="inline-flex items-center gap-1.5">
+    <label className="inline-flex flex-col gap-0.5">
       <Input
-        type="number"
-        inputMode="numeric"
-        min={1}
-        max={10000}
         value={v}
         disabled={disabled}
         onChange={(e) => setV(e.target.value)}
-        onBlur={() => {
-          const n = v ? Math.max(1, Math.min(10000, Math.round(Number(v)))) : null;
-          if (n !== task.estimate_min) updateTask(task.id, { estimate_min: n });
-        }}
-        className="h-8 w-20 tnum"
+        onBlur={commit}
+        onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+        placeholder={t("estimateHint")}
+        aria-invalid={invalid}
         aria-label={t("estimate")}
+        className="h-8 w-36"
       />
-      <span className="text-xs text-muted-foreground">{t("estimatePlaceholder")}</span>
+      {invalid && <span className="text-xs text-danger-fg">{t("estimateInvalid")}</span>}
     </label>
   );
 }

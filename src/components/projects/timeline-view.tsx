@@ -80,6 +80,23 @@ export function TimelineView({ tasks, sections, writable, color }: { tasks: Task
     return { s, e, left: diffDays(from, s) * px, w: (diffDays(s, e) + 1) * px };
   };
 
+  /** Keyboard: move the whole bar, or change its end (length), by whole days. */
+  function shiftBar(task: Task, days: number, mode: "move" | "end") {
+    const s0 = task.start_date ?? task.due_date!;
+    const e0 = task.due_date ?? task.start_date!;
+    const values: Partial<Task> = {};
+    if (mode === "move") {
+      if (task.start_date) values.start_date = addDays(s0, days);
+      if (task.due_date) values.due_date = addDays(e0, days);
+    } else {
+      const end = addDays(e0, days);
+      if (end < s0) return;
+      values.due_date = end;
+    }
+    if (values.due_date && task.due_at) values.due_at = zonedToUtc(values.due_date, timeIn(tz, task.due_at), tz).toISOString();
+    updateTask(task.id, values);
+  }
+
   function onPointerDown(e: React.PointerEvent, task: Task, mode: Drag["mode"]) {
     if (!writable) return;
     e.stopPropagation();
@@ -235,16 +252,26 @@ export function TimelineView({ tasks, sections, writable, color }: { tasks: Task
                 return (
                   <div
                     key={r.id}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={t("timeline.barLabel", { title: r.title, from: f.dayMonth(span(r).s), to: f.dayMonth(span(r).e) })}
+                    aria-keyshortcuts={writable ? "ArrowLeft ArrowRight Shift+ArrowLeft Shift+ArrowRight Enter" : "Enter"}
                     data-color={safeColor(color)}
                     style={{ left, width: Math.max(w, px), top: i * ROW + 7, height: ROW - 14 }}
                     onPointerDown={(e) => onPointerDown(e, r, "move")}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") openTask(r.id);
+                      if (!writable || (e.key !== "ArrowLeft" && e.key !== "ArrowRight")) return;
+                      e.preventDefault();
+                      shiftBar(r, e.key === "ArrowRight" ? 1 : -1, e.shiftKey ? "end" : "move");
+                    }}
                     className={cn(
                       "group absolute z-20 flex items-center overflow-hidden rounded-md bg-pc px-2 text-xs font-medium text-white shadow-elev-1 select-none",
                       writable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
                       done && "opacity-50",
                       drag?.id === r.id && "shadow-elev-3 ring-2 ring-white/60",
                     )}
-                    title={r.title}
+                    title={`${r.title} · ${f.dayMonth(span(r).s)} – ${f.dayMonth(span(r).e)}`}
                   >
                     {writable && <span onPointerDown={(e) => onPointerDown(e, r, "start")} className="absolute inset-y-0 left-0 w-2 cursor-ew-resize hover:bg-white/30" />}
                     <span className="truncate">{w > 60 ? r.title : ""}</span>

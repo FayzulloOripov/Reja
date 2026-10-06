@@ -15,7 +15,9 @@
     "demoShort": "Demo",
     "demoPill": "About demo mode",
     "demoHide": "Hide",
-    "demoSignUp": "Sign up"
+    "demoSignUp": "Sign up",
+    "loadErrorTitle": "Couldn’t load your data",
+    "loadErrorBody": "Check your connection and try again. Nothing you entered is lost."
   },
   "common": {
     "save": "Save",
@@ -200,7 +202,10 @@
     "noProject": "No project",
     "completedToday": "Done today",
     "completedTodayHint": "Ticked one by mistake? Tap its circle to reopen it.",
-    "focusThisWeekSessions": "this week · {count, plural, one {# session} other {# sessions}}"
+    "focusThisWeekSessions": "this week · {count, plural, one {# session} other {# sessions}}",
+    "timelineDue": "task time",
+    "timelineBlock": "planned time block",
+    "timelineDeleteBlock": "Delete block “{title}”"
   },
   "inbox": {
     "title": "Inbox",
@@ -357,7 +362,8 @@
     "dependency": "Dependency",
     "today": "Today",
     "showDone": "Show completed ({count})",
-    "noDatesHint": "Drag a task onto the chart to give it a day"
+    "noDatesHint": "Drag a task onto the chart to give it a day",
+    "barLabel": "{title}: {from} – {to}. Arrows move it, Shift + arrows change its length"
   },
   "table": {
     "title": "Title",
@@ -407,7 +413,6 @@
     "deadline": "Deadline",
     "deadlineHint": "Hard deadline: must not slip past this",
     "estimate": "Estimate",
-    "estimatePlaceholder": "minutes",
     "repeat": "Repeat",
     "repeatNone": "Does not repeat",
     "repeatDaily": "Every day",
@@ -458,7 +463,9 @@
     "chooseFile": "Choose a file",
     "createdByYou": "Created by you · {date}",
     "checklistItem": "Checklist item: {text}",
-    "deleteChecklistItem": "Delete “{text}”"
+    "deleteChecklistItem": "Delete “{text}”",
+    "estimateHint": "e.g. 1.5 h or 90 min",
+    "estimateInvalid": "Couldn’t read that: try 1.5 h, 90 min or 1:30"
   },
   "quickAdd": {
     "title": "Quick add",

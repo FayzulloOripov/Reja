@@ -54,6 +54,8 @@ export async function openDemo(page: Page, path = "/") {
   await page.goto(`/auth/confirm?token_hash=${data.properties.hashed_token}&type=magiclink&next=/`);
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 20_000 });
   if (path !== "/") await page.goto(path);
+  // wait for the first load from Supabase to finish, so rows don't re-render under the test
+  await page.waitForLoadState("networkidle");
 }
 
 /** Skip a test that only makes sense in the in-browser demo. */
@@ -81,4 +83,23 @@ export async function unnamedControls(page: Page): Promise<string[]> {
     }
     return out;
   });
+}
+
+/** A real touch swipe (Chrome DevTools touch events), dx < 0 = left. */
+export async function swipe(page: Page, target: import("@playwright/test").Locator, dx: number) {
+  // centre it: at the very bottom it would sit under the fixed tab bar
+  await target.evaluate((el) => el.scrollIntoView({ block: "center" }));
+  const box = (await target.boundingBox())!;
+  const cdp = await page.context().newCDPSession(page);
+  const y = box.y + box.height / 2;
+  let x = dx < 0 ? box.x + box.width - 30 : box.x + 30;
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
+  const steps = 12;
+  for (let i = 0; i < steps; i++) {
+    x += dx / steps;
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x, y }] });
+    await page.waitForTimeout(16);
+  }
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await cdp.detach();
 }

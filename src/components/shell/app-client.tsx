@@ -8,7 +8,8 @@ import { useMounted, useTheme } from "@/components/providers/theme";
 import { useEffect, useRef, type ReactNode } from "react";
 import { setLocaleCookie } from "@/server/actions/locale";
 import { useMe } from "@/store/hooks";
-import { useStore } from "@/store/store";
+import { refresh, useStore } from "@/store/store";
+import { Button } from "@/components/ui/button";
 import { useBootstrap } from "@/hooks/use-bootstrap";
 import { MobileTabBar, MobileTopBar } from "./mobile-nav";
 import { DemoBanner } from "./demo-banner";
@@ -81,13 +82,28 @@ export function AppClient({ userId, demo, children }: { userId: string; demo?: b
           </div>
         )}
         <main id="main" tabIndex={-1} className={cn("flex-1 pb-28 outline-none md:pb-0")}>
-          {showSkeleton ? <ShellSkeleton /> : children}
+          {status === "error" && !me ? <LoadError /> : showSkeleton ? <ShellSkeleton /> : children}
         </main>
       </div>
       <MobileTabBar />
       <Overlays />
       {mounted && <PwaManager />}
       <FocusPill />
+    </div>
+  );
+}
+
+/** Nothing cached and the first load failed: say so and offer a retry. */
+function LoadError() {
+  const t = useTranslations();
+  const error = useStore((s) => s.error);
+  return (
+    <div role="alert" className="mx-auto flex max-w-md flex-col items-center gap-3 px-6 py-20 text-center">
+      <CloudOff className="size-10 text-muted-foreground" aria-hidden />
+      <h1 className="text-22 font-bold">{t("app.loadErrorTitle")}</h1>
+      <p className="text-sm text-muted-foreground">{t("app.loadErrorBody")}</p>
+      {error && <p className="max-w-full truncate text-xs text-subtle-foreground" title={error}>{error}</p>}
+      <Button onClick={() => void refresh()}>{t("common.tryAgain")}</Button>
     </div>
   );
 }
