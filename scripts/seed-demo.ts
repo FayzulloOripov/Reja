@@ -10,6 +10,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { config } from "dotenv";
 import { buildDemoData } from "../src/lib/demo/seed";
+import { normalizeSupabaseUrl } from "../src/lib/env";
 import { todayIn } from "../src/lib/dates";
 
 config({ path: ".env.local" });
@@ -25,7 +26,7 @@ async function main() {
     console.error("Usage: npm run seed:demo -- --email you@example.com");
     process.exit(1);
   }
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const url = normalizeSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
   const key = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY!;
   const sb = createClient(url, key, { auth: { persistSession: false } });
 

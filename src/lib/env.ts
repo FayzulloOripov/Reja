@@ -12,11 +12,16 @@ export const FORCED_DEMO = process.env.NEXT_PUBLIC_DEMO === "1" || process.env.N
 /** Set by /demo, cleared by /demo/exit. */
 export const DEMO_COOKIE = "reja_demo";
 
-export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+/** The project URL; a pasted REST endpoint (…/rest/v1/) or stray spaces are tolerated. */
+export function normalizeSupabaseUrl(raw: string | undefined): string {
+  return (raw ?? "").trim().replace(/\/rest\/v1\/?$/, "").replace(/\/+$/, "");
+}
+
+export const SUPABASE_URL = normalizeSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
 
 /** Supabase now issues "publishable" keys (sb_publishable_…); older projects use the anon JWT. */
 export const SUPABASE_PUBLIC_KEY =
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+  (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "").trim();
 
 export const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "";
 

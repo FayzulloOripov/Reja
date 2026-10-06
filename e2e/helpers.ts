@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { expect, type Page, test } from "@playwright/test";
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const url = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").trim().replace(/\/rest\/v1\/?$/, "").replace(/\/+$/, "") || undefined;
 const serviceKey = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 /** The suite needs a real Supabase project (local `supabase start` or a test project). */
