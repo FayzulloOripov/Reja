@@ -52,6 +52,8 @@ export async function openDemo(page: Page, path = "/") {
   const { data, error } = await admin().auth.admin.generateLink({ type: "magiclink", email: me.email });
   if (error) throw error;
   await page.goto(`/auth/confirm?token_hash=${data.properties.hashed_token}&type=magiclink&next=/`);
+  // the sign-in passes through /auth and /login on its way in; wait until the app itself is shown
+  await page.waitForURL((u) => !/^\/(auth|login|onboarding)/.test(u.pathname), { timeout: 20_000 });
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 20_000 });
   if (path !== "/") await page.goto(path);
   // wait for the first load from Supabase to finish, so rows don't re-render under the test

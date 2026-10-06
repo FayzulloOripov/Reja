@@ -420,10 +420,10 @@ export function buildDemoData(userId: string, today: string, tz = "Asia/Tashkent
     { id: id(), workspace_id: wsTeam.id, name: uz ? "Dilnoza (demo)" : "Dilnoza (demo)", company: uz ? "Bosmaxona (demo)" : "Print shop (demo)", phone: null, telegram: null, note: null, created_by: userId, deleted_at: null, ...stamp },
   ];
   t(pSales, uz ? "TexnoSoft dan CRM narxini olish" : "Get the CRM quote from TexnoSoft", {
-    status: "waiting", waiting_on_contact_id: contacts[0].id, waiting_since: addDays(today, -4), follow_up_date: today, due_date: addDays(today, 5),
+    status: "waiting", waiting_on_contact_id: contacts[0].id, waiting_since: addDays(today, -4), follow_up_date: today, due_date: addDays(today, 5), section_id: sPlanned.id,
   });
   t(pAgency, uz ? "Reklama byudjetini tasdiqlash" : "Approve the ad budget", {
-    status: "waiting", waiting_on_user_id: PARTNER, waiting_since: addDays(today, -2), follow_up_date: addDays(today, 2),
+    status: "waiting", waiting_on_user_id: PARTNER, waiting_since: addDays(today, -2), follow_up_date: addDays(today, 2), section_id: sLeads.id,
   });
 
   const friday = nextWeekday(today, 5, true);
