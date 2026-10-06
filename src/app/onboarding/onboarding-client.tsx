@@ -19,6 +19,7 @@ import { PROJECT_COLORS } from "@/lib/colors";
 import { TELEGRAM_ENABLED } from "@/lib/env";
 import { useFormat } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { timezoneLabel } from "@/lib/timezones";
 import { setLocaleCookie } from "@/server/actions/locale";
 import { createInvitation } from "@/server/actions/invitations";
 import { createArea, createProject, createWorkspace, switchWorkspace, updateProfile } from "@/store/actions";
@@ -205,7 +206,7 @@ function ProfileStep() {
           <SelectContent>
             {Array.from(new Set(["Asia/Tashkent", "Asia/Samarkand", detectedTz, "Europe/Moscow", "Europe/Istanbul", "Asia/Dubai", "Europe/London", "UTC"])).map((z) => (
               <SelectItem key={z} value={z}>
-                {z}
+                {timezoneLabel(z, locale)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -227,7 +228,7 @@ function DayStep() {
       <Heading title={t("dayTitle")} body={t("dayBody")} />
       <div className="space-y-2">
         <p className="text-sm font-medium">{tc("settings.workDays")}</p>
-        <div className="flex flex-wrap gap-1.5" role="group" aria-label={tc("settings.workDays")}>
+        <div className="grid max-w-sm grid-cols-7 gap-1.5" role="group" aria-label={tc("settings.workDays")}>
           {f.weekdaysShort.map((d, i) => {
             const dow = i + 1;
             const on = me.work_days.includes(dow);
@@ -237,7 +238,7 @@ function DayStep() {
                 aria-pressed={on}
                 aria-label={f.weekdays[i]}
                 onClick={() => updateProfile({ work_days: on ? me.work_days.filter((x) => x !== dow) : [...me.work_days, dow].sort() })}
-                className={cn("size-11 rounded-full border text-xs font-semibold", on ? "border-brand bg-brand-soft text-brand-fg" : "text-muted-foreground")}
+                className={cn("aspect-square w-full max-w-11 rounded-full border text-xs font-semibold", on ? "border-brand bg-brand-soft text-brand-fg" : "text-muted-foreground")}
               >
                 {d}
               </button>

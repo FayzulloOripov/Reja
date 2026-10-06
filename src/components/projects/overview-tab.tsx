@@ -80,7 +80,7 @@ export function OverviewTab({ project, tasks, sections, people, writable }: { pr
   if (!health) return null;
 
   return (
-    <div className="grid gap-4 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
       <div className="space-y-4 lg:col-span-2">
         <section className="rounded-2xl border bg-card p-5 shadow-elev-1">
           <div className="flex flex-wrap items-center gap-3">

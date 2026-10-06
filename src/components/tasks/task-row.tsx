@@ -52,7 +52,7 @@ export function TaskCheckbox({
       }}
       style={{ width: size, height: size }}
       className={cn(
-        "group/check relative flex shrink-0 items-center justify-center rounded-full border-[1.75px] transition-all duration-200 ease-out",
+        "group/check tap-44 relative flex shrink-0 items-center justify-center rounded-full border-[1.75px] transition-all duration-200 ease-out",
         done ? "border-success bg-success" : cn(RING[task.priority], urgentFill && "bg-[color-mix(in_oklch,currentColor_0%,transparent)]"),
         !done && !disabled && "hover:bg-success/10",
         disabled && "opacity-50",
@@ -79,6 +79,8 @@ export function TaskCheckbox({
 export interface TaskRowProps {
   task: Task;
   showProject?: boolean;
+  /** the day the surrounding group stands for: a task due that day does not repeat it */
+  groupDate?: string | null;
   focused?: boolean;
   selected?: boolean;
   readOnly?: boolean;
@@ -88,7 +90,7 @@ export interface TaskRowProps {
   className?: string;
 }
 
-function TaskRowInner({ task, showProject, focused, selected, readOnly, indent, dragHandle, onSelect, className }: TaskRowProps) {
+function TaskRowInner({ task, showProject, groupDate, focused, selected, readOnly, indent, dragHandle, onSelect, className }: TaskRowProps) {
   const t = useTranslations();
   const today = useToday();
   const openTask = useUI((s) => s.openTask);
@@ -207,9 +209,9 @@ function TaskRowInner({ task, showProject, focused, selected, readOnly, indent, 
             {meta.assignees.length > 0 && <AvatarStack people={meta.assignees} size={20} max={2} />}
           </div>
         </div>
-        {(task.due_date || task.deadline || showProject || waiting || meta.labels.length > 0 || meta.checklist.total > 0 || meta.subtasks.total > 0 || meta.comments > 0) && (
+        {((task.due_date && !(groupDate && task.due_date === groupDate && !task.due_at && !task.recurrence)) || task.deadline || showProject || waiting || meta.labels.length > 0 || meta.checklist.total > 0 || meta.subtasks.total > 0 || meta.comments > 0) && (
           <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1">
-            <DueChip date={task.due_date} dueAt={task.due_at} deadline={task.deadline} recurring={Boolean(task.recurrence)} done={done} />
+            <DueChip date={task.due_date} dueAt={task.due_at} deadline={task.deadline} recurring={Boolean(task.recurrence)} done={done} hideDay={Boolean(groupDate) && task.due_date === groupDate} />
             {waiting && !done && (
               <span className={cn("inline-flex items-center gap-1 text-xs tnum", waiting.chase ? "font-medium text-warning-fg" : "text-muted-foreground")}>
                 <CirclePause className="size-3" />

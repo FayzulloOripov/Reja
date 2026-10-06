@@ -49,7 +49,7 @@ export function NotesTab({ project, writable }: { project: Project; writable: bo
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-[15rem_1fr]">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-[15rem_1fr]">
       <aside className="space-y-1">
         {writable && (
           <Button variant="outline" size="sm" className="mb-2 w-full justify-start bg-card" onClick={() => select(createNote(project).id)}>

@@ -43,7 +43,7 @@ export default async function InvitePage(props: PageProps<"/invite/[token]">) {
               {t("invite.body", { inviter: info.inviter_name ?? "Reja", name, role: t(`settings.roles.${info.role}` as never) })}
             </p>
             {signedIn ? (
-              <AcceptButton token={token} name={name} />
+              <AcceptButton token={token} name={name} email={info.email} />
             ) : (
               <Button asChild size="lg" className="w-full">
                 <Link href={`/login?next=${encodeURIComponent(`/invite/${token}`)}`}>{t("invite.signInFirst")}</Link>

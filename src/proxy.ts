@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { DEMO_COOKIE, FORCED_DEMO, SUPABASE_PUBLIC_KEY, SUPABASE_URL, supabaseConfigured } from "@/lib/env";
+import { safeNext } from "@/lib/safe-next";
 
 // Routes that work without a session.
 const PUBLIC_PREFIXES = ["/login", "/auth", "/demo", "/share", "/invite", "/offline", "/api/telegram", "/api/cron", "/api/ics"];
@@ -52,10 +53,8 @@ export async function proxy(request: NextRequest) {
   }
 
   if (signedIn && pathname === "/login") {
-    const url = request.nextUrl.clone();
-    url.pathname = request.nextUrl.searchParams.get("next") ?? "/";
-    url.search = "";
-    return NextResponse.redirect(url);
+    // a next path may carry its own query ("/projects/x?view=board"): resolve it, do not assign it to pathname
+    return NextResponse.redirect(new URL(safeNext(request.nextUrl.searchParams.get("next")), request.nextUrl.origin));
   }
 
   return response;

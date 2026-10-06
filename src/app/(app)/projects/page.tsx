@@ -343,7 +343,8 @@ function ProjectRow({ row, favorite, access, areas }: { row: Row; favorite: bool
             {health.percentDone}%
           </span>
           <span className="tnum">{t("project.openCount", { count: health.open })}</span>
-          {health.overdue > 0 && <span className="font-semibold text-danger-fg tnum">{t("project.overdueCount", { count: health.overdue })}</span>}
+          {/* the reason line above already says "1 ta kechikkan" unless the health was set by hand */}
+          {health.overdue > 0 && p.health_manual && <span className="font-semibold text-danger-fg tnum">{t("project.overdueCount", { count: health.overdue })}</span>}
           {next && (
             <span className="flex items-center gap-1">
               <KeyDateChip kind={next.kind} date={next.date} /> <span className="max-w-48 truncate" title={next.task.title}>{next.task.title}</span>

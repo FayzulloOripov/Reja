@@ -212,7 +212,7 @@ export default function HomePage() {
           <WaitingOnOthers />
           <StatsCards />
           <Section title={t("home.timeline")} actions={<span className="hidden text-2xs text-muted-foreground lg:inline">{t("home.timelineHint")}</span>}>
-            <div className="max-h-[560px] overflow-y-auto rounded-2xl border bg-card p-3 pt-4 shadow-elev-1">
+            <div className="max-h-[560px] overflow-y-auto rounded-2xl border bg-card p-3 pt-4 shadow-elev-1 [scrollbar-width:thin]">
               <DayTimeline date={today} candidates={timelineCandidates} />
             </div>
           </Section>

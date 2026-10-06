@@ -22,6 +22,7 @@ import { useMe, useToday, useTz, useUserId } from "@/store/hooks";
 import { setLocaleCookie } from "@/server/actions/locale";
 import { sendTestNotification } from "@/server/actions/notifications";
 import { getBrowserSupabase } from "@/lib/supabase/client";
+import { timezoneLabel } from "@/lib/timezones";
 import { PrayerCard } from "./prayer";
 import { DevicesCard } from "./trust";
 import { SettingsCard, SettingsRow, timeValue } from "./common";
@@ -52,7 +53,7 @@ export function ProfileSection() {
     <SettingsCard title={t("settings.profile")}>
       <div className="flex items-center gap-4 px-5 py-4">
         <UserAvatar profile={{ ...me, avatar_url: avatar || null }} size={56} />
-        <div className="grid flex-1 gap-2 sm:grid-cols-2">
+        <div className="grid grid-cols-1 flex-1 gap-2 sm:grid-cols-2">
           <Input value={name} onChange={(e) => setName(e.target.value)} onBlur={() => name.trim() && name !== me.name && updateProfile({ name: name.trim() })} aria-label={t("settings.name")} placeholder={t("settings.name")} />
           <Input value={avatar} onChange={(e) => setAvatar(e.target.value)} onBlur={() => avatar !== (me.avatar_url ?? "") && updateProfile({ avatar_url: /^https:\/\//.test(avatar) ? avatar : null })} aria-label={t("settings.avatar")} placeholder="https://…" />
         </div>
@@ -77,7 +78,7 @@ export function ProfileSection() {
         <Select value={me.timezone} onValueChange={(v) => updateProfile({ timezone: v })}>
           <SelectTrigger aria-label={t("settings.timezone")} className="w-56"><SelectValue /></SelectTrigger>
           <SelectContent className="max-h-80">
-            {zones.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}
+            {zones.map((z) => <SelectItem key={z} value={z}>{timezoneLabel(z, locale)}</SelectItem>)}
           </SelectContent>
         </Select>
       </SettingsRow>

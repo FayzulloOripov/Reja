@@ -8,7 +8,7 @@ test.use({ viewport: { width: 1280, height: 860 } });
 
 const openProject = async (page: import("@playwright/test").Page, name: RegExp, view?: string) => {
   await page.getByRole("link", { name }).first().click();
-  await expect(page.getByRole("textbox", { name: "Nomi" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
   if (view) await page.getByRole("button", { name: view, exact: true }).click();
 };
 
@@ -69,7 +69,8 @@ test("recurring: undoing a completion removes the generated next occurrence", as
   await page.getByRole("button", { name: "Qaytarish" }).click();
   await expect(rows()).toHaveCount(1);
   await expect(rows().first().getByRole("checkbox")).toHaveAttribute("aria-checked", "false");
-  await expect(rows().first()).toContainText("Bugun");
+  // it is back under today's header (the row itself no longer repeats "Bugun")
+  await expect(page.getByRole("rowgroup", { name: /^Bugun/ }).locator("[data-task-id]", { hasText: "Har kuni 8 stakan suv" })).toHaveCount(1);
 });
 
 test("task panel: estimate in hours, and typing is kept when the panel closes at once", async ({ page }) => {

@@ -128,7 +128,7 @@ export function NewProjectDialog() {
 
           <div className="space-y-1.5">
             <Label>{t("project.visibility")}</Label>
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {(
                 [
                   ["workspace", Globe, t("project.visibilityWorkspace")],
@@ -148,7 +148,7 @@ export function NewProjectDialog() {
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="p-start">{t("project.startDate")}</Label>
               <Input id="p-start" type="date" value={start} onChange={(e) => setStart(e.target.value)} />

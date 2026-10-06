@@ -53,7 +53,7 @@ export default function DocsPage() {
       {list.length === 0 ? (
         <EmptyState illustration="notes" title={q ? t("common.noResults") : t("docs.empty")} body={q ? undefined : t("docs.emptyBody")} />
       ) : (
-        <ul className="grid gap-3 md:grid-cols-2">
+        <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {list.map(({ note, text, links: count }) => {
             const project = projects[note.project_id];
             return (

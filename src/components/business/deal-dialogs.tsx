@@ -128,7 +128,7 @@ export function DealDialog({
               </Select>
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="d-stage">{t("pipeline.stage")}</Label>
               <Select value={form.stage_id} onValueChange={set("stage_id")}>

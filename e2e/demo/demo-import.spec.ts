@@ -21,7 +21,7 @@ test("demo data moves into a new real account without losing anything", async ({
   await page.getByRole("textbox", { name: "Tezkor qoʻshish" }).fill("Demodagi inbox vazifa ertaga");
   await page.keyboard.press("Enter");
   await page.getByRole("link", { name: /Agentlik mijozlari/ }).first().click();
-  await expect(page.getByRole("textbox", { name: "Nomi" })).toHaveValue("Agentlik mijozlari");
+  await expect(page.getByRole("heading", { level: 1, name: "Agentlik mijozlari" })).toBeVisible();
   await page.getByRole("button", { name: "Vazifa qoʻshish" }).first().click();
   await page.getByRole("textbox", { name: "Vazifa qoʻshish" }).fill("Demodagi loyiha vazifasi");
   await page.getByRole("textbox", { name: "Vazifa qoʻshish" }).press("Enter");

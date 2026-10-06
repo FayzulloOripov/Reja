@@ -384,7 +384,7 @@ export function Sidebar() {
         </Tooltip>
       </div>
 
-      <nav className="scrollbar-none flex-1 space-y-5 overflow-y-auto px-2.5 pt-1 pb-4">
+      <nav className="flex-1 space-y-5 overflow-y-auto px-2.5 pt-1 pb-8 [mask-image:linear-gradient(to_bottom,black_calc(100%-2rem),transparent)] [scrollbar-width:thin]">
         <ul className="space-y-0.5">
           {primary.map((item) => (
             <li key={item.href}>

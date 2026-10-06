@@ -19,7 +19,7 @@ test.describe("core flow", () => {
     await page.getByLabel("Nomi").fill("Topcoach E2E");
     await page.getByRole("button", { name: "Mijoz loyihasi" }).click(); // template with sections
     await page.getByRole("button", { name: "Yaratish" }).click();
-    await expect(page.getByRole("textbox", { name: "Nomi" })).toHaveValue("Topcoach E2E");
+    await expect(page.getByRole("heading", { level: 1, name: "Topcoach E2E" })).toBeVisible();
 
     // quick add with natural language parsing
     await page.keyboard.press("q");

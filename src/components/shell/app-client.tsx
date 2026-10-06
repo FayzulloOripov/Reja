@@ -83,7 +83,7 @@ export function AppClient({ userId, demo, children }: { userId: string; demo?: b
             {pending > 0 && <span className="tnum">· {t("app.syncing", { count: pending })}</span>}
           </div>
         )}
-        <main id="main" tabIndex={-1} className={cn("flex-1 pb-28 outline-none md:pb-0")}>
+        <main id="main" tabIndex={-1} className={cn("min-w-0 flex-1 pb-28 outline-none md:pb-0")}>
           {status === "error" && !me ? <LoadError /> : showSkeleton ? <ShellSkeleton /> : children}
         </main>
       </div>
@@ -132,7 +132,7 @@ function ShellSkeleton() {
     <div className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8 sm:px-6 lg:px-10" aria-busy="true">
       <div className="h-8 w-56 animate-pulse rounded-lg bg-muted" />
       <div className="h-4 w-80 animate-pulse rounded bg-muted" />
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {[0, 1, 2].map((i) => (
           <div key={i} className="h-24 animate-pulse rounded-xl bg-muted" />
         ))}

@@ -161,6 +161,7 @@ export function DueChip({
   deadline,
   recurring,
   done,
+  hideDay,
   className,
 }: {
   date: string | null;
@@ -168,6 +169,8 @@ export function DueChip({
   deadline?: string | null;
   recurring?: boolean;
   done?: boolean;
+  /** the row sits under a header for this same day: show only the time and the repeat icon */
+  hideDay?: boolean;
   className?: string;
 }) {
   const t = useTranslations("task");
@@ -181,10 +184,13 @@ export function DueChip({
   const deadlineDiff = deadline ? diffDays(today, deadline) : null;
   const deadlinePassed = !done && deadlineDiff !== null && deadlineDiff < 0;
   const deadlineSoon = !done && deadlineDiff !== null && deadlineDiff <= 2;
-  const dueText = date ? `${f.relativeDay(date)}${dueAt ? ` ${f.time(dueAt)}` : ""}` : "";
+  const dayOnly = hideDay && !overdue;
+  const dueText = date ? (dayOnly ? (dueAt ? f.time(dueAt) : "") : `${f.relativeDay(date)}${dueAt ? ` ${f.time(dueAt)}` : ""}`) : "";
+  const showDue = Boolean(date) && (!dayOnly || Boolean(dueAt) || Boolean(recurring));
+  if (!showDue && !deadline) return null;
   return (
     <span className={cn("inline-flex items-center gap-1.5 text-xs tnum", className)}>
-      {date && (
+      {date && showDue && (
         <span
           title={`${t("due")}: ${f.weekdayDate(date)}${dueAt ? ` ${f.time(dueAt)}` : ""}`}
           className={cn(
@@ -193,7 +199,7 @@ export function DueChip({
           )}
         >
           {overdue ? <AlarmClock className="size-3" aria-hidden /> : <CalendarClock className="size-3" aria-hidden />}
-          <span className="sr-only">{t("due")}:</span>
+          {dueText && <span className="sr-only">{t("due")}:</span>}
           {dueText}
           {recurring && (
             <>

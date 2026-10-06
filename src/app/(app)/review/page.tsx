@@ -213,7 +213,7 @@ function ReviewHistory({ reviews }: { reviews: WeeklyReview[] }) {
         </ul>
       )}
       <p className="px-1 pt-2 text-xs text-muted-foreground">
-        <Link href="/settings" className="underline-offset-2 hover:underline">{t("review.reminderHint")}</Link>
+        <Link href="/settings/notifications" className="text-brand-fg underline underline-offset-2">{t("review.reminderHint")}</Link>
       </p>
     </section>
   );

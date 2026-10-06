@@ -140,7 +140,7 @@ export function ImportPanel() {
         </p>
         <div>
           <p className="mb-2 text-13 font-semibold">{t("import.mapTitle")}</p>
-          <div className="grid gap-2 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             {CSV_FIELDS.map((field) => (
               <label key={field} className="space-y-1 text-xs">
                 <span className="font-medium">
@@ -231,7 +231,7 @@ export function ImportPanel() {
               const target = g.target;
               const value = target.kind === "existing" ? `p:${target.projectId}` : target.kind;
               return (
-                <li key={g.key} className="grid gap-2 p-2.5 sm:grid-cols-[1fr_14rem_12rem] sm:items-center">
+                <li key={g.key} className="grid grid-cols-1 gap-2 p-2.5 sm:grid-cols-[1fr_14rem_12rem] sm:items-center">
                   <span className="text-13">
                     <span className="font-medium">{g.label}</span> <span className="text-muted-foreground">· {t("import.tasks", { count: g.count })}</span>
                   </span>

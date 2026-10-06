@@ -48,7 +48,7 @@ export function DemoImportCard({ className }: { className?: string }) {
         <FlaskConical className="size-4 text-info" aria-hidden /> {t("title")}
       </h2>
       <p className="text-13 text-muted-foreground">{t("body")}</p>
-      <div role="radiogroup" aria-label={t("title")} className="grid gap-2 sm:grid-cols-2">
+      <div role="radiogroup" aria-label={t("title")} className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {(["mine", "all"] as const).map((m) => (
           <button
             key={m}

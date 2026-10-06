@@ -22,7 +22,7 @@ export function FocusPill() {
   return (
     <Link
       href="/focus"
-      className="fixed top-3 right-3 z-40 inline-flex items-center gap-1.5 rounded-full bg-foreground px-3 py-1.5 text-xs font-semibold text-background shadow-elev-3 tnum md:top-4 md:right-4"
+      className="fixed top-3 right-3 z-40 inline-flex items-center gap-1.5 rounded-full bg-foreground px-3 py-1.5 text-xs font-semibold text-background shadow-elev-3 tnum-fixed md:top-4 md:right-4"
     >
       {phase === "work" ? <Timer className="size-3.5" /> : <Coffee className="size-3.5" />}
       {String(Math.floor(s / 60)).padStart(2, "0")}:{String(s % 60).padStart(2, "0")}

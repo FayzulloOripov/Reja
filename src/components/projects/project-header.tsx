@@ -150,6 +150,7 @@ export function ProjectHeader({ project, access }: { project: Project; access: A
   const [settings, setSettings] = useState(false);
   const [share, setShare] = useState(false);
   const [name, setName] = useState(project.name);
+  const [renaming, setRenaming] = useState(false);
   const writable = canWrite(access);
   const manager = canManage(access);
   const data = useStore((s) => s.data);
@@ -182,22 +183,40 @@ export function ProjectHeader({ project, access }: { project: Project; access: A
           <span className="size-4 rounded-md bg-pc" />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
+          {renaming ? (
             <input
+              autoFocus
               value={name}
-              readOnly={!writable}
               onChange={(e) => setName(e.target.value)}
+              onFocus={(e) => e.target.select()}
               onBlur={() => {
                 const v = name.trim();
                 if (v && v !== project.name) updateProject(project.id, { name: v });
                 else setName(project.name);
+                setRenaming(false);
               }}
-              onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                if (e.key === "Escape") {
+                  setName(project.name);
+                  setRenaming(false);
+                }
+              }}
               aria-label={t("common.name")}
-              title={name}
-              className="min-w-0 flex-1 truncate bg-transparent font-display text-22 font-bold outline-none sm:text-28"
+              className="w-full min-w-0 rounded-md bg-transparent font-display text-22 font-bold outline-none ring-ring/40 focus-visible:ring-2 sm:text-28"
             />
-          </div>
+          ) : (
+            // the name wraps instead of being cut off; a tap renames it
+            <h1 className="font-display text-22 leading-tight font-bold text-balance break-words sm:text-28">
+              {writable ? (
+                <button type="button" onClick={() => { setName(project.name); setRenaming(true); }} title={t("common.rename")} className="rounded-md text-left hover:bg-muted/60">
+                  {project.name}
+                </button>
+              ) : (
+                project.name
+              )}
+            </h1>
+          )}
           <div className="mt-1 flex flex-wrap items-center gap-2 text-13 text-muted-foreground">
             {health && <HealthControl project={project} result={health} editable={manager} />}
             {project.target_date && (

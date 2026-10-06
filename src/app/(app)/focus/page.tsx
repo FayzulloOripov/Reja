@@ -117,7 +117,7 @@ function FocusInner() {
               {focus.phase === "work" ? <Timer className="size-3.5" /> : <Coffee className="size-3.5" />}
               {focus.phase === "work" ? t("focus.work") : t("focus.break")}
             </span>
-            <span className="font-display text-6xl font-bold tnum">{formatClock(remaining)}</span>
+            <span className="font-display text-6xl font-bold tnum-fixed">{formatClock(remaining)}</span>
             {task && <span className="mt-2 max-w-52 truncate text-13 text-muted-foreground">{task.title}</span>}
           </div>
         </div>
