@@ -145,11 +145,11 @@
     "docs": "Docs"
   },
   "auth": {
-    "title": "Welcome to Reja",
-    "subtitle": "Enter your email and we'll send you a sign-in link.",
+    "title": "Sign in or sign up",
+    "subtitle": "No password needed: enter your email, press «Sign in» and open the link we email you. New here? Your account is created automatically.",
     "emailLabel": "Email address",
     "emailPlaceholder": "name@company.com",
-    "sendLink": "Send sign-in link",
+    "sendLink": "Sign in",
     "sending": "Sending…",
     "orContinue": "or",
     "google": "Continue with Google",

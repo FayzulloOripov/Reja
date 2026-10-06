@@ -145,11 +145,11 @@
     "docs": "Hujjatlar"
   },
   "auth": {
-    "title": "Reja’ga xush kelibsiz",
-    "subtitle": "Kirish uchun emailingizni kiriting — sizga havola yuboramiz.",
+    "title": "Kirish yoki roʻyxatdan oʻtish",
+    "subtitle": "Parol kerak emas: emailingizni kiriting, «Kirish»ni bosing va emailga kelgan havolani oching. Hisobingiz boʻlmasa, u avtomatik yaratiladi.",
     "emailLabel": "Email manzil",
     "emailPlaceholder": "ism@kompaniya.uz",
-    "sendLink": "Kirish havolasini yuborish",
+    "sendLink": "Kirish",
     "sending": "Yuborilmoqda…",
     "orContinue": "yoki",
     "google": "Google bilan kirish",
