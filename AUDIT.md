@@ -165,13 +165,15 @@ Every row runs in the demo and against the real backend (`e2e/demo/checklist.spe
 
 ## 6. Test results
 
-Run on 2026-10-06 against the local production build (`next build` + `next start`) and the Supabase project.
+Final run on 2026-10-06 (local production build: `next build` + `next start`).
 
 | Suite | Result |
 |---|---|
 | Typecheck, lint | clean |
-| Unit + database tests on PGlite (`npm test`) | 250 passed, 3 skipped (Supabase-only checks) |
-| Database tests on Supabase (`npm run test:db:remote`) — RLS for all 52 tables, triggers, business rules, sessions, audit log, storage/realtime/cron | 81 / 81 passed |
-| Playwright, demo (`npm run test:e2e:demo`) | 67 passed, 5 skipped, 1 failed; that test (a selector) was fixed and its spec file then passed — the whole suite was not rerun after the fix |
-| Playwright, Supabase (`npm run test:e2e:real`) — every test signs in a freshly seeded user | 70 passed, 3 skipped (demo-only behaviour) |
-| Lighthouse 12, mobile, local | sign-in: performance 88, accessibility 100, best practices 100, SEO 100 · Home: 75 / 100 / 100 / 100 |
+| Unit + database tests on PGlite (`npm test`) — includes RLS for all 52 tables, triggers, business rules, sessions, audit log, the test-project guard | 254 passed, 3 skipped (Supabase-only checks) |
+| Playwright, demo (`npm run test:e2e:demo`), full suite | 68 passed, 5 skipped (real-backend-only tests) |
+| Database tests on Supabase (`npm run test:db:remote`) | 81 / 81 passed on 2026-10-06, before the project became production; **not rerun since** — remote tests now refuse to run against production and no separate test project is used (decision: no `reja-test`) |
+| Playwright on Supabase (`npm run test:e2e:real`) | 70 passed, 3 skipped on 2026-10-06, same project before it became production; **not rerun since**, same reason |
+| Lighthouse 12, mobile, local build | sign-in: performance 88, accessibility 100, best practices 100, SEO 100 · Home: 75 / 100 / 100 / 100 (live-site scores: see section 7) |
+
+Remote suites can run again any time a separate test project is put in `.env.test.local` (see `scripts/test-env.mjs`); they refuse the production project.
