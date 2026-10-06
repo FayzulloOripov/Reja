@@ -4,6 +4,7 @@ import { siteUrl } from "@/lib/env";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { sendEmail } from "@/server/email";
 import { googleConfigured, serverEnv } from "@/server/env";
+import { clientIp, rateLimit } from "@/server/rate-limit";
 import { syncGoogle } from "@/server/google";
 import { ListEmail } from "@/emails/digest";
 import { serverT } from "@/server/i18n";
@@ -57,7 +58,11 @@ async function syncStaleGoogle(): Promise<number> {
 
 /** Called every minute by pg_cron via pg_net (see supabase/migrations/…_cron.sql). */
 async function handle(req: NextRequest) {
-  if (!authorised(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (!authorised(req)) {
+    // guessing the secret is throttled per address
+    const limited = !(await rateLimit(`cron-denied:${await clientIp()}`, 10, 600));
+    return NextResponse.json({ error: limited ? "rate_limited" : "unauthorized" }, { status: limited ? 429 : 401 });
+  }
   const started = Date.now();
   const result = await runScheduler({
     store: supabaseSchedulerStore(getAdminSupabase()),

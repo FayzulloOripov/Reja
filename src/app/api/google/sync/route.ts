@@ -3,6 +3,7 @@ import { getAdminSupabase } from "@/lib/supabase/admin";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { googleConfigured } from "@/server/env";
 import { syncGoogle } from "@/server/google";
+import { rateLimit } from "@/server/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,6 +14,7 @@ export async function POST() {
   const sb = await getServerSupabase();
   const { data } = await sb.auth.getUser();
   if (!data.user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (!(await rateLimit(`google-sync:${data.user.id}`, 6, 60))) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   try {
     return NextResponse.json(await syncGoogle(getAdminSupabase(), data.user.id));
   } catch (e) {
