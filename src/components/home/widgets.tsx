@@ -12,7 +12,7 @@ import { addDays, dateIn, startOfWeek } from "@/lib/dates";
 import { focusSummary } from "@/lib/focus-stats";
 import { useFormat } from "@/lib/format";
 import { currentStreak, scheduledOn } from "@/lib/habits";
-import { isOpen, suggestHealth, effectiveHealth } from "@/lib/health";
+import { effectiveHealth, healthReason, isOpen, suggestHealth } from "@/lib/health";
 import type { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { setTop, toggleHabit } from "@/store/actions";
@@ -107,7 +107,10 @@ export function StatsCards() {
     const byProject = tasksByProject(tasks);
     const atRisk = projects
       .filter((p) => p.status === "active")
-      .map((p) => ({ p, h: effectiveHealth(p, suggestHealth(p, byProject[p.id] ?? [], today).health) }))
+      .map((p) => {
+        const r = suggestHealth(p, byProject[p.id] ?? [], today);
+        return { p, r, h: effectiveHealth(p, r.health) };
+      })
       .filter((r) => r.h !== "on_track");
     return { thisWeek, lastWeek, focus, atRisk };
   }, [mine, entries, uid, tz, weekStart, lastWeekStart, tasks, projects, today]);
@@ -145,12 +148,16 @@ export function StatsCards() {
           <p className="mt-1.5 text-sm font-medium text-success-fg">{t("home.atRiskNone")}</p>
         ) : (
           <ul className="mt-2 space-y-1">
-            {stats.atRisk.slice(0, 4).map(({ p, h }) => (
+            {stats.atRisk.slice(0, 4).map(({ p, r, h }) => (
               <li key={p.id}>
-                <Link href={`/projects/${p.id}?view=overview`} className="flex items-center gap-2 rounded-md py-0.5 text-13 hover:underline">
-                  <ProjectDot color={p.color} size="sm" />
-                  <span className="flex-1 truncate">{p.name}</span>
-                  <span className={cn("text-xs font-semibold", h === "off_track" ? "text-danger-fg" : "text-warning-fg")}>{t(`health.${h}`)}</span>
+                <Link href={`/projects/${p.id}?view=overview`} className="block rounded-md py-0.5 text-13 hover:underline">
+                  <span className="flex items-center gap-2">
+                    <ProjectDot color={p.color} size="sm" />
+                    <span className="flex-1 truncate">{p.name}</span>
+                    <span className={cn("text-xs font-semibold", h === "off_track" ? "text-danger-fg" : "text-warning-fg")}>{t(`health.${h}`)}</span>
+                  </span>
+                  {/* the reason, as on the project page: "5 kun qoldi, 50% bajarildi, 1 ta kechikkan" */}
+                  <span className="block pl-4 text-xs text-muted-foreground">{healthReason((k, v) => t(k as never, v as never), p, r)}</span>
                 </Link>
               </li>
             ))}

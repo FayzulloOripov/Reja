@@ -52,7 +52,7 @@ export function TaskCheckbox({
       }}
       style={{ width: size, height: size }}
       className={cn(
-        "group/check relative flex shrink-0 items-center justify-center rounded-full border-[1.75px] transition-all duration-200 ease-out",
+        "group/check tap-44 relative flex shrink-0 items-center justify-center rounded-full border-[1.75px] transition-all duration-200 ease-out",
         done ? "border-success bg-success" : cn(RING[task.priority], urgentFill && "bg-[color-mix(in_oklch,currentColor_0%,transparent)]"),
         !done && !disabled && "hover:bg-success/10",
         disabled && "opacity-50",

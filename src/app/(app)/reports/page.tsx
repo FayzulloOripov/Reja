@@ -3,7 +3,7 @@
 import { BarChart3, CheckCircle2, Clock, Gauge } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { axisProps, barProps, ChartCard, ChartTooltip, gridProps, hbarProps, lineProps, SLOT, StatTile } from "@/components/charts/kit";
 import { PageHeader, ProjectDot } from "@/components/common/bits";
 import { AreaFilterChips, inArea, useAreaFilter, type AreaFilterValue } from "@/components/projects/area-filter";
@@ -12,6 +12,7 @@ import { PageContainer } from "@/components/shell/app-client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { colorVar } from "@/lib/colors";
 import { useFormat } from "@/lib/format";
 import { isOverdue } from "@/lib/health";
 import { responsibleIds } from "@/lib/tasks/responsible";
@@ -100,7 +101,7 @@ function Personal({ weeks, tz, uid, weekLabel, area }: { weeks: ReturnType<typeo
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatTile icon={<CheckCircle2 className="text-success" />} label={t("reports.totalDone")} value={f.num(total)} hint={period} />
-        <StatTile icon={<BarChart3 />} label={t("reports.avgPerWeek")} value={f.num(total / weeks.length, 1)} hint={period} />
+        <StatTile icon={<BarChart3 />} label={t("reports.avgPerWeek")} value={f.num(total / weeks.length, Math.round((total / weeks.length) * 10) % 10 === 0 ? 0 : 1)} hint={period} />
         <StatTile icon={<Gauge />} label={t("reports.onTimeRate")} value={rate === null ? "—" : `${f.num(rate)}%`} hint={period} />
         <StatTile icon={<Clock />} label={t("reports.focusTime")} value={f.duration(totalMinutes)} hint={period} />
       </div>
@@ -185,7 +186,12 @@ function Personal({ weeks, tz, uid, weekLabel, area }: { weeks: ReturnType<typeo
                   }}
                 />
                 <Tooltip cursor={{ fill: "var(--muted)", opacity: 0.5 }} content={<ChartTooltip format={(v) => f.duration(v)} />} />
-                <Bar dataKey="minutes" name={t("reports.minutes")} fill={SLOT[0]} {...hbarProps} />
+                <Bar dataKey="minutes" name={t("reports.minutes")} fill={SLOT[0]} {...hbarProps}>
+                  {/* each bar in its project's colour, matching the dot beside its name */}
+                  {time.map((r) => (
+                    <Cell key={r.name} fill={colorVar(r.color)} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           )}

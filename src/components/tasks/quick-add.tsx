@@ -2,7 +2,7 @@
 
 import { AlertTriangle, CalendarDays, Clock, Flag, Inbox, Repeat, Star, Undo2, User, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useOnChange } from "@/hooks/use-synced-state";
 import { toast } from "sonner";
 import { PriorityIcon, ProjectDot, UserAvatar, Kbd } from "@/components/common/bits";
@@ -158,6 +158,11 @@ export function QuickAddDialog() {
     }
   }
 
+  // keep the mirror scrolled with the input after every change, not only on scroll events
+  useLayoutEffect(() => {
+    if (overlayRef.current && inputRef.current) overlayRef.current.scrollLeft = inputRef.current.scrollLeft;
+  });
+
   // highlighted mirror of the input
   const segments = useMemo(() => {
     const out: { text: string; kind?: ChipKind }[] = [];
@@ -187,11 +192,11 @@ export function QuickAddDialog() {
           <div
             ref={overlayRef}
             aria-hidden
-            className="pointer-events-none absolute inset-x-4 top-4 h-11 overflow-hidden text-[17px] leading-[44px] whitespace-pre"
+            className="pointer-events-none absolute inset-x-4 top-4 h-11 overflow-hidden pr-10 text-[17px] leading-[44px] whitespace-pre"
           >
             {segments.map((s, i) =>
               s.kind ? (
-                <mark key={i} className={cn("rounded-[5px] text-transparent", CHIP_STYLE[s.kind])}>
+                <mark key={i} className={cn("rounded-[5px]", CHIP_STYLE[s.kind], "text-transparent")}>
                   {s.text}
                 </mark>
               ) : (

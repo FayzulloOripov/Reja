@@ -768,7 +768,7 @@
     "title": "Settings",
     "profile": "Profile",
     "notifications": "Notifications",
-    "integrations": "Telegram & calendar",
+    "integrations": "Connections",
     "workspace": "Workspace",
     "members": "Members",
     "labels": "Labels",
@@ -881,7 +881,7 @@
     "sectionHints": {
       "profile": "Name, language, theme, time zone, work days",
       "notifications": "Which message goes to which channel, quiet hours",
-      "integrations": "Push, calendar, Telegram (coming soon)",
+      "integrations": "Push notifications, Google Calendar, Telegram (coming soon)",
       "workspace": "Name, members and invitations",
       "labels": "Shared labels",
       "templates": "Project templates",

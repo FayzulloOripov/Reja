@@ -12,7 +12,7 @@ import {
   ExternalLink,
   Eye,
   EyeOff,
-  Flag,
+  Milestone,
   Hourglass,
   Inbox,
   MoreHorizontal,
@@ -331,7 +331,7 @@ function TaskDetailBody({ task, onClose, fullPage }: { task: Task; onClose?: () 
             </DatePicker>
           </Prop>
 
-          <Prop icon={<Flag />} label={t("task.deadline")}>
+          <Prop icon={<Milestone />} label={t("task.deadline")}>
             <DatePicker value={task.deadline} onChange={(d) => updateTask(task.id, { deadline: d })} allowTime={false}>
               <PropButton disabled={!writable} title={t("task.deadlineHint")} className={cn(!task.deadline && "text-muted-foreground")}>
                 {task.deadline ? f.dayMonth(task.deadline) : t("common.none")}

@@ -67,17 +67,19 @@ export function BoardView({ project, tasks, sections, by, writable }: { project:
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState("");
 
+  // an empty "Boʻlimsiz" column would be the whole first screen on a phone: when the board opens with it
+  // empty (and real sections exist) it goes last. Decided once, so it does not jump while cards are dragged.
+  const [looseLast] = useState(() => sections.length > 0 && !tasks.some((x) => !x.section_id || !sections.some((s) => s.id === x.section_id)));
   const columns: Column[] = useMemo(() => {
     if (by === "status") {
       return STATUSES.filter((s) => s !== "cancelled").map((s) => ({ key: s, title: t(`status.${s}`), status: s, tasks: tasks.filter((x) => x.status === s).sort(byPosition) }));
     }
     const loose = tasks.filter((x) => !x.section_id || !sections.some((s) => s.id === x.section_id)).sort(byPosition);
     // every column stays visible, empty or not, so a card can always be dragged back
-    return [
-      { key: "none", title: t("project.noSection"), sectionId: null, tasks: loose },
-      ...sections.map((s) => ({ key: s.id, title: s.name, sectionId: s.id, tasks: tasks.filter((x) => x.section_id === s.id).sort(byPosition) })),
-    ];
-  }, [by, tasks, sections, t]);
+    const none: Column = { key: "none", title: t("project.noSection"), sectionId: null, tasks: loose };
+    const rest = sections.map((s) => ({ key: s.id, title: s.name, sectionId: s.id, tasks: tasks.filter((x) => x.section_id === s.id).sort(byPosition) }));
+    return looseLast ? [...rest, none] : [none, ...rest];
+  }, [by, tasks, sections, t, looseLast]);
 
   // mouse drags after 6px; on touch a long press (250 ms) starts the drag, so swiping scrolls the board
   const sensors = useSensors(

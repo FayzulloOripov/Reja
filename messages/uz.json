@@ -768,7 +768,7 @@
     "title": "Sozlamalar",
     "profile": "Profil",
     "notifications": "Bildirishnomalar",
-    "integrations": "Telegram va kalendar",
+    "integrations": "Ulanishlar",
     "workspace": "Ish maydoni",
     "members": "Aʼzolar",
     "labels": "Teglar",
@@ -881,7 +881,7 @@
     "sectionHints": {
       "profile": "Ism, til, mavzu, vaqt mintaqasi, ish kunlari",
       "notifications": "Qaysi xabar qaysi kanalga keladi, sokin soatlar",
-      "integrations": "Push, kalendar, Telegram (tez orada)",
+      "integrations": "Push-bildirishnomalar, Google Kalendar, Telegram (tez orada)",
       "workspace": "Nomi, aʼzolar va takliflar",
       "labels": "Umumiy teglar",
       "templates": "Loyiha shablonlari",

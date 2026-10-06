@@ -136,7 +136,12 @@ export function moneyLabel(num: (v: number, digits?: number) => string, amount: 
 /** Short form for tiles and cards: "12,5 mln", "850 ming". */
 export function compactUzs(num: (v: number, digits?: number) => string, uzs: number, words: { mln: string; k: string }): string {
   const a = Math.abs(uzs);
-  if (a >= 1_000_000) return `${num(uzs / 1_000_000, a >= 100_000_000 ? 0 : 1)} ${words.mln}`;
+  if (a >= 1_000_000) {
+    const m = uzs / 1_000_000;
+    // one decimal only when it says something: "12,5 mln", but "60 mln", not "60,0 mln"
+    const digits = a >= 100_000_000 || Math.round(m * 10) % 10 === 0 ? 0 : 1;
+    return `${num(m, digits)} ${words.mln}`;
+  }
   if (a >= 10_000) return `${num(uzs / 1000, 0)} ${words.k}`;
   return num(uzs);
 }

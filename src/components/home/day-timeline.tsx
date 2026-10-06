@@ -2,7 +2,7 @@
 
 import { AlarmClock, CalendarDays, CalendarSync, Moon, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
@@ -99,6 +99,16 @@ export function DayTimeline({ date, candidates }: { date: string; candidates: Ta
     }
     setDrag(null);
   }
+
+  // the timeline sits in a fixed-height box on Home: open it at the current hour, not at the top of the day
+  const scrolledToNow = useRef(false);
+  useEffect(() => {
+    if (scrolledToNow.current || !ref.current || now < START || now > END) return;
+    const box = ref.current.closest<HTMLElement>(".overflow-y-auto");
+    if (!box) return;
+    scrolledToNow.current = true;
+    box.scrollTop = Math.max(0, (now - START) * PX_PER_MIN - box.clientHeight / 3);
+  }, [now, START, END]);
 
   const hours = [];
   for (let m = START; m <= END; m += 60) hours.push(m);

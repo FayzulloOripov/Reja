@@ -222,8 +222,14 @@ function EntryRow({ entry, onOpen }: { entry: MoneyEntry; onOpen: () => void }) 
         <span className={cn("flex size-8 shrink-0 items-center justify-center rounded-full", income ? "bg-success-soft text-success-fg" : "bg-danger-soft text-danger-fg")}>
           {income ? <ArrowDownLeft className="size-4" /> : <ArrowUpRight className="size-4" />}
         </span>
+        {/* title and amount share the first line; the details get the full width below */}
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-medium">{entry.note || entry.category || t(income ? "money.income" : "money.expense")}</span>
+          <span className="flex items-baseline gap-3">
+            <span className="min-w-0 flex-1 truncate text-sm font-medium" title={entry.note || entry.category || undefined}>{entry.note || entry.category || t(income ? "money.income" : "money.expense")}</span>
+            <span className={cn("shrink-0 text-right text-sm font-semibold tnum", inactive ? "text-muted-foreground line-through decoration-muted-foreground/50" : income && "text-success-fg")}>
+              {income ? "+" : "−"}{moneyLabel(f.num, Number(entry.amount), entry.currency)}
+            </span>
+          </span>
           <span className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
             <span>{f.relativeDay(entry.date)}</span>
             {project && <span>{project.name}</span>}
@@ -232,13 +238,8 @@ function EntryRow({ entry, onOpen }: { entry: MoneyEntry; onOpen: () => void }) 
             {partner && <span className="inline-flex items-center gap-1"><UserAvatar profile={partner} size={14} /> {partner.name}</span>}
             {entry.status === "pending" && <span className="font-medium text-warning-fg">{t("money.status.pending")}</span>}
             {entry.status === "rejected" && <span className="font-medium text-danger-fg">{t("money.status.rejected")}</span>}
+            {entry.currency === "USD" && <span className="ml-auto tnum">≈ {moneyLabel(f.num, toUzs(entry))}</span>}
           </span>
-        </span>
-        <span className={cn("shrink-0 text-right tnum", inactive && "text-muted-foreground line-through decoration-muted-foreground/50")}>
-          <span className={cn("block text-sm font-semibold", !inactive && (income ? "text-success-fg" : ""))}>
-            {income ? "+" : "−"}{moneyLabel(f.num, Number(entry.amount), entry.currency)}
-          </span>
-          {entry.currency === "USD" && <span className="block text-2xs text-muted-foreground">{moneyLabel(f.num, toUzs(entry))}</span>}
         </span>
       </button>
       <button type="button" onClick={() => deleteMoneyEntry(entry)} aria-label={t("common.delete")} className="rounded p-1 text-muted-foreground opacity-0 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100">
