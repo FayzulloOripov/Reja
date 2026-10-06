@@ -68,7 +68,7 @@ export default function ShutdownPage() {
               <ul className="divide-y rounded-xl border">
                 {unfinished.map((task) => (
                   <li key={task.id} className="flex flex-wrap items-center gap-2 px-3 py-2">
-                    <span className="min-w-0 flex-1 truncate text-sm">{task.title}</span>
+                    <span className="min-w-48 flex-1 text-sm break-words">{task.title}</span>
                     <div className="flex gap-1" role="group" aria-label={t("shutdown.triage", { title: task.title })}>
                       <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => triageLeftover(task, "tomorrow")}>{t("common.tomorrow")}</Button>
                       <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => triageLeftover(task, "later")}>{t("shutdown.later")}</Button>
@@ -108,7 +108,7 @@ export default function ShutdownPage() {
                       className={cn("flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm hover:bg-muted disabled:opacity-50", on && "bg-warning-soft/60")}
                     >
                       <Star className={cn("size-4 shrink-0", on ? "fill-warning text-warning" : "text-muted-foreground")} />
-                      <span className="min-w-0 flex-1 truncate">{task.title}</span>
+                      <span className="line-clamp-2 min-w-0 flex-1">{task.title}</span>
                     </button>
                   </li>
                 );

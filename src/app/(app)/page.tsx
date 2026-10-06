@@ -7,7 +7,7 @@ import { useMemo } from "react";
 import { ProjectDot, Section } from "@/components/common/bits";
 import { EmptyState, Illustration } from "@/components/common/empty-state";
 import { DayTimeline, TASK_DRAG_TYPE } from "@/components/home/day-timeline";
-import { HabitsRow, PlanTomorrow, StatsCards, WaitingOnOthers } from "@/components/home/widgets";
+import { HabitsRow, NextUp, PlanTomorrow, StatsCards, WaitingOnOthers } from "@/components/home/widgets";
 import { EnergyCard, RoutinesRow, ShutdownCard } from "@/components/home/org-widgets";
 import { PageContainer } from "@/components/shell/app-client";
 import { InlineAdd, TaskList, type TaskGroup } from "@/components/tasks/task-list";
@@ -91,6 +91,7 @@ export default function HomePage() {
           <header className="space-y-2">
             <p className="text-13 font-medium text-brand-fg">{f.longDay(today)}</p>
             <h1 className="text-28 font-bold sm:text-36">{t(`greeting.${partOfDay(Math.floor(now / 60))}`, { name: firstName || "👋" })}</h1>
+            <NextUp tasks={mine} />
             <AreaFilterChips areas={areas} value={area} onChange={setArea} className="pt-1" />
             <div className="flex items-center gap-3">
               <p className="text-sm text-muted-foreground">{plannedToday ? t("home.subtitleDone", { percent }) : t("home.subtitleEmpty")}</p>

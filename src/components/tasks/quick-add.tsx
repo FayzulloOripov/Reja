@@ -48,6 +48,7 @@ export function QuickAddDialog() {
   const t = useTranslations();
   const { open, defaults } = useUI((s) => s.quickAdd);
   const close = useUI((s) => s.closeQuickAdd);
+  const openTask = useUI((s) => s.openTask);
   const today = useToday();
   const tz = useTz();
   const nowMinutes = useNowMinutes();
@@ -134,7 +135,7 @@ export function QuickAddDialog() {
   function submit(keepOpen: boolean) {
     const title = parsed.title.trim();
     if (!title) return;
-    createTask({
+    const created = createTask({
       ...defaults,
       title,
       workspaceId: project?.workspace_id ?? ws?.id,
@@ -147,7 +148,17 @@ export function QuickAddDialog() {
       top,
       assigneeIds: parsed.assigneeIds.length ? parsed.assigneeIds : defaults?.assigneeIds,
     });
-    toast.success(navigator.onLine ? t("quickAdd.added") : t("quickAdd.addedOffline"));
+    // say where it went: a task for someone else, or for another day, leaves the screen you are on
+    const assignees = parsed.assigneeIds.length ? parsed.assigneeIds : (defaults?.assigneeIds ?? []);
+    const where = [
+      project?.name ?? t("nav.inbox"),
+      dueDate ? `${capitalize(f.relativeDay(dueDate))}${dueTime ? ` ${dueTime}` : ""}` : null,
+      ...assignees.map((id) => profiles[id]?.name).filter(Boolean),
+    ].filter(Boolean).join(" · ");
+    toast.success(navigator.onLine ? t("quickAdd.added") : t("quickAdd.addedOffline"), {
+      description: where,
+      action: { label: t("quickAdd.open"), onClick: () => openTask(created.id) },
+    });
     if (keepOpen) {
       setText("");
       setDismissed([]);

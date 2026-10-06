@@ -55,6 +55,8 @@ export interface TaskListProps {
   empty?: ReactNode;
   className?: string;
   triage?: boolean;
+  /** waiting lists: rows get a follow-up share button */
+  chase?: boolean;
   /** make rows draggable with the HTML5 API (e.g. onto the day timeline) */
   nativeDragType?: string;
 }
@@ -98,7 +100,7 @@ function GroupDrop({ id, children }: { id: string; children: ReactNode }) {
   );
 }
 
-export function TaskList({ groups, showProject, sortable, readOnly, allowAdd, onMove, empty, className, triage, nativeDragType }: TaskListProps) {
+export function TaskList({ groups, showProject, sortable, readOnly, allowAdd, onMove, empty, className, triage, chase, nativeDragType }: TaskListProps) {
   const t = useTranslations();
   const selection = useUI((s) => s.selection);
   const toggleSelect = useUI((s) => s.toggleSelect);
@@ -260,6 +262,8 @@ export function TaskList({ groups, showProject, sortable, readOnly, allowAdd, on
                 task,
                 showProject,
                 groupDate: g.defaults?.dueDate ?? null,
+                triage,
+                chase,
                 readOnly,
                 focused: focusId ? focusId === task.id : i === 0 && g === groups.find((x) => x.tasks.length),
                 selected: selection.includes(task.id),

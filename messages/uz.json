@@ -184,6 +184,9 @@
     "night": "Xayrli tun, {name}"
   },
   "home": {
+    "nextUp": "Keyingisi",
+    "nextNow": "hozir",
+    "nextIn": "{duration} qoldi",
     "title": "Bugun",
     "subtitleDone": "Bugungi rejaning {percent}% bajarildi",
     "subtitleEmpty": "Kunni rejalashtirishdan boshlang",
@@ -232,6 +235,7 @@
     "empty": "Kiruvchi boʻsh",
     "emptyBody": "Fikr kelsa — Q tugmasini bosing yoki Telegram botga yozing. Keyin shu yerda saralaysiz.",
     "triageHint": "↑↓ tanlash · T bugun · M ertaga · P loyihaga · E bajarildi · Del oʻchirish",
+    "toProject": "Loyihaga",
     "fromTelegram": "Telegram’dan",
     "forwardedFrom": "{name} dan uzatilgan"
   },
@@ -494,6 +498,7 @@
     "addAnother": "Yana qoʻshish",
     "added": "Vazifa qoʻshildi",
     "addedOffline": "Vazifa saqlandi — internet qaytganda yuboriladi",
+    "open": "Ochish",
     "inbox": "Kiruvchi",
     "chipDate": "Sana",
     "chipTime": "Vaqt",
@@ -1217,6 +1222,8 @@
     "done": "{tasks} ta vazifa hisobingizga oʻtkazildi"
   },
   "waiting": {
+    "chase": "Soʻrash",
+    "chaseText": "Salom! «{title}» boʻyicha holat qanday? Muddat: {date}.",
     "title": "Kutilmoqda",
     "subtitle": "Boshqalarga topshirgan va kutayotgan ishlaringiz",
     "delegated": "Boshqalardan kutilayotgan",

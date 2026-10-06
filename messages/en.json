@@ -184,6 +184,9 @@
     "night": "Good night, {name}"
   },
   "home": {
+    "nextUp": "Next",
+    "nextNow": "now",
+    "nextIn": "in {duration}",
     "title": "Today",
     "subtitleDone": "{percent}% of today's plan is done",
     "subtitleEmpty": "Start by planning your day",
@@ -232,6 +235,7 @@
     "empty": "Inbox zero",
     "emptyBody": "Capture ideas with Q or by messaging the Telegram bot, then sort them here.",
     "triageHint": "↑↓ select · T today · M tomorrow · P to project · E done · Del delete",
+    "toProject": "To a project",
     "fromTelegram": "From Telegram",
     "forwardedFrom": "Forwarded from {name}"
   },
@@ -494,6 +498,7 @@
     "addAnother": "Add another",
     "added": "Task added",
     "addedOffline": "Task saved — it will sync when you're back online",
+    "open": "Open",
     "inbox": "Inbox",
     "chipDate": "Date",
     "chipTime": "Time",
@@ -1217,6 +1222,8 @@
     "done": "{tasks} tasks moved to your account"
   },
   "waiting": {
+    "chase": "Ask",
+    "chaseText": "Hi! How is «{title}» going? Due: {date}.",
     "title": "Waiting for",
     "subtitle": "Work you handed to others and are waiting on",
     "delegated": "Waiting on others",
