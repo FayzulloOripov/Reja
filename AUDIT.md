@@ -5,7 +5,7 @@ Status of every feature in the original spec and in the fix prompt.
 
 Tests: `tests/unit` (Vitest) · `tests/db` (Postgres/RLS — on PGlite by default, and against the Supabase project with `npm run test:db:remote`) · `e2e/demo` (Playwright — against the in-browser demo with `npm run test:e2e:demo`, and the same tests against the real Supabase backend with `npm run test:e2e:real`, each test signing in a freshly seeded real account).
 
-_Last updated: phase 4 (checklist)._
+_Last updated: after phase 8, when the code moved to GitHub (CI now runs on every push)._
 
 **Telegram is postponed** (no bot token): every Telegram item below is marked *postponed*, its controls are hidden or shown as «Tez orada», and reminders, the daily digest, the weekly review and the overdue nudge go out by web push (and email once Resend is set up). The app runs fully without `TELEGRAM_BOT_TOKEN`.
 **Email is waiting** for the Resend key and a verified domain: email sending is skipped while `RESEND_API_KEY` is empty.
@@ -174,6 +174,6 @@ Final run on 2026-10-06 (local production build: `next build` + `next start`).
 | Playwright, demo (`npm run test:e2e:demo`), full suite | 68 passed, 5 skipped (real-backend-only tests) |
 | Database tests on Supabase (`npm run test:db:remote`) | 81 / 81 passed on 2026-10-06, before the project became production; **not rerun since** — remote tests now refuse to run against production and no separate test project is used (decision: no `reja-test`) |
 | Playwright on Supabase (`npm run test:e2e:real`) | 70 passed, 3 skipped on 2026-10-06, same project before it became production; **not rerun since**, same reason |
-| Lighthouse 12, mobile, local build | sign-in: performance 88, accessibility 100, best practices 100, SEO 100 · Home: 75 / 100 / 100 / 100 (live-site scores: see section 7) |
+| Lighthouse 12, mobile, local build | sign-in: performance 88, accessibility 100, best practices 100, SEO 100 · Home: 75 / 100 / 100 / 100 (live-site scores: not measured yet — not deployed) |
 
 Remote suites can run again any time a separate test project is put in `.env.test.local` (see `scripts/test-env.mjs`); they refuse the production project.
