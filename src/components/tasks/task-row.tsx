@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Check, CheckSquare, GitBranch, GripVertical, MessageSquare, Star, Sun, Sunrise } from "lucide-react";
+import { CalendarDays, Check, CheckSquare, CirclePause, GitBranch, GripVertical, MessageSquare, Star, Sun, Sunrise } from "lucide-react";
 import { animate, motion, useMotionValue, useTransform } from "motion/react";
 import { useTranslations } from "next-intl";
 import { memo, useMemo, useRef, useState, type HTMLAttributes } from "react";
@@ -8,6 +8,7 @@ import { AvatarStack, DueChip, PriorityIcon, ProjectBadge } from "@/components/c
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { addDays } from "@/lib/dates";
 import { isOverdue } from "@/lib/health";
+import { followUpDue, waitingDays } from "@/lib/org";
 import type { Task, TaskPriority } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { rescheduleTasks, setTop, toggleComplete } from "@/store/actions";
@@ -117,6 +118,15 @@ function TaskRowInner({ task, showProject, focused, selected, readOnly, indent, 
     };
   }, [taskAssignees, profiles, taskLabels, labelsById, checklistItems, allTasks, comments, task.id]);
 
+  const contactName = useStore((s) => (task.waiting_on_contact_id ? s.data.contacts[task.waiting_on_contact_id]?.name : undefined));
+  const waiting =
+    task.waiting_on_contact_id || task.waiting_on_user_id
+      ? {
+          name: contactName ?? (task.waiting_on_user_id ? profiles[task.waiting_on_user_id]?.name : undefined) ?? "…",
+          days: waitingDays(task, today) ?? 0,
+          chase: followUpDue(task, today),
+        }
+      : null;
   const done = task.status === "done" || completing;
   const overdue = isOverdue(task, today);
   const isTop = task.top_date === today;
@@ -193,9 +203,15 @@ function TaskRowInner({ task, showProject, focused, selected, readOnly, indent, 
             {meta.assignees.length > 0 && <AvatarStack people={meta.assignees} size={20} max={2} />}
           </div>
         </div>
-        {(task.due_date || task.deadline || showProject || meta.labels.length > 0 || meta.checklist.total > 0 || meta.subtasks.total > 0 || meta.comments > 0) && (
+        {(task.due_date || task.deadline || showProject || waiting || meta.labels.length > 0 || meta.checklist.total > 0 || meta.subtasks.total > 0 || meta.comments > 0) && (
           <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1">
             <DueChip date={task.due_date} dueAt={task.due_at} deadline={task.deadline} recurring={Boolean(task.recurrence)} done={done} />
+            {waiting && !done && (
+              <span className={cn("inline-flex items-center gap-1 text-xs tnum", waiting.chase ? "font-medium text-warning-fg" : "text-muted-foreground")}>
+                <CirclePause className="size-3" />
+                {t("waiting.onShort", { name: waiting.name, count: waiting.days })}
+              </span>
+            )}
             {meta.subtasks.total > 0 && (
               <span className="inline-flex items-center gap-1 text-xs text-muted-foreground tnum">
                 <GitBranch className="size-3" />

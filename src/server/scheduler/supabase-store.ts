@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PushSub, SchedNotification, SchedProfile, SchedReminder, SchedTask, SchedulerStore } from "./core";
 
 const PROFILE_COLS =
-  "id, name, email, language, timezone, quiet_enabled, quiet_start, quiet_end, notify_prefs, telegram_chat_id, digest_enabled, digest_time, review_enabled, review_dow, review_time, overdue_nudge_enabled, last_digest_on, last_review_on, last_overdue_nudge_on";
+  "id, name, email, language, timezone, quiet_enabled, quiet_start, quiet_end, notify_prefs, telegram_chat_id, digest_enabled, digest_time, review_enabled, review_dow, review_time, overdue_nudge_enabled, last_digest_on, last_review_on, last_overdue_nudge_on, shutdown_enabled, shutdown_time, last_shutdown_on";
 
 function check<T>(res: { data: T | null; error: { message: string } | null }): T {
   if (res.error) throw new Error(res.error.message);
@@ -77,7 +77,7 @@ export function supabaseSchedulerStore(sb: SupabaseClient): SchedulerStore {
         await sb
           .from("profiles")
           .select(PROFILE_COLS)
-          .or("digest_enabled.eq.true,review_enabled.eq.true,overdue_nudge_enabled.eq.true")
+          .or("digest_enabled.eq.true,review_enabled.eq.true,overdue_nudge_enabled.eq.true,shutdown_enabled.eq.true")
           .or("telegram_chat_id.not.is.null,email.not.is.null"),
       ) as SchedProfile[];
     },

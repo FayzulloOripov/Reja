@@ -1,5 +1,5 @@
-import { beforeAll, describe, expect, it } from "vitest";
-import { as, asService, createDb, createUser, rejects, type Db, type TestUser } from "./harness";
+import { beforeAll, describe, expect, it, vi } from "vitest";
+import { as, asService, createDb, createUser, rejects, REMOTE, type Db, type TestUser } from "./harness";
 
 // RLS for every table. The owner fills one row into each table through the normal (RLS-checked)
 // path; then four other people try to read and change those rows:
@@ -144,6 +144,9 @@ beforeAll(async () => {
   });
 });
 
+// against Supabase every query is a network round trip; the table-by-table checks take minutes
+if (REMOTE) vi.setConfig({ testTimeout: 300_000 });
+
 describe("RLS matrix (every table)", () => {
   it("every public table has RLS enabled and is listed in this test", async () => {
     const rows = await asService(db, async (tx) =>
@@ -170,7 +173,8 @@ describe("RLS matrix (every table)", () => {
     }
   });
 
-  it("an outsider sees nothing and can change nothing in any table", async () => {
+  // ~150 sequential round trips: needs more than the default when run against Supabase
+  it("an outsider sees nothing and can change nothing in any table", { timeout: 300_000 }, async () => {
     for (const table of TABLES) {
       if (table === "rate_limits") {
         expect(await rejects(count(outsider, table))).toMatch(/permission denied/);

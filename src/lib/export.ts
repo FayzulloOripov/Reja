@@ -22,6 +22,12 @@ export const EXPORT_TABLES = [
   "notes",
   "saved_views",
   "templates",
+  "contacts",
+  "meetings",
+  "meeting_attendees",
+  "meeting_items",
+  "routines",
+  "routine_runs",
 ] as const;
 
 type Row = Record<string, unknown>;

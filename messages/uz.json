@@ -134,7 +134,12 @@
     "accountMenu": "Hisob menyusi: {name}",
     "leaveDemo": "Demodan chiqish va roʻyxatdan oʻtish",
     "waiting": "Kutilmoqda",
-    "noArea": "Sohasiz"
+    "noArea": "Sohasiz",
+    "meetings": "Uchrashuvlar",
+    "routines": "Rutinlar",
+    "contacts": "Kontaktlar",
+    "review": "Haftalik tahlil",
+    "shutdown": "Kunni yakunlash"
   },
   "auth": {
     "title": "Reja’ga xush kelibsiz",
@@ -887,7 +892,10 @@
     "capacityHours": "Kuniga soat",
     "capacityHoursUnit": "soat",
     "comingSoon": "Tez orada",
-    "telegramSoon": "Telegram orqali eslatmalar va kunlik xulosa tez orada qoʻshiladi. Hozircha ular push va email orqali keladi."
+    "telegramSoon": "Telegram orqali eslatmalar va kunlik xulosa tez orada qoʻshiladi. Hozircha ular push va email orqali keladi.",
+    "shutdown": "Kunni yakunlash",
+    "shutdownHint": "Belgilangan vaqtda push: qolgan ishlarni koʻchirish va ertangi 3 ta asosiyni tanlash.",
+    "shutdownTime": "Kunni yakunlash vaqti"
   },
   "invite": {
     "title": "Taklif",
@@ -1168,7 +1176,21 @@
     "delegatedEmptyBody": "Vazifani hamkasbga topshirsangiz (@ism), u shu yerda sana bilan koʻrinadi.",
     "homeCard": "Boshqalardan kutilayotgan",
     "homeEmpty": "Hech kimdan kutayotgan ishingiz yoʻq",
-    "seeAll": "Hammasi"
+    "seeAll": "Hammasi",
+    "label": "Kutilmoqda",
+    "set": "Kimdandir kutyapman…",
+    "days": "{count, plural, =0 {bugundan} other {# kun}}",
+    "onShort": "{name} · {count, plural, =0 {bugun} other {# kun}}",
+    "followUp": "Eslatish sanasi",
+    "followUpShort": "Eslatish",
+    "followUpTitle": "Soʻrab koʻrish: {title}",
+    "clear": "Kutishni olib tashlash",
+    "searchPlaceholder": "Ism yoki kontakt…",
+    "teammates": "Jamoa",
+    "mine": "Men kutayotganlar",
+    "mineEmpty": "Hech kimdan javob kutmayapsiz",
+    "mineEmptyBody": "Vazifa panelida «Kutilmoqda» maydonidan kimni kutayotganingizni belgilang — shu yerda kun soni va eslatish sanasi bilan koʻrinadi.",
+    "chaseCount": "{count} tasini soʻrash vaqti"
   },
   "projects": {
     "title": "Loyihalar",
@@ -1185,6 +1207,185 @@
   },
   "push": {
     "digestBody": "Asosiy: {top} · Bugun: {today} · Kechikkan: {overdue}",
-    "overdueTitle": "{count} ta vazifaning muddati oʻtgan"
+    "overdueTitle": "{count} ta vazifaning muddati oʻtgan",
+    "shutdownTitle": "Kunni yakunlash vaqti",
+    "shutdownBody": "Bugundan {count} ta ish qoldi — ertaga koʻchiring va ertangi 3 ta asosiyni tanlang.",
+    "shutdownBodyClear": "Bugungi ishlar tugadi. Ertangi 3 ta asosiyni tanlang."
+  },
+  "contacts": {
+    "title": "Kontaktlar",
+    "subtitle": "Ilovada boʻlmagan odamlar: mijoz, yetkazib beruvchi, maslahatchi",
+    "new": "Yangi kontakt",
+    "editTitle": "Kontaktni tahrirlash",
+    "edit": "{name} — tahrirlash",
+    "createNamed": "Yangi kontakt: {name}",
+    "company": "Kompaniya",
+    "phone": "Telefon",
+    "note": "Izoh",
+    "empty": "Hali kontakt yoʻq",
+    "emptyBody": "Ilovada hisobi yoʻq odamlarni qoʻshing — vazifalarda ulardan javob kutayotganingizni belgilash va uchrashuvga chaqirish uchun.",
+    "guest": "Kontaktlar faqat jamoa aʼzolariga koʻrinadi",
+    "guestBody": "Mehmonlar ish maydonining kontaktlar roʻyxatini koʻrmaydi.",
+    "waitingOn": "Undan kutilayotgan: {count}"
+  },
+  "meetings": {
+    "title": "Uchrashuvlar",
+    "subtitle": "Kun tartibi, qarorlar va ulardan chiqadigan vazifalar",
+    "new": "Yangi uchrashuv",
+    "titleLabel": "Nomi",
+    "date": "Sana",
+    "time": "Vaqt",
+    "duration": "Davomiyligi",
+    "minutes": "{count} daqiqa",
+    "repeat": "Takrorlash",
+    "repeatOptions": {
+      "none": "Takrorlanmaydi",
+      "weekly": "Har hafta",
+      "biweekly": "Har ikki haftada",
+      "monthly": "Har oy"
+    },
+    "noProject": "Loyihasiz",
+    "location": "Joy yoki havola",
+    "locationPlaceholder": "Ofis, Zoom havolasi…",
+    "attendees": "Ishtirokchilar",
+    "editAttendees": "Ishtirokchilar",
+    "upcoming": "Kelgusi",
+    "past": "Oʻtgan",
+    "empty": "Rejalashtirilgan uchrashuv yoʻq",
+    "emptyBody": "Uchrashuv yarating: kun tartibi, qarorlar va qarordan vazifa bir joyda.",
+    "recurring": "Takrorlanadi",
+    "agendaCount": "Kun tartibi {done}/{total}",
+    "decisionCount": "{count} ta qaror",
+    "done": "Yakunlangan",
+    "notFound": "Uchrashuv topilmadi",
+    "reopen": "Qayta ochish",
+    "agenda": "Kun tartibi",
+    "decisions": "Qarorlar",
+    "agendaEmpty": "Muhokama qilinadigan masalalarni qoʻshing.",
+    "decisionsEmpty": "Qabul qilingan qarorlarni yozing — har birini vazifaga aylantirish mumkin.",
+    "addAgenda": "Masala qoʻshish",
+    "addDecision": "Qaror qoʻshish",
+    "agendaItem": "Masala: {text}",
+    "toTask": "Vazifaga",
+    "taskCreated": "Vazifa",
+    "taskToast": "Qarordan vazifa yaratildi",
+    "notes": "Qaydlar",
+    "notesPlaceholder": "Uchrashuvdagi qaydlar…",
+    "finish": "Uchrashuvni yakunlash",
+    "finished": "Uchrashuv yakunlandi",
+    "carryHint": "{count} ta ochiq masala keyingi uchrashuvga oʻtadi",
+    "nextCreated": "Keyingi uchrashuv: {date}",
+    "openNext": "Ochish",
+    "partner": {
+      "title": "Haftalik hamkor uchrashuvi",
+      "description": "Har juma 19:30 — oʻtgan hafta raqamlari va kechikkan ishlar kun tartibiga avtomatik qoʻshiladi.",
+      "agendaNote": "Kun tartibiga oʻtgan hafta raqamlari, hozir kechikkan vazifalar, pul masalalari va keyingi hafta rejasi qoʻshiladi.",
+      "numbers": "Oʻtgan hafta: {done} ta bajarildi, {overdue} ta kechikkan, {hours} soat ishlandi",
+      "overdueItem": "Kechikkan: {title}",
+      "money": "Pul: tushum va xarajatlar",
+      "nextWeek": "Keyingi hafta rejasi va masʼullar"
+    }
+  },
+  "review": {
+    "title": "Haftalik tahlil",
+    "subtitle": "15 daqiqa: haftani yoping, keyingisini rejalang",
+    "doneThisWeek": "Bu haftaning tahlili tugallangan",
+    "again": "Qaytadan oʻtish",
+    "progress": "{total} qadamdan {step}-qadam",
+    "stepOf": "{step}/{total}",
+    "steps": {
+      "inbox": {
+        "title": "Kiruvchini tozalang",
+        "body": "Har bir ishni loyihaga oʻtkazing, sana qoʻying yoki oʻchiring."
+      },
+      "numbers": {
+        "title": "Hafta raqamlarda",
+        "body": "Bu hafta nima bajarildi va qancha vaqt ketdi."
+      },
+      "overdue": {
+        "title": "Kechikkanlar",
+        "body": "Har birini bajaring, yangi sana qoʻying yoki voz keching."
+      },
+      "waiting": {
+        "title": "Kutilayotganlar",
+        "body": "Kimdan nima kutyapsiz — kerak boʻlsa soʻrab koʻring."
+      },
+      "next": {
+        "title": "Keyingi hafta",
+        "body": "Kelgusi haftadagi muddatlar va asosiy eʼtibor."
+      },
+      "reflect": {
+        "title": "Xulosa",
+        "body": "Nima yaxshi boʻldi va nimani oʻzgartirasiz."
+      }
+    },
+    "inboxClear": "Kiruvchi boʻsh",
+    "done": "Bajarildi",
+    "overdueNow": "Hozir kechikkan",
+    "tracked": "Qayd etilgan vaqt",
+    "moveAllToMonday": "{count} tasini dushanbaga koʻchirish",
+    "noOverdue": "Kechikkan ish yoʻq",
+    "chaseHint": "Baʼzilarini soʻrash vaqti keldi",
+    "noWaiting": "Hech kimdan kutayotgan ishingiz yoʻq",
+    "nextWeekEmpty": "Keyingi haftaga muddatli ish yoʻq",
+    "focus": "Keyingi haftaning asosiy eʼtibori",
+    "focusPlaceholder": "Masalan: CRM ni ishga tushirish",
+    "wins": "Yutuqlar",
+    "lessons": "Saboqlar",
+    "finish": "Tahlilni yakunlash",
+    "history": "Oʻtgan tahlillar",
+    "historyEmpty": "Hali tahlil yoʻq",
+    "historyEmptyBody": "Tugallangan har bir haftalik tahlil shu yerda saqlanadi.",
+    "weekOf": "{date} haftasi",
+    "historyStats": "{done} bajarildi · {overdue} kechikkan",
+    "reminderHint": "Haftalik tahlil eslatmasini Sozlamalarda yoqing"
+  },
+  "shutdown": {
+    "title": "Kunni yakunlash",
+    "subtitle": "5 daqiqa: bugunni yoping, ertangi kunni tayyorlang",
+    "doneTitle": "Bugun bajarildi: {count}",
+    "doneEmpty": "Bugun bajarilgan vazifa yoʻq — bu ham boʻladi.",
+    "unfinishedTitle": "Qolganlar: {count}",
+    "moveAll": "{count} tasini ertaga koʻchirish",
+    "nothingLeft": "Bugungi rejadan hech narsa qolmadi",
+    "top3Title": "Ertangi 3 ta asosiy",
+    "top3Count": "{count}/3",
+    "top3Empty": "Ertaga muddatli ish yoʻq. Kiruvchidan tanlang.",
+    "noteTitle": "Ertangi oʻzingizga eslatma",
+    "notePlaceholder": "Qayerdan davom ettirasiz?",
+    "finish": "Kunni yakunlash",
+    "closed": "Kun yakunlandi",
+    "closedBody": "Bugun {done} ta ish bajarildi. Dam oling!",
+    "homeTitle": "Kunni yakunlash vaqti",
+    "homeBody": "Qolganlarni koʻchiring va ertangi 3 ta asosiyni tanlang"
+  },
+  "routines": {
+    "title": "Rutinlar",
+    "subtitle": "Takrorlanadigan nazorat roʻyxatlari: ertalabki tartib, oylik hisob-kitob",
+    "new": "Yangi rutin",
+    "empty": "Hali rutin yoʻq",
+    "emptyBody": "Har kuni yoki har oy bir xil qadamlar boʻlsa, ularni rutin qiling — har safar roʻyxat tayyor turadi.",
+    "today": "Bugun",
+    "notToday": "Bugun emas",
+    "shared": "Jamoa bilan",
+    "private": "Shaxsiy",
+    "byOther": "{name} bugun boshlagan",
+    "complete": "Bugun bajarildi",
+    "archive": "Arxivlash",
+    "archived": "Rutin arxivlandi",
+    "namePlaceholder": "Masalan: Ertalabki tartib",
+    "items": "Qadamlar (har biri yangi qatorda)",
+    "itemsPlaceholder": "Pochtani koʻrish\nBugungi 3 ta asosiyni tanlash\nJamoaga salom",
+    "repeat": "Takrorlash",
+    "shareWithTeam": "Jamoa bilan ulashish",
+    "rules": {
+      "daily": "Har kuni",
+      "weekdays": "Ish kunlari (Du–Ju)",
+      "weekly": "Har hafta",
+      "monthly": "Har oy",
+      "custom": "Maxsus jadval"
+    },
+    "homeEmpty": "Rutin qoʻshish",
+    "progress": "{done}/{total}"
   }
 }

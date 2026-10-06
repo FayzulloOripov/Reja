@@ -5,6 +5,14 @@ import type {
   Area,
   ChecklistItem,
   Comment,
+  Contact,
+  DailyShutdown,
+  Meeting,
+  MeetingAttendee,
+  MeetingItem,
+  Routine,
+  RoutineRun,
+  WeeklyReview,
   Goal,
   Habit,
   KeyResult,
@@ -51,6 +59,10 @@ export function newTask(p: Partial<Task> & Pick<Task, "workspace_id" | "title">)
     completed_at: null,
     created_by: null,
     source: null,
+    waiting_on_user_id: null,
+    waiting_on_contact_id: null,
+    waiting_since: null,
+    follow_up_date: null,
     created_at: now(),
     updated_at: now(),
     deleted_at: null,
@@ -204,4 +216,51 @@ export function newTemplate(p: Partial<Template> & Pick<Template, "workspace_id"
 
 export function newArea(p: Partial<Area> & Pick<Area, "workspace_id" | "name" | "owner_id">): Area {
   return { id: uuid(), color: "sky", icon: null, visibility: "workspace", position: Date.now(), archived_at: null, deleted_at: null, created_at: now(), updated_at: now(), ...p };
+}
+
+export function newContact(p: Partial<Contact> & Pick<Contact, "workspace_id" | "name">): Contact {
+  return { id: uuid(), phone: null, telegram: null, company: null, note: null, created_by: null, deleted_at: null, created_at: now(), updated_at: now(), ...p };
+}
+
+export function newMeeting(p: Partial<Meeting> & Pick<Meeting, "workspace_id" | "title" | "starts_at">): Meeting {
+  return {
+    id: uuid(),
+    project_id: null,
+    duration_min: 60,
+    location: null,
+    notes: null,
+    recurrence: null,
+    template_key: null,
+    series_id: null,
+    finished_at: null,
+    created_by: null,
+    deleted_at: null,
+    created_at: now(),
+    updated_at: now(),
+    ...p,
+  };
+}
+
+export function newMeetingAttendee(p: Partial<MeetingAttendee> & Pick<MeetingAttendee, "meeting_id" | "workspace_id">): MeetingAttendee {
+  return { id: uuid(), user_id: null, contact_id: null, created_at: now(), ...p };
+}
+
+export function newMeetingItem(p: Partial<MeetingItem> & Pick<MeetingItem, "meeting_id" | "workspace_id" | "kind" | "text">): MeetingItem {
+  return { id: uuid(), task_id: null, done: false, position: Date.now(), created_by: null, created_at: now(), updated_at: now(), ...p };
+}
+
+export function newWeeklyReview(p: Partial<WeeklyReview> & Pick<WeeklyReview, "user_id" | "week_start">): WeeklyReview {
+  return { id: uuid(), data: {}, completed_at: null, created_at: now(), updated_at: now(), ...p };
+}
+
+export function newDailyShutdown(p: Partial<DailyShutdown> & Pick<DailyShutdown, "user_id" | "date">): DailyShutdown {
+  return { id: uuid(), data: {}, completed_at: null, created_at: now(), updated_at: now(), ...p };
+}
+
+export function newRoutine(p: Partial<Routine> & Pick<Routine, "workspace_id" | "owner_id" | "name">): Routine {
+  return { id: uuid(), items: [], recurrence: "FREQ=DAILY", visibility: "private", color: "teal", position: Date.now(), archived_at: null, created_at: now(), updated_at: now(), ...p };
+}
+
+export function newRoutineRun(p: Partial<RoutineRun> & Pick<RoutineRun, "routine_id" | "workspace_id" | "user_id" | "date">): RoutineRun {
+  return { id: uuid(), checked: [], completed_at: null, created_at: now(), updated_at: now(), ...p };
 }

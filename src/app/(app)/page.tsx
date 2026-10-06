@@ -8,6 +8,7 @@ import { ProjectDot, Section } from "@/components/common/bits";
 import { EmptyState, Illustration } from "@/components/common/empty-state";
 import { DayTimeline, TASK_DRAG_TYPE } from "@/components/home/day-timeline";
 import { HabitsRow, PlanTomorrow, StatsCards, WaitingOnOthers } from "@/components/home/widgets";
+import { RoutinesRow, ShutdownCard } from "@/components/home/org-widgets";
 import { PageContainer } from "@/components/shell/app-client";
 import { InlineAdd, TaskList, type TaskGroup } from "@/components/tasks/task-list";
 import { TaskRow } from "@/components/tasks/task-row";
@@ -201,10 +202,12 @@ export default function HomePage() {
         </div>
 
         <aside className="space-y-6 lg:sticky lg:top-6 lg:self-start">
+          <ShutdownCard />
           <PlanTomorrow evening={now >= 17 * 60} />
           <Section title={t("home.habits")}>
             <HabitsRow />
           </Section>
+          <RoutinesRow />
           <WaitingOnOthers />
           <StatsCards />
           <Section title={t("home.timeline")} actions={<span className="hidden text-2xs text-muted-foreground lg:inline">{t("home.timelineHint")}</span>}>

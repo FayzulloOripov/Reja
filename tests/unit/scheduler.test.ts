@@ -227,6 +227,17 @@ describe("daily digest and weekly review", () => {
     expect(senders.pushes).toContain("📊 Haftalik tahlil");
   });
 
+  it("nudges to close the day at the shutdown time, by push, once", async () => {
+    store.prof.set("u1", profile({ digest_enabled: false, review_enabled: false, telegram_chat_id: null, shutdown_enabled: true, shutdown_time: "18:30:00", last_shutdown_on: null }));
+    const before = await run("2026-10-05T13:20:00Z"); // 18:20 Tashkent
+    expect(before.daily.shutdown).toBe(0);
+    const at = await run("2026-10-05T13:35:00Z");
+    expect(at.daily.shutdown).toBe(1);
+    expect(senders.pushes).toContain("Kunni yakunlash vaqti");
+    const again = await run("2026-10-05T13:50:00Z");
+    expect(again.daily.shutdown).toBe(0);
+  });
+
   it("sends the weekly review on the chosen weekday", async () => {
     store.prof.set("u1", profile({ digest_enabled: false, language: "en" }));
     const res = await run("2026-10-11T04:00:00Z"); // Sunday 09:00

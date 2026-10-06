@@ -62,7 +62,7 @@ export function setOpErrorListener(fn: ErrorListener) {
 }
 
 // ------------------------------------------------------------------ persistence
-const SNAPSHOT_VERSION = 5;
+const SNAPSHOT_VERSION = 6;
 const snapshotKey = (uid: string) => `reja:snapshot:v${SNAPSHOT_VERSION}:${uid}`;
 let persistTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -281,7 +281,9 @@ function reapplyOutbox(data: StoreData, outbox: Op[]): StoreData {
 
 export async function bootstrap(userId: string, adapter: DataAdapter) {
   const prevUser = getState().userId;
-  if (prevUser === userId && getState().adapter === adapter && getState().status !== "idle") return;
+  // Already loaded for this user (e.g. the app shell remounted): what is in memory is newer than
+  // the snapshot, so never read the snapshot over it again.
+  if (prevUser === userId && getState().adapter?.kind === adapter.kind && getState().status !== "idle") return;
 
   setState({ userId, adapter, status: "loading", error: null });
 

@@ -69,3 +69,46 @@ describe("planDemoImport", () => {
     expect([...ids].some(isSeedId)).toBe(false);
   });
 });
+
+describe("planDemoImport — organisation", () => {
+  const today = "2026-10-06";
+  const demo = buildDemoData(DEMO_USER_ID, today, "Asia/Tashkent", "uz");
+  const snap: Snapshot = Object.fromEntries(
+    Object.entries(demo).map(([table, rows]) => [table, Object.fromEntries((rows as Record<string, unknown>[]).map((r) => [String(r.id ?? `${r.task_id}|${r.user_id}`), r]))]),
+  );
+  let n = 0;
+  const plan = planDemoImport(snap, { userId: "me", workspaceId: "ws", mode: "all", newId: () => `new-${++n}` });
+  const of = (table: string) => plan.items.filter((i) => i.table === table).map((i) => i.row);
+
+  it("brings contacts, meetings with items, routines and reviews, re-pointed to the new ids", () => {
+    expect(of("contacts")).toHaveLength(demo.contacts.length);
+    expect(of("meetings")).toHaveLength(demo.meetings.length);
+    expect(of("meeting_items")).toHaveLength(demo.meeting_items.length);
+    expect(of("routines")).toHaveLength(demo.routines.length);
+    expect(of("weekly_reviews")).toHaveLength(1);
+    const meetingIds = new Set(of("meetings").map((m) => m.id));
+    for (const i of of("meeting_items")) expect(meetingIds.has(i.meeting_id)).toBe(true);
+    // attendees: the demo user becomes me, the invented partner is dropped, contacts stay
+    const att = of("meeting_attendees");
+    expect(att.every((a) => a.user_id === "me" || (a.user_id === null && a.contact_id))).toBe(true);
+    expect(att.some((a) => a.contact_id)).toBe(true);
+  });
+
+  it("keeps waiting on a contact, drops waiting on the invented partner", () => {
+    const tasks = of("tasks");
+    const contactIds = new Set(of("contacts").map((c) => c.id));
+    const onContact = tasks.find((x) => x.title === "TexnoSoft dan CRM narxini olish")!;
+    expect(contactIds.has(onContact.waiting_on_contact_id)).toBe(true);
+    expect(onContact.status).toBe("waiting");
+    const onPartner = tasks.find((x) => x.title === "Reklama byudjetini tasdiqlash")!;
+    expect(onPartner).toMatchObject({ waiting_on_user_id: null, waiting_on_contact_id: null, status: "todo", waiting_since: null });
+  });
+
+  it("only what I entered: a ticked sample routine comes along with today's run", () => {
+    const run = demo.routine_runs[0];
+    const mine = { ...snap, routine_runs: { [run.id]: { ...run, checked: ["r1", "r2"], __demoEdited: true } } } as Snapshot;
+    const p = planDemoImport(mine, { userId: "me", workspaceId: "ws", mode: "mine", newId: () => `m-${++n}` });
+    expect(p.items.filter((i) => i.table === "routines")).toHaveLength(1);
+    expect(p.items.find((i) => i.table === "routine_runs")!.row).toMatchObject({ user_id: "me", checked: ["r1", "r2"] });
+  });
+});

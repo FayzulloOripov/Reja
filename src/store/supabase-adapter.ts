@@ -37,9 +37,18 @@ async function fetchAllPages<T>(build: () => Query): Promise<T[]> {
 
 /** Loaders for tables added after the first release (kept separate so the list above stays readable). */
 function EXTRA_LOADERS(sb: SupabaseClient, userId: string): Partial<Record<TableName, () => Query>> {
-  void userId;
-  void sb;
-  return {};
+  const since60 = new Date(Date.now() - 60 * 86_400_000).toISOString();
+  const since60d = since60.slice(0, 10);
+  return {
+    contacts: () => sb.from("contacts").select("*").is("deleted_at", null),
+    meetings: () => sb.from("meetings").select("*").is("deleted_at", null).or(`finished_at.is.null,starts_at.gte.${since60}`),
+    meeting_attendees: () => sb.from("meeting_attendees").select("*"),
+    meeting_items: () => sb.from("meeting_items").select("*"),
+    weekly_reviews: () => sb.from("weekly_reviews").select("*").eq("user_id", userId),
+    daily_shutdowns: () => sb.from("daily_shutdowns").select("*").eq("user_id", userId).gte("date", since60d),
+    routines: () => sb.from("routines").select("*").is("archived_at", null),
+    routine_runs: () => sb.from("routine_runs").select("*").gte("date", since60d),
+  };
 }
 
 // Tables kept in sync per workspace (all carry workspace_id).
@@ -62,10 +71,16 @@ const WORKSPACE_TABLES: TableName[] = [
   "key_results",
   "notes",
   "time_entries",
+  "contacts",
+  "meetings",
+  "meeting_attendees",
+  "meeting_items",
+  "routines",
+  "routine_runs",
 ];
 
 // Tables scoped to the signed-in user.
-const USER_TABLES: TableName[] = ["notifications", "reminders", "habits", "habit_logs", "time_blocks", "project_favorites"];
+const USER_TABLES: TableName[] = ["notifications", "reminders", "habits", "habit_logs", "time_blocks", "project_favorites", "weekly_reviews", "daily_shutdowns"];
 
 export function createSupabaseAdapter(): DataAdapter {
   const sb = getBrowserSupabase();

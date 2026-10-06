@@ -55,6 +55,14 @@ const ORDER = [
   "habit_logs",
   "time_blocks",
   "time_entries",
+  "contacts",
+  "meetings",
+  "meeting_attendees",
+  "meeting_items",
+  "routines",
+  "routine_runs",
+  "weekly_reviews",
+  "daily_shutdowns",
 ] as const;
 
 const list = (snap: Snapshot, table: string): Row[] => Object.values(snap[table] ?? {}).filter((r) => !r.deleted_at);
@@ -75,7 +83,7 @@ export function planDemoImport(snap: Snapshot, opts: DemoImportOptions): { items
   // "mine": rows the visitor created, and sample rows they changed (e.g. completed a sample task)
   for (const table of ORDER) {
     for (const row of list(snap, table)) {
-      if (table === "habit_logs" || table === "task_labels" || table === "task_assignees") continue; // decided by their parents below
+      if (table === "habit_logs" || table === "task_labels" || table === "task_assignees" || table === "meeting_attendees" || table === "routine_runs") continue; // decided by their parents below
       if (opts.mode === "all" || !isSeedId(row.id) || row[DEMO_EDITED]) chosen[table].push(row);
     }
   }
@@ -104,6 +112,9 @@ export function planDemoImport(snap: Snapshot, opts: DemoImportOptions): { items
     if (table === "goals") ensure("projects", row.project_id);
     if (table === "notes") ensure("projects", row.project_id);
     if (table === "time_blocks" || table === "time_entries") ensure("tasks", row.task_id);
+    if (table === "tasks") ensure("contacts", row.waiting_on_contact_id);
+    if (table === "meetings") ensure("projects", row.project_id);
+    if (table === "meeting_items") ensure("meetings", row.meeting_id);
   }
   for (const table of ORDER) for (const row of [...chosen[table]]) deps(table, row);
 
@@ -123,6 +134,23 @@ export function planDemoImport(snap: Snapshot, opts: DemoImportOptions): { items
   }
   for (const a of list(snap, "task_assignees")) if (taskIds.has(a.task_id as string) && a.user_id === DEMO_USER_ID) chosen.task_assignees.push(a);
   for (const l of list(snap, "habit_logs")) if (habitIds.has(l.habit_id as string)) chosen.habit_logs.push(l);
+  // ticking a sample routine or adding someone to a sample meeting brings that routine/meeting along
+  if (opts.mode === "mine") {
+    for (const r of list(snap, "routine_runs")) if (!isSeedId(r.id) || r[DEMO_EDITED]) ensure("routines", r.routine_id);
+    for (const a of list(snap, "meeting_attendees")) if (!isSeedId(a.id)) ensure("meetings", a.meeting_id);
+  }
+  const meetingIds = new Set(chosen.meetings.map((m) => m.id as string));
+  for (const i of list(snap, "meeting_items")) if (meetingIds.has(i.meeting_id as string) && !chosen.meeting_items.includes(i)) chosen.meeting_items.push(i);
+  for (const a of list(snap, "meeting_attendees")) {
+    if (!meetingIds.has(a.meeting_id as string)) continue;
+    if (a.user_id === DEMO_USER_ID) chosen.meeting_attendees.push(a);
+    else if (a.contact_id) {
+      ensure("contacts", a.contact_id);
+      chosen.meeting_attendees.push(a);
+    }
+  }
+  const routineIds = new Set(chosen.routines.map((r) => r.id as string));
+  for (const r of list(snap, "routine_runs")) if (routineIds.has(r.routine_id as string) && r.user_id === DEMO_USER_ID) chosen.routine_runs.push(r);
 
   // parents before children
   const depth = (t: Row): number => {
@@ -161,9 +189,15 @@ export function planDemoImport(snap: Snapshot, opts: DemoImportOptions): { items
     });
   for (const r of chosen.sections) push("sections", { ...r, id: map(r.id), workspace_id: ws, project_id: map(r.project_id), created_at: now, updated_at: now });
   for (const r of chosen.labels) push("labels", { ...r, id: map(r.id), workspace_id: ws, created_at: now, updated_at: now });
-  for (const r of chosen.tasks)
+  const contactIds = new Set(chosen.contacts.map((c) => c.id as string));
+  for (const r of chosen.contacts) push("contacts", { ...r, id: map(r.id), workspace_id: ws, created_by: me, created_at: now, updated_at: now });
+  for (const r of chosen.tasks) {
+    // waiting on a contact that comes along keeps its link; the demo's invented people are dropped
+    const waitContact = r.waiting_on_contact_id && contactIds.has(r.waiting_on_contact_id as string) ? map(r.waiting_on_contact_id) : null;
+    const waiting = { waiting_on_contact_id: waitContact, waiting_on_user_id: null, ...(waitContact ? {} : { waiting_since: null, follow_up_date: null, status: r.status === "waiting" ? "todo" : r.status }) };
     push("tasks", {
       ...r,
+      ...waiting,
       id: map(r.id),
       workspace_id: ws,
       project_id: r.project_id ? map(r.project_id) : null,
@@ -175,6 +209,7 @@ export function planDemoImport(snap: Snapshot, opts: DemoImportOptions): { items
       created_at: now,
       updated_at: now,
     });
+  }
   for (const r of chosen.task_labels) push("task_labels", { task_id: map(r.task_id), label_id: map(r.label_id), workspace_id: ws, created_at: now });
   for (const r of chosen.task_assignees) push("task_assignees", { task_id: map(r.task_id), user_id: me, workspace_id: ws, created_at: now });
   for (const r of chosen.checklist_items) push("checklist_items", { ...r, id: map(r.id), task_id: map(r.task_id), workspace_id: ws, created_at: now, updated_at: now });
@@ -187,6 +222,16 @@ export function planDemoImport(snap: Snapshot, opts: DemoImportOptions): { items
   for (const r of chosen.time_blocks) push("time_blocks", { ...r, id: map(r.id), user_id: me, task_id: r.task_id && taskIds.has(r.task_id as string) ? map(r.task_id) : null, created_at: now, updated_at: now });
   for (const r of chosen.time_entries)
     push("time_entries", { ...r, id: map(r.id), user_id: me, workspace_id: ws, task_id: r.task_id && taskIds.has(r.task_id as string) ? map(r.task_id) : null, created_at: now });
+
+  for (const r of chosen.meetings) push("meetings", { ...r, id: map(r.id), workspace_id: ws, project_id: r.project_id ? map(r.project_id) : null, series_id: r.series_id ? map(r.series_id) : null, created_by: me, created_at: now, updated_at: now });
+  for (const r of chosen.meeting_attendees)
+    push("meeting_attendees", { ...r, id: map(r.id), meeting_id: map(r.meeting_id), workspace_id: ws, user_id: r.user_id ? me : null, contact_id: r.contact_id ? map(r.contact_id) : null, created_at: now });
+  for (const r of chosen.meeting_items)
+    push("meeting_items", { ...r, id: map(r.id), meeting_id: map(r.meeting_id), workspace_id: ws, task_id: r.task_id && taskIds.has(r.task_id as string) ? map(r.task_id) : null, created_by: me, created_at: now, updated_at: now });
+  for (const r of chosen.routines) push("routines", { ...r, id: map(r.id), workspace_id: ws, owner_id: me, created_at: now, updated_at: now });
+  for (const r of chosen.routine_runs) push("routine_runs", { ...r, id: map(r.id), routine_id: map(r.routine_id), workspace_id: ws, user_id: me, created_at: now, updated_at: now });
+  for (const r of chosen.weekly_reviews) push("weekly_reviews", { ...r, id: map(r.id), user_id: me, created_at: now, updated_at: now });
+  for (const r of chosen.daily_shutdowns) push("daily_shutdowns", { ...r, id: map(r.id), user_id: me, created_at: now, updated_at: now });
 
   const summary: DemoImportSummary = {
     projects: chosen.projects.length,

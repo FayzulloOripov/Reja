@@ -73,7 +73,13 @@ export interface DailySlotProfile {
   last_digest_on: ISODate | null;
   last_review_on: ISODate | null;
   last_overdue_nudge_on: ISODate | null;
+  /** end-of-day shutdown nudge (push only) */
+  shutdown_enabled?: boolean;
+  shutdown_time?: string;
+  last_shutdown_on?: ISODate | null;
 }
+
+export type DailySlotKind = "digest" | "review" | "overdue" | "shutdown";
 
 /** How late a missed slot may still be sent (e.g. the cron was down for a while). */
 const LATE_WINDOW_MINUTES = 180;
@@ -84,11 +90,11 @@ const OVERDUE_NUDGE_TIME = "10:00";
  * Which daily messages are due for this user right now. The scheduler then claims each slot
  * atomically (claim_daily_slot) so a slot is sent at most once per local date.
  */
-export function dueDailySlots(p: DailySlotProfile, now: Date): { kind: "digest" | "review" | "overdue"; date: ISODate }[] {
+export function dueDailySlots(p: DailySlotProfile, now: Date): { kind: DailySlotKind; date: ISODate }[] {
   const tz = p.timezone || "Asia/Tashkent";
   const today = todayIn(tz, now);
   const minute = minutesOfDay(tz, now);
-  const out: { kind: "digest" | "review" | "overdue"; date: ISODate }[] = [];
+  const out: { kind: DailySlotKind; date: ISODate }[] = [];
   const inWindow = (time: string) => {
     const t = hhmmToMinutes(time);
     return minute >= t && minute < t + LATE_WINDOW_MINUTES;
@@ -103,6 +109,9 @@ export function dueDailySlots(p: DailySlotProfile, now: Date): { kind: "digest" 
   const nudgeTime = p.digest_enabled ? p.digest_time : OVERDUE_NUDGE_TIME;
   if (p.overdue_nudge_enabled && inWindow(nudgeTime) && (!p.last_overdue_nudge_on || p.last_overdue_nudge_on < today)) {
     out.push({ kind: "overdue", date: today });
+  }
+  if (p.shutdown_enabled && p.shutdown_time && inWindow(p.shutdown_time) && (!p.last_shutdown_on || p.last_shutdown_on < today)) {
+    out.push({ kind: "shutdown", date: today });
   }
   return out;
 }

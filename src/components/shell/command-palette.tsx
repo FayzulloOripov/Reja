@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, FolderPlus, Languages, Moon, Plus, Settings, Users } from "lucide-react";
+import { Building2, FileText, FolderPlus, Languages, Moon, MoonStar, Plus, Settings, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useTheme } from "@/components/providers/theme";
@@ -151,6 +151,12 @@ export function CommandPalette() {
                 <item.icon /> {item.label}
               </CommandItem>
             ))}
+            <CommandItem value={`${t("nav.contacts")} /contacts`} onSelect={() => run(() => router.push("/contacts"))}>
+              <Building2 /> {t("nav.contacts")}
+            </CommandItem>
+            <CommandItem value={`${t("nav.shutdown")} /shutdown`} onSelect={() => run(() => router.push("/shutdown"))}>
+              <MoonStar /> {t("nav.shutdown")}
+            </CommandItem>
             <CommandItem value={t("nav.settings")} onSelect={() => run(() => router.push("/settings"))}>
               <Settings /> {t("nav.settings")}
             </CommandItem>

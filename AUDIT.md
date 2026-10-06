@@ -29,7 +29,7 @@ _Last updated: phase 4 (checklist)._
 | 13 | Unlabelled icon buttons | done | icon buttons get an automatic desktop tooltip from `aria-label` (`ui/button.tsx`), tooltips off on touch (`ui/tooltip.tsx`), Uzbek close labels, priority = coloured flag with its word as name, status/priority read once | e2e `every visible button and link has an accessible name` (9 pages) |
 | 14 | Settings hard to find | done | gear in the sidebar footer, «Sozlamalar» tile in «Yana», section list on phones — `components/settings/settings-shell.tsx` | e2e desktop + mobile settings tests |
 | 15 | Demo banner wastes space | done | collapses to a pill after «Yashirish», remembered — `components/shell/demo-banner.tsx` | e2e `demo banner collapses…` |
-| 16 | Delegated tasks disappear | done | «Kutilmoqda» page (`/waiting`, grouped by person) and Home card «Boshqalardan kutilayotgan»; waiting-for items join the same page in phase 5 | unit `responsible` · e2e `delegated tasks stay visible` |
+| 16 | Delegated tasks disappear | done | «Kutilmoqda» page (`/waiting`, grouped by person) and Home card «Boshqalardan kutilayotgan»; waiting-for items are on the same page (phase 5) | unit `responsible` · e2e `delegated tasks stay visible` |
 | 17 | Raw ISO date in toast | done | shared formatter for non-React code (`lib/i18n-client.ts formatter()`) → «Keyingisi: ertaga, 6-okt» | e2e `completing a recurring task…` |
 | 18 | Two unlabelled dates | done | due date = calendar icon, deadline = violet signpost, both with label/tooltip; one «next date» rule (`lib/tasks/key-dates.ts`) used by overview, project overview, deadlines list | unit `next key date` · e2e `project list labels…` |
 | 19 | Empty board columns vanish | done | all columns always shown with a drop hint — `board-view.tsx` | e2e `board keeps empty columns…` |
@@ -49,6 +49,11 @@ _Last updated: phase 4 (checklist)._
 - Deleting an account failed for anyone who owned a workspace (`workspaces.owner_id` had no delete rule). Now the personal workspace goes with the account and a shared one passes to another admin/member (`20261006000005_account_deletion.sql`, db test `account deletion`).
 - The demo → account import sent its rows as deletes (the items had no operation kind, hidden by a cast). Items are explicit inserts now, the adapter refuses unknown operations, and sample rows the visitor changed (e.g. completed) are imported too. Verified against Supabase (`e2e/demo/demo-import.spec.ts`).
 - Checklist inputs had no accessible names.
+
+### Also fixed in phase 5
+
+- Changes made in the first seconds after opening a page could vanish: when the app shell remounted (e.g. after the language cookie was synced) the store loaded the IndexedDB snapshot again over newer in-memory data. The store now never re-reads the snapshot once it is loaded for that user.
+- Scheduled reminders that carry their own title (follow-ups) now use it instead of the task title.
 
 ### Also fixed in phase 3
 
@@ -99,12 +104,12 @@ Every row runs in the demo and against the real backend (`e2e/demo/checklist.spe
 | Feature | Status |
 |---|---|
 | Areas above projects | done — table + RLS (shared/private, guests see areas of their projects), picker, wizard, Projects page, sidebar grouping, Home and Reports area filter | db `areas` |
-| Waiting-for list | missing |
-| Outside contacts | missing |
-| Meetings and agenda | missing |
-| Guided weekly review | missing |
-| Daily shutdown | missing |
-| Routines | missing |
+| Waiting-for list | done — task panel «Kutilmoqda»: a teammate or an outside contact, days waiting, follow-up date that creates a reminder at the start of the working day; chip on task rows (amber when it's time to chase); `/waiting` «Men kutayotganlar» grouped by who, chase count first | unit `org` · db `organisation` · e2e `waiting-for` |
+| Outside contacts | done — `contacts` table (full members only, guests never see it), `/contacts` page, create from the waiting picker, a contact must be in the task's workspace (trigger), shown on meetings | db `rls-matrix`, `organisation` · e2e `contacts` |
+| Meetings and agenda | done — `/meetings` list and detail: attendees (people and contacts), agenda with ticks, decisions → task (linked back), notes; finishing a recurring meeting creates the next one with the open agenda points; «Haftalik hamkor uchrashuvi» template (Friday 19:30, weekly, agenda with last week's numbers and overdue tasks) | unit `org` · e2e `meetings` ×2 |
+| Guided weekly review | done — `/review`: six steps (inbox, numbers, overdue, waiting, next week, reflection), saved per step, history of past weeks; the weekly push links to it | e2e `weekly review` |
+| Daily shutdown | done — `/shutdown`: done today, move leftovers to tomorrow, pick tomorrow's top 3, note; Settings → Bildirishnomalar «Kunni yakunlash» + time; Home card after that time; scheduler push in the `shutdown` slot (once a day) | unit `scheduler` · e2e `daily shutdown`, `settings` |
+| Routines | done — `/routines`: checklists on a schedule (daily, weekdays, weekly, monthly), private or shared with the team, one run per day, Home row with progress | unit `org` · db `organisation` · e2e `routines` |
 | Pipeline | missing |
 | Money | missing |
 | Docs with version history | missing |

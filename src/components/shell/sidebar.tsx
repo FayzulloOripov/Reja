@@ -2,6 +2,9 @@
 
 import {
   BarChart3,
+  ClipboardCheck,
+  Handshake,
+  ListChecks,
   Bell,
   CalendarRange,
   Hourglass,
@@ -97,8 +100,11 @@ export function useNavItems() {
     { href: "/notifications", label: t("notifications"), icon: Bell, badge: unread, tone: "danger" },
   ];
   const secondary: NavItem[] = [
+    { href: "/meetings", label: t("meetings"), icon: Handshake },
+    { href: "/review", label: t("review"), icon: ClipboardCheck },
     { href: "/goals", label: t("goals"), icon: Target },
     { href: "/habits", label: t("habits"), icon: Sprout },
+    { href: "/routines", label: t("routines"), icon: ListChecks },
     { href: "/focus", label: t("focus"), icon: Timer },
     { href: "/reports", label: t("reports"), icon: BarChart3 },
     { href: "/workload", label: t("workload"), icon: Users },

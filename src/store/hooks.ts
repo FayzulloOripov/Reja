@@ -10,9 +10,12 @@ import type {
   ActivityEntry,
   Area,
   ChecklistItem,
+  Contact,
   Label,
+  Meeting,
   Profile,
   Project,
+  Routine,
   Section,
   Task,
   TaskAssignee,
@@ -356,4 +359,27 @@ export function useDelegatedTasks(): Task[] {
     const watched = new Set(Object.values(watchers).filter((w) => w.user_id === uid).map((w) => w.task_id));
     return liveTasks(tasks).filter((t) => !t.parent_id && isOpen(t) && isDelegatedBy(t, uid, by, watched.has(t.id)));
   }, [tasks, assignees, watchers, uid]);
+}
+
+// ------------------------------------------------------------------ organisation
+
+export function useContacts(workspaceId?: string): Contact[] {
+  const contacts = useStore((s) => s.data.contacts);
+  return useMemo(
+    () =>
+      Object.values(contacts)
+        .filter((c) => !c.deleted_at && (!workspaceId || c.workspace_id === workspaceId))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [contacts, workspaceId],
+  );
+}
+
+export function useMeetings(): Meeting[] {
+  const meetings = useStore((s) => s.data.meetings);
+  return useMemo(() => Object.values(meetings).filter((m) => !m.deleted_at).sort((a, b) => a.starts_at.localeCompare(b.starts_at)), [meetings]);
+}
+
+export function useRoutines(): Routine[] {
+  const routines = useStore((s) => s.data.routines);
+  return useMemo(() => Object.values(routines).filter((r) => !r.archived_at).sort((a, b) => a.position - b.position || a.name.localeCompare(b.name)), [routines]);
 }

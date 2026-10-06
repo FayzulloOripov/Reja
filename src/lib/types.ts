@@ -66,6 +66,10 @@ export interface Profile {
   daily_capacity_minutes: number | null;
   pomodoro_work: number;
   pomodoro_break: number;
+  /** end-of-day shutdown ritual */
+  shutdown_enabled: boolean;
+  shutdown_time: TimeOfDay;
+  last_shutdown_on: ISODate | null;
   last_digest_on: ISODate | null;
   last_review_on: ISODate | null;
   last_overdue_nudge_on: ISODate | null;
@@ -202,6 +206,11 @@ export interface Task {
   completed_at: ISODateTime | null;
   created_by: UUID | null;
   source: string | null;
+  /** waiting-for: a teammate or an outside contact, since when, and when to chase */
+  waiting_on_user_id: UUID | null;
+  waiting_on_contact_id: UUID | null;
+  waiting_since: ISODate | null;
+  follow_up_date: ISODate | null;
   created_at: ISODateTime;
   updated_at: ISODateTime;
   deleted_at: ISODateTime | null;
@@ -492,4 +501,128 @@ export interface TaskFilters {
   due?: "overdue" | "today" | "week" | "none" | "any" | null;
   search?: string;
   showDone?: boolean;
+}
+
+/** Someone without an account: a client's CTO, a supplier. Shared with the workspace's full members. */
+export interface Contact {
+  id: UUID;
+  workspace_id: UUID;
+  name: string;
+  phone: string | null;
+  telegram: string | null;
+  company: string | null;
+  note: string | null;
+  created_by: UUID | null;
+  deleted_at: ISODateTime | null;
+  created_at: ISODateTime;
+  updated_at: ISODateTime;
+}
+
+export interface Meeting {
+  id: UUID;
+  workspace_id: UUID;
+  project_id: UUID | null;
+  title: string;
+  starts_at: ISODateTime;
+  duration_min: number;
+  location: string | null;
+  notes: RichDoc;
+  recurrence: string | null;
+  template_key: string | null;
+  series_id: UUID | null;
+  finished_at: ISODateTime | null;
+  created_by: UUID | null;
+  deleted_at: ISODateTime | null;
+  created_at: ISODateTime;
+  updated_at: ISODateTime;
+}
+
+export interface MeetingAttendee {
+  id: UUID;
+  meeting_id: UUID;
+  workspace_id: UUID;
+  user_id: UUID | null;
+  contact_id: UUID | null;
+  created_at: ISODateTime;
+}
+
+export interface MeetingItem {
+  id: UUID;
+  meeting_id: UUID;
+  workspace_id: UUID;
+  kind: "agenda" | "decision";
+  text: string;
+  task_id: UUID | null;
+  done: boolean;
+  position: number;
+  created_by: UUID | null;
+  created_at: ISODateTime;
+  updated_at: ISODateTime;
+}
+
+export interface WeeklyReviewData {
+  step?: number;
+  wins?: string;
+  lessons?: string;
+  focus?: string;
+  stats?: { done: number; overdue: number; minutes: number };
+}
+
+export interface WeeklyReview {
+  id: UUID;
+  user_id: UUID;
+  week_start: ISODate;
+  data: WeeklyReviewData;
+  completed_at: ISODateTime | null;
+  created_at: ISODateTime;
+  updated_at: ISODateTime;
+}
+
+export interface DailyShutdownData {
+  done?: number;
+  moved?: number;
+  tomorrow?: string[];
+  note?: string;
+}
+
+export interface DailyShutdown {
+  id: UUID;
+  user_id: UUID;
+  date: ISODate;
+  data: DailyShutdownData;
+  completed_at: ISODateTime | null;
+  created_at: ISODateTime;
+  updated_at: ISODateTime;
+}
+
+export interface RoutineItem {
+  id: string;
+  text: string;
+}
+
+export interface Routine {
+  id: UUID;
+  workspace_id: UUID;
+  owner_id: UUID;
+  name: string;
+  items: RoutineItem[];
+  recurrence: string;
+  visibility: "private" | "workspace";
+  color: string;
+  position: number;
+  archived_at: ISODateTime | null;
+  created_at: ISODateTime;
+  updated_at: ISODateTime;
+}
+
+export interface RoutineRun {
+  id: UUID;
+  routine_id: UUID;
+  workspace_id: UUID;
+  user_id: UUID;
+  date: ISODate;
+  checked: string[];
+  completed_at: ISODateTime | null;
+  created_at: ISODateTime;
+  updated_at: ISODateTime;
 }

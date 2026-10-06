@@ -124,7 +124,7 @@ AUDIT.md tracks every item. Phases:
 - [x] 2 Backend — Supabase as default, demo at /demo, demo-data import, first-run wizard, import rewrite, areas schema (`20261006000002_areas_and_setup.sql`). Connecting the live project waits for keys.
 - [x] 3 Projects and areas — Projects page, areas everywhere, workload (owner rule, work days, capacity), activity in the demo and live feeds, delegated view
 - [x] 4 Check list — everything in «not tested yet» tested in demo and on Supabase; board reorder, drag preview offset, fast-close data loss fixed
-- [ ] 5 Organisation — waiting-for, contacts, meetings, weekly review, daily shutdown, routines
+- [x] 5 Organisation — waiting-for, contacts, meetings, weekly review, daily shutdown, routines
 - [ ] 6 Business modules — pipeline, money, docs, goals fed by data
 - [ ] 7 Communication and personal — Telegram group digests and replies, email digest, Google Calendar, PWA, prayer times, energy labels
 - [ ] 8 Data, trust, ship — import, backups, sessions, audit log, deploy, Lighthouse, Playwright

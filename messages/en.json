@@ -134,7 +134,12 @@
     "accountMenu": "Account menu: {name}",
     "leaveDemo": "Leave the demo and sign up",
     "waiting": "Waiting for",
-    "noArea": "No area"
+    "noArea": "No area",
+    "meetings": "Meetings",
+    "routines": "Routines",
+    "contacts": "Contacts",
+    "review": "Weekly review",
+    "shutdown": "Close the day"
   },
   "auth": {
     "title": "Welcome to Reja",
@@ -887,7 +892,10 @@
     "capacityHours": "Hours per day",
     "capacityHoursUnit": "hours",
     "comingSoon": "Coming soon",
-    "telegramSoon": "Reminders and the daily digest on Telegram are coming soon. For now they arrive by push and email."
+    "telegramSoon": "Reminders and the daily digest on Telegram are coming soon. For now they arrive by push and email.",
+    "shutdown": "Close the day",
+    "shutdownHint": "A push at this time: move what's left and pick tomorrow's top 3.",
+    "shutdownTime": "Close-the-day time"
   },
   "invite": {
     "title": "Invitation",
@@ -1168,7 +1176,21 @@
     "delegatedEmptyBody": "When you give a task to someone (@name), it shows up here with its date.",
     "homeCard": "Waiting on others",
     "homeEmpty": "Nothing you are waiting on",
-    "seeAll": "All"
+    "seeAll": "All",
+    "label": "Waiting on",
+    "set": "Waiting on someone…",
+    "days": "{count, plural, =0 {since today} one {# day} other {# days}}",
+    "onShort": "{name} · {count, plural, =0 {today} one {# day} other {# days}}",
+    "followUp": "Follow-up date",
+    "followUpShort": "Follow up",
+    "followUpTitle": "Follow up: {title}",
+    "clear": "Stop waiting",
+    "searchPlaceholder": "Name or contact…",
+    "teammates": "Team",
+    "mine": "I'm waiting on",
+    "mineEmpty": "You aren't waiting on anyone",
+    "mineEmptyBody": "Use «Waiting on» in the task panel to note who you're waiting for — it shows here with the days and a follow-up date.",
+    "chaseCount": "{count} to chase"
   },
   "projects": {
     "title": "Projects",
@@ -1185,6 +1207,185 @@
   },
   "push": {
     "digestBody": "Top: {top} · Today: {today} · Overdue: {overdue}",
-    "overdueTitle": "{count} overdue tasks"
+    "overdueTitle": "{count} overdue tasks",
+    "shutdownTitle": "Time to close the day",
+    "shutdownBody": "{count} left from today — move them to tomorrow and pick tomorrow's top 3.",
+    "shutdownBodyClear": "Today's work is done. Pick tomorrow's top 3."
+  },
+  "contacts": {
+    "title": "Contacts",
+    "subtitle": "People outside the app: clients, suppliers, advisers",
+    "new": "New contact",
+    "editTitle": "Edit contact",
+    "edit": "Edit {name}",
+    "createNamed": "New contact: {name}",
+    "company": "Company",
+    "phone": "Phone",
+    "note": "Note",
+    "empty": "No contacts yet",
+    "emptyBody": "Add people who don't have an account — to note that a task waits on them and to invite them to meetings.",
+    "guest": "Contacts are visible to team members only",
+    "guestBody": "Guests don't see the workspace's contact list.",
+    "waitingOn": "Waiting on them: {count}"
+  },
+  "meetings": {
+    "title": "Meetings",
+    "subtitle": "Agenda, decisions and the tasks that come out of them",
+    "new": "New meeting",
+    "titleLabel": "Title",
+    "date": "Date",
+    "time": "Time",
+    "duration": "Duration",
+    "minutes": "{count} min",
+    "repeat": "Repeat",
+    "repeatOptions": {
+      "none": "Doesn't repeat",
+      "weekly": "Every week",
+      "biweekly": "Every two weeks",
+      "monthly": "Every month"
+    },
+    "noProject": "No project",
+    "location": "Place or link",
+    "locationPlaceholder": "Office, Zoom link…",
+    "attendees": "Attendees",
+    "editAttendees": "Attendees",
+    "upcoming": "Upcoming",
+    "past": "Past",
+    "empty": "No meetings planned",
+    "emptyBody": "Create a meeting: agenda, decisions and tasks from decisions in one place.",
+    "recurring": "Recurring",
+    "agendaCount": "Agenda {done}/{total}",
+    "decisionCount": "{count, plural, one {# decision} other {# decisions}}",
+    "done": "Finished",
+    "notFound": "Meeting not found",
+    "reopen": "Reopen",
+    "agenda": "Agenda",
+    "decisions": "Decisions",
+    "agendaEmpty": "Add the points to discuss.",
+    "decisionsEmpty": "Write down what was decided — each one can become a task.",
+    "addAgenda": "Add agenda point",
+    "addDecision": "Add decision",
+    "agendaItem": "Agenda: {text}",
+    "toTask": "To task",
+    "taskCreated": "Task",
+    "taskToast": "Task created from the decision",
+    "notes": "Notes",
+    "notesPlaceholder": "Meeting notes…",
+    "finish": "Finish meeting",
+    "finished": "Meeting finished",
+    "carryHint": "{count, plural, one {# open point moves} other {# open points move}} to the next meeting",
+    "nextCreated": "Next meeting: {date}",
+    "openNext": "Open",
+    "partner": {
+      "title": "Weekly partner meeting",
+      "description": "Every Friday 19:30 — last week's numbers and overdue work are added to the agenda automatically.",
+      "agendaNote": "The agenda gets last week's numbers, tasks overdue right now, money, and next week's plan.",
+      "numbers": "Last week: {done} done, {overdue} overdue, {hours} h worked",
+      "overdueItem": "Overdue: {title}",
+      "money": "Money: income and expenses",
+      "nextWeek": "Next week's plan and owners"
+    }
+  },
+  "review": {
+    "title": "Weekly review",
+    "subtitle": "15 minutes: close the week, plan the next",
+    "doneThisWeek": "This week's review is done",
+    "again": "Go through it again",
+    "progress": "Step {step} of {total}",
+    "stepOf": "{step}/{total}",
+    "steps": {
+      "inbox": {
+        "title": "Clear the inbox",
+        "body": "Move each item to a project, give it a date, or delete it."
+      },
+      "numbers": {
+        "title": "The week in numbers",
+        "body": "What got done this week and how much time it took."
+      },
+      "overdue": {
+        "title": "Overdue",
+        "body": "Do it, give it a new date, or let it go."
+      },
+      "waiting": {
+        "title": "Waiting on others",
+        "body": "Who owes you what — chase where needed."
+      },
+      "next": {
+        "title": "Next week",
+        "body": "Next week's dates and your main focus."
+      },
+      "reflect": {
+        "title": "Reflect",
+        "body": "What went well and what you'll change."
+      }
+    },
+    "inboxClear": "Inbox is empty",
+    "done": "Done",
+    "overdueNow": "Overdue now",
+    "tracked": "Time tracked",
+    "moveAllToMonday": "Move {count} to Monday",
+    "noOverdue": "Nothing overdue",
+    "chaseHint": "Some are due a follow-up",
+    "noWaiting": "You aren't waiting on anyone",
+    "nextWeekEmpty": "Nothing due next week",
+    "focus": "Next week's main focus",
+    "focusPlaceholder": "E.g. launch the CRM",
+    "wins": "Wins",
+    "lessons": "Lessons",
+    "finish": "Finish review",
+    "history": "Past reviews",
+    "historyEmpty": "No reviews yet",
+    "historyEmptyBody": "Every finished weekly review is kept here.",
+    "weekOf": "Week of {date}",
+    "historyStats": "{done} done · {overdue} overdue",
+    "reminderHint": "Turn on the weekly review reminder in Settings"
+  },
+  "shutdown": {
+    "title": "Close the day",
+    "subtitle": "5 minutes: close today, set up tomorrow",
+    "doneTitle": "Done today: {count}",
+    "doneEmpty": "Nothing completed today — that happens too.",
+    "unfinishedTitle": "Left over: {count}",
+    "moveAll": "Move {count} to tomorrow",
+    "nothingLeft": "Nothing left from today's plan",
+    "top3Title": "Tomorrow's top 3",
+    "top3Count": "{count}/3",
+    "top3Empty": "Nothing due tomorrow. Pick from the inbox.",
+    "noteTitle": "A note for tomorrow",
+    "notePlaceholder": "Where will you pick up?",
+    "finish": "Close the day",
+    "closed": "Day closed",
+    "closedBody": "{done} done today. Get some rest!",
+    "homeTitle": "Time to close the day",
+    "homeBody": "Move what's left and pick tomorrow's top 3"
+  },
+  "routines": {
+    "title": "Routines",
+    "subtitle": "Checklists that come back: morning routine, monthly payroll close",
+    "new": "New routine",
+    "empty": "No routines yet",
+    "emptyBody": "If you do the same steps every day or month, make them a routine — the list is ready each time.",
+    "today": "Today",
+    "notToday": "Not today",
+    "shared": "Shared with the team",
+    "private": "Private",
+    "byOther": "Started today by {name}",
+    "complete": "Done for today",
+    "archive": "Archive",
+    "archived": "Routine archived",
+    "namePlaceholder": "E.g. Morning routine",
+    "items": "Steps (one per line)",
+    "itemsPlaceholder": "Check email\nPick today's top 3\nSay hi to the team",
+    "repeat": "Repeat",
+    "shareWithTeam": "Share with the team",
+    "rules": {
+      "daily": "Every day",
+      "weekdays": "Weekdays (Mon–Fri)",
+      "weekly": "Every week",
+      "monthly": "Every month",
+      "custom": "Custom schedule"
+    },
+    "homeEmpty": "Add a routine",
+    "progress": "{done}/{total}"
   }
 }

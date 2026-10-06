@@ -4,6 +4,14 @@ import type {
   Attachment,
   ChecklistItem,
   Comment,
+  Contact,
+  DailyShutdown,
+  Meeting,
+  MeetingAttendee,
+  MeetingItem,
+  Routine,
+  RoutineRun,
+  WeeklyReview,
   CommentReaction,
   Goal,
   Habit,
@@ -66,6 +74,14 @@ export interface Tables {
   time_blocks: TimeBlock;
   saved_views: SavedView;
   templates: Template;
+  contacts: Contact;
+  meetings: Meeting;
+  meeting_attendees: MeetingAttendee;
+  meeting_items: MeetingItem;
+  weekly_reviews: WeeklyReview;
+  daily_shutdowns: DailyShutdown;
+  routines: Routine;
+  routine_runs: RoutineRun;
 }
 
 export type TableName = keyof Tables;
@@ -105,6 +121,14 @@ export const PK: { [T in TableName]: (keyof Tables[T] & string)[] } = {
   time_blocks: ["id"],
   saved_views: ["id"],
   templates: ["id"],
+  contacts: ["id"],
+  meetings: ["id"],
+  meeting_attendees: ["id"],
+  meeting_items: ["id"],
+  weekly_reviews: ["id"],
+  daily_shutdowns: ["id"],
+  routines: ["id"],
+  routine_runs: ["id"],
 };
 
 export const TABLE_NAMES = Object.keys(PK) as TableName[];
@@ -138,6 +162,8 @@ export const PROFILE_EDITABLE = [
   "day_end",
   "daily_capacity_tasks",
   "daily_capacity_minutes",
+  "shutdown_enabled",
+  "shutdown_time",
 ] as const;
 
 export type StoreData = { [T in TableName]: Record<string, Row<T>> };

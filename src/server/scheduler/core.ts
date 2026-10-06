@@ -7,7 +7,7 @@
 //   4. Telegram group posts for projects connected to a group
 
 import { addDays, startOfWeek, timeIn, zonedToUtc } from "@/lib/dates";
-import { deliveryTime, dueDailySlots, inQuietHours, type DailySlotProfile } from "@/lib/reminders";
+import { deliveryTime, dueDailySlots, inQuietHours, type DailySlotKind, type DailySlotProfile } from "@/lib/reminders";
 import type { Channel, NotificationType, NotifyPrefs } from "@/lib/types";
 
 export interface SchedProfile extends DailySlotProfile {
@@ -70,7 +70,7 @@ export interface SchedulerStore {
   updateNotification(id: string, patch: Record<string, unknown>): Promise<void>;
   recordReminderNotification(r: SchedReminder, title: string, url: string): Promise<void>;
   dailyCandidates(): Promise<SchedProfile[]>;
-  claimDaily(userId: string, kind: "digest" | "review" | "overdue", date: string): Promise<boolean>;
+  claimDaily(userId: string, kind: DailySlotKind, date: string): Promise<boolean>;
   responsibleTasks(userId: string, until: string): Promise<SchedTask[]>;
   timeBlocks(userId: string, date: string): Promise<{ title: string; start_at: string; end_at: string }[]>;
   completedCount(userId: string, from: string, to: string): Promise<number>;
@@ -105,7 +105,7 @@ export type Translate = (locale: string) => (key: string, values?: Record<string
 export interface RunResult {
   reminders: { claimed: number; sent: number; deferred: number; dismissed: number; failed: number };
   notifications: { claimed: number; delivered: number; deferred: number };
-  daily: { digest: number; review: number; overdue: number };
+  daily: { digest: number; review: number; overdue: number; shutdown: number };
   groupPosts: number;
   errors: string[];
 }
@@ -129,7 +129,7 @@ export async function runScheduler(opts: { store: SchedulerStore; senders: Sende
   const result: RunResult = {
     reminders: { claimed: 0, sent: 0, deferred: 0, dismissed: 0, failed: 0 },
     notifications: { claimed: 0, delivered: 0, deferred: 0 },
-    daily: { digest: 0, review: 0, overdue: 0 },
+    daily: { digest: 0, review: 0, overdue: 0, shutdown: 0 },
     groupPosts: 0,
     errors: [],
   };
@@ -155,7 +155,7 @@ export async function runScheduler(opts: { store: SchedulerStore; senders: Sende
         continue;
       }
       const tr = t(p.language);
-      const title = task?.title ?? r.title ?? tr("bot.reminder");
+      const title = r.title ?? task?.title ?? tr("bot.reminder");
       const url = task ? `${siteUrl}/tasks/${task.id}` : siteUrl;
       const timeLabel = task?.due_at ? ` · ${timeIn(p.timezone, task.due_at)}` : "";
       const line = `${tr("bot.reminder")}\n<b>${esc(title)}</b>${task?.project_name ? `\n<i>${esc(task.project_name)}</i>` : ""}${esc(timeLabel)}`;
@@ -299,8 +299,19 @@ export async function collectDigest(store: SchedulerStore, p: SchedProfile, date
   return { top, today, overdue, blocks };
 }
 
-async function sendDaily(store: SchedulerStore, senders: Senders, t: Translate, siteUrl: string, p: SchedProfile, kind: "digest" | "review" | "overdue", date: string): Promise<boolean> {
+async function sendDaily(store: SchedulerStore, senders: Senders, t: Translate, siteUrl: string, p: SchedProfile, kind: DailySlotKind, date: string): Promise<boolean> {
   const tr = t(p.language);
+  if (kind === "shutdown") {
+    // a gentle push only: what is still open today, and a link to close the day
+    const open = await store.responsibleTasks(p.id, date);
+    const left = open.filter((x) => (x.due_date && x.due_date <= date) || x.top_date === date).length;
+    return pushAll(store, senders, p.id, {
+      title: tr("push.shutdownTitle"),
+      body: left ? tr("push.shutdownBody", { count: left }) : tr("push.shutdownBodyClear"),
+      url: "/shutdown",
+      tag: "reja-shutdown",
+    });
+  }
   const first = (p.name || "").split(" ")[0] || "👋";
   const item = (x: SchedTask) => `${x.due_at ? `${timeIn(p.timezone, x.due_at)} ` : ""}${x.title}${x.project_name ? ` — ${x.project_name}` : ""}`;
   const MAX = 8;

@@ -5,6 +5,7 @@ import {
   CalendarDays,
   CalendarRange,
   ChevronRight,
+  CirclePause,
   Clock,
   Copy,
   ExternalLink,
@@ -83,6 +84,7 @@ import { AssigneePicker, DatePicker, LabelPicker, PriorityPicker, ProjectPicker,
 import { TaskCheckbox } from "./task-row";
 import { AttachmentsSection, ChecklistSection, CommentsAndActivity, DependenciesSection, SubtasksSection } from "./task-detail-sections";
 import { useTaskPresence } from "@/hooks/use-presence";
+import { WaitingField } from "./waiting-field";
 
 function Prop({ icon, label, children }: { icon: ReactNode; label: string; children: ReactNode }) {
   return (
@@ -365,6 +367,18 @@ function TaskDetailBody({ task, onClose, fullPage }: { task: Task; onClose?: () 
                 <PropButton className="text-muted-foreground">{assigneeIds.length ? "+" : t("task.assign")}</PropButton>
               </AssigneePicker>
             )}
+          </Prop>
+
+          <Prop icon={<CirclePause />} label={t("waiting.label")}>
+            <WaitingField
+              task={task}
+              disabled={!writable}
+              button={(children, cls) => (
+                <PropButton disabled={!writable} className={cls}>
+                  {children}
+                </PropButton>
+              )}
+            />
           </Prop>
 
           <Prop icon={<Tag />} label={t("task.labels")}>

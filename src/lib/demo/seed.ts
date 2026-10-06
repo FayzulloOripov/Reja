@@ -1,12 +1,19 @@
 // Clearly fake demo data, used by demo mode (NEXT_PUBLIC_DEMO_MODE) and `npm run seed:demo`.
 // Every person and company here is invented; names end with "(demo)" where they could be mistaken.
 
-import { addDays, addMonths, startOfMonth, startOfWeek, zonedToUtc } from "../dates";
+import { addDays, addMonths, nextWeekday, startOfMonth, startOfWeek, zonedToUtc } from "../dates";
 import type {
   ActivityEntry,
   Area,
   Comment,
   ChecklistItem,
+  Contact,
+  Meeting,
+  MeetingAttendee,
+  MeetingItem,
+  Routine,
+  RoutineRun,
+  WeeklyReview,
   Goal,
   Habit,
   HabitLog,
@@ -56,6 +63,13 @@ export interface DemoData {
   time_blocks: TimeBlock[];
   time_entries: TimeEntry[];
   notifications: Notification[];
+  contacts: Contact[];
+  meetings: Meeting[];
+  meeting_attendees: MeetingAttendee[];
+  meeting_items: MeetingItem[];
+  routines: Routine[];
+  routine_runs: RoutineRun[];
+  weekly_reviews: WeeklyReview[];
 }
 
 function seededId(n: number): string {
@@ -99,6 +113,9 @@ export function buildDemoData(userId: string, today: string, tz = "Asia/Tashkent
     ics_token: "demo-token",
     onboarded_at: ts,
     current_workspace_id: null,
+    shutdown_enabled: false,
+    shutdown_time: "18:30:00",
+    last_shutdown_on: null,
     work_start: "10:00:00",
     work_end: "19:00:00",
     day_start: "07:00:00",
@@ -235,6 +252,10 @@ export function buildDemoData(userId: string, today: string, tz = "Asia/Tashkent
       completed_at: null,
       created_by: userId,
       source: null,
+      waiting_on_user_id: null,
+      waiting_on_contact_id: null,
+      waiting_since: null,
+      follow_up_date: null,
       deleted_at: null,
       ...stamp,
       ...extra,
@@ -393,7 +414,75 @@ export function buildDemoData(userId: string, today: string, tz = "Asia/Tashkent
     },
   ];
 
+  // ---------------------------------------------------------------- organisation
+  const contacts: Contact[] = [
+    { id: id(), workspace_id: wsTeam.id, name: uz ? "Akmal Rahimov (demo)" : "Akmal Rahimov (demo)", company: uz ? "TexnoSoft (demo), CTO" : "TexnoSoft (demo), CTO", phone: "+998 90 000 00 00", telegram: null, note: uz ? "CRM boʻyicha texnik savollar" : "Technical questions about the CRM", created_by: userId, deleted_at: null, ...stamp },
+    { id: id(), workspace_id: wsTeam.id, name: uz ? "Dilnoza (demo)" : "Dilnoza (demo)", company: uz ? "Bosmaxona (demo)" : "Print shop (demo)", phone: null, telegram: null, note: null, created_by: userId, deleted_at: null, ...stamp },
+  ];
+  t(pSales, uz ? "TexnoSoft dan CRM narxini olish" : "Get the CRM quote from TexnoSoft", {
+    status: "waiting", waiting_on_contact_id: contacts[0].id, waiting_since: addDays(today, -4), follow_up_date: today, due_date: addDays(today, 5),
+  });
+  t(pAgency, uz ? "Reklama byudjetini tasdiqlash" : "Approve the ad budget", {
+    status: "waiting", waiting_on_user_id: PARTNER, waiting_since: addDays(today, -2), follow_up_date: addDays(today, 2),
+  });
+
+  const friday = nextWeekday(today, 5, true);
+  const lastFriday = addDays(friday, -7);
+  const mStamp = { ...stamp, deleted_at: null, created_by: userId };
+  const series = id();
+  const meetings: Meeting[] = [
+    { id: id(), workspace_id: wsTeam.id, project_id: null, title: uz ? "Haftalik hamkor uchrashuvi" : "Weekly partner meeting", starts_at: at(lastFriday, "19:30"), duration_min: 60, location: null, notes: null, recurrence: "FREQ=WEEKLY;BYDAY=FR", template_key: "partner_weekly", series_id: series, finished_at: at(lastFriday, "20:40"), ...mStamp },
+    { id: id(), workspace_id: wsTeam.id, project_id: null, title: uz ? "Haftalik hamkor uchrashuvi" : "Weekly partner meeting", starts_at: at(friday, "19:30"), duration_min: 60, location: null, notes: null, recurrence: "FREQ=WEEKLY;BYDAY=FR", template_key: "partner_weekly", series_id: series, finished_at: null, ...mStamp },
+    { id: id(), workspace_id: wsTeam.id, project_id: pSales.id, title: uz ? "TexnoSoft bilan CRM demo" : "CRM demo with TexnoSoft", starts_at: at(addDays(today, 2), "11:00"), duration_min: 45, location: "Zoom", notes: null, recurrence: null, template_key: null, series_id: null, finished_at: null, ...mStamp },
+  ];
+  const [mPast, mNext, mDemo] = meetings;
+  const meeting_attendees: MeetingAttendee[] = [
+    ...[mPast, mNext].flatMap((m) => [userId, PARTNER].map((u) => ({ id: id(), meeting_id: m.id, workspace_id: wsTeam.id, user_id: u, contact_id: null, created_at: ts }))),
+    { id: id(), meeting_id: mDemo.id, workspace_id: wsTeam.id, user_id: userId, contact_id: null, created_at: ts },
+    { id: id(), meeting_id: mDemo.id, workspace_id: wsTeam.id, user_id: null, contact_id: contacts[0].id, created_at: ts },
+  ];
+  let pos = 1;
+  const item = (m: Meeting, kind: MeetingItem["kind"], text: string, extra: Partial<MeetingItem> = {}): MeetingItem => ({
+    id: id(), meeting_id: m.id, workspace_id: wsTeam.id, kind, text, task_id: null, done: false, position: pos++, created_by: userId, ...stamp, ...extra,
+  });
+  const meeting_items: MeetingItem[] = [
+    item(mPast, "agenda", uz ? "Oʻtgan hafta: 6 ta bajarildi, 2 ta kechikkan" : "Last week: 6 done, 2 overdue", { done: true }),
+    item(mPast, "agenda", uz ? "Pul: tushum va xarajatlar" : "Money: income and expenses", { done: true }),
+    item(mPast, "decision", uz ? "Shartnoma shablonini hamkor tayyorlaydi" : "Partner prepares the contract template", { task_id: tasks[8].id }),
+    item(mPast, "decision", uz ? "Reklamaga oyiga 5 mln soʻmdan oshirmaslik" : "Keep ads under 5M a month"),
+    item(mNext, "agenda", uz ? "Oʻtgan hafta raqamlari" : "Last week's numbers"),
+    item(mNext, "agenda", uz ? "CRM: TexnoSoft javobi" : "CRM: TexnoSoft's answer"),
+    item(mNext, "agenda", uz ? "Keyingi hafta rejasi va masʼullar" : "Next week's plan and owners"),
+    item(mDemo, "agenda", uz ? "Narx va muddat" : "Price and timeline"),
+  ];
+
+  const routines: Routine[] = [
+    { id: id(), workspace_id: wsPersonal.id, owner_id: userId, name: uz ? "Ertalabki tartib" : "Morning routine", items: [
+      { id: "r1", text: uz ? "Pochta va xabarlarni koʻrish" : "Check email and messages" },
+      { id: "r2", text: uz ? "Bugungi 3 ta asosiyni tanlash" : "Pick today's top 3" },
+      { id: "r3", text: uz ? "Kalendarni tekshirish" : "Check the calendar" },
+    ], recurrence: "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR", visibility: "private", color: "amber", position: 1, archived_at: null, created_at: at(addDays(today, -30), "08:00"), updated_at: ts },
+    { id: id(), workspace_id: wsTeam.id, owner_id: userId, name: uz ? "Oylik hisob-kitob" : "Monthly close", items: [
+      { id: "m1", text: uz ? "Ish haqi hisobi" : "Payroll" },
+      { id: "m2", text: uz ? "Ijara va kommunal" : "Rent and utilities" },
+      { id: "m3", text: uz ? "Hamkor bilan hisobni solishtirish" : "Reconcile with the partner" },
+    ], recurrence: "FREQ=MONTHLY", visibility: "workspace", color: "emerald", position: 2, archived_at: null, created_at: at(startOfMonth(addMonths(today, -2)), "09:00"), updated_at: ts },
+  ];
+  const routine_runs: RoutineRun[] = [
+    { id: id(), routine_id: routines[0].id, workspace_id: wsPersonal.id, user_id: userId, date: today, checked: ["r1"], completed_at: null, ...stamp },
+  ];
+  const weekly_reviews: WeeklyReview[] = [
+    { id: id(), user_id: userId, week_start: addDays(startOfWeek(today), -7), data: { step: 5, stats: { done: 6, overdue: 2, minutes: 150 }, wins: uz ? "Ikki yangi mijoz bilan uchrashdik" : "Met two new clients", lessons: uz ? "Ertalab birinchi soatni fokusga ajratish kerak" : "Keep the first hour for focus", focus: uz ? "CRM ni tanlash" : "Choose the CRM" }, completed_at: at(addDays(startOfWeek(today), -1), "10:00"), ...stamp },
+  ];
+
   return {
+    contacts,
+    meetings,
+    meeting_attendees,
+    meeting_items,
+    routines,
+    routine_runs,
+    weekly_reviews,
     profiles: [me, partner, guest],
     workspaces: [wsPersonal, wsTeam],
     workspace_members: members,

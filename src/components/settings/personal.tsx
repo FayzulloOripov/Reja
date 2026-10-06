@@ -207,6 +207,10 @@ export function NotificationsSection() {
           </Select>
           <Input type="time" className="w-28 tnum" value={timeValue(me.review_time)} disabled={!me.review_enabled} onChange={(e) => e.target.value && updateProfile({ review_time: e.target.value })} aria-label={t("settings.weeklyReview")} />
         </SettingsRow>
+        <SettingsRow label={t("settings.shutdown")} description={t("settings.shutdownHint")}>
+          <Switch checked={me.shutdown_enabled} onCheckedChange={(v) => updateProfile({ shutdown_enabled: v })} aria-label={t("settings.shutdown")} />
+          <Input type="time" className="w-28 tnum" value={timeValue(me.shutdown_time)} disabled={!me.shutdown_enabled} onChange={(e) => e.target.value && updateProfile({ shutdown_time: e.target.value })} aria-label={t("settings.shutdownTime")} />
+        </SettingsRow>
         <SettingsRow label={t("settings.overdueNudge")}>
           <Switch checked={me.overdue_nudge_enabled} onCheckedChange={(v) => updateProfile({ overdue_nudge_enabled: v })} aria-label={t("settings.overdueNudge")} />
         </SettingsRow>

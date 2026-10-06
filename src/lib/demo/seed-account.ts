@@ -62,6 +62,7 @@ export async function seedDemoAccount(sb: SupabaseClient, people: SeedPeople, op
   await insert("projects", fix(demo.projects));
   await insert("project_members", fix(demo.project_members));
   await insert("sections", fix(demo.sections));
+  await insert("contacts", fix(demo.contacts));
   await insert("tasks", fix(demo.tasks));
   await insert("task_assignees", fix(demo.task_assignees));
   await insert("labels", fix(demo.labels));
@@ -78,6 +79,12 @@ export async function seedDemoAccount(sb: SupabaseClient, people: SeedPeople, op
   await insert("notes", fix(demo.notes));
   await insert("time_blocks", fix(demo.time_blocks));
   await insert("time_entries", fix(demo.time_entries));
+  await insert("meetings", fix(demo.meetings));
+  await insert("meeting_attendees", fix(demo.meeting_attendees));
+  await insert("meeting_items", fix(demo.meeting_items));
+  await insert("routines", fix(demo.routines));
+  await insert("routine_runs", fix(demo.routine_runs));
+  await insert("weekly_reviews", fix(demo.weekly_reviews));
 
   const teamId = team[0]?.id as string;
   const { error } = await sb.from("profiles").update({ current_workspace_id: teamId, onboarded_at: new Date().toISOString(), timezone: tz, language: lang }).eq("id", people.me);

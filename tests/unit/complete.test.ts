@@ -10,7 +10,7 @@ const base: Task = {
   description: null, status: "todo", priority: "high", start_date: "2026-10-07", due_date: "2026-10-09",
   due_at: "2026-10-09T05:00:00.000Z", deadline: null, estimate_min: 30, recurrence: "FREQ=WEEKLY;BYDAY=FR", recurrence_parent_id: null,
   top_date: "2026-10-09", position: 1, completed_at: null, created_by: "u", source: null,
-  created_at: "2026-10-01T00:00:00Z", updated_at: "2026-10-01T00:00:00Z", deleted_at: null,
+  waiting_on_user_id: null, waiting_on_contact_id: null, waiting_since: null, follow_up_date: null, created_at: "2026-10-01T00:00:00Z", updated_at: "2026-10-01T00:00:00Z", deleted_at: null,
 };
 
 describe("planCompletion", () => {
