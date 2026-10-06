@@ -200,11 +200,13 @@ test("search results show the task's date", async ({ page }) => {
 });
 
 test("sign-in: an email with a trailing space is accepted, and a failed send never shows the error page", async ({ page }) => {
+  demoOnly(); // against a real backend this would send a real email on every run
   await page.goto("/login");
-  await page.getByLabel("Email manzil").fill("ali@example.test ");
+  // a fresh address each run: the same one is rate limited after four tries in ten minutes
+  await page.getByLabel("Email manzil").fill(`e2e-${Date.now().toString(36)}@example.test `);
   await page.getByRole("button", { name: "Kirish", exact: true }).click();
-  // with a backend: the "check your email" screen with the 6-digit code; without one: a message under the field
-  await expect(page.getByRole("heading", { name: "Pochtangizni tekshiring" }).or(page.getByText("Xatni yuborib boʻlmadi"))).toBeVisible({ timeout: 15_000 });
+  // no backend here, so sending fails: a message under the field, not the full-page error
+  await expect(page.getByText("Xatni yuborib boʻlmadi")).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText("Toʻgʻri email kiriting")).toHaveCount(0);
   await expect(page.getByText("Nimadir notoʻgʻri ketdi")).toHaveCount(0);
 });
