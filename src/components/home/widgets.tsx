@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, ArrowDownRight, ArrowUpRight, Check, CheckCircle2, Flame, Hourglass, Moon, Plus, Star, Timer } from "lucide-react";
+import { AlertTriangle, ArrowDownRight, ArrowUpRight, Check, CheckCircle2, Clock, Flame, Hourglass, Moon, Plus, Star, Timer } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
@@ -8,7 +8,7 @@ import { DueChip, ProjectDot, UserAvatar } from "@/components/common/bits";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { safeColor } from "@/lib/colors";
-import { addDays, dateIn, startOfWeek } from "@/lib/dates";
+import { addDays, dateIn, minutesOfDay, startOfWeek } from "@/lib/dates";
 import { focusSummary } from "@/lib/focus-stats";
 import { useFormat } from "@/lib/format";
 import { currentStreak, scheduledOn } from "@/lib/habits";
@@ -16,7 +16,7 @@ import { effectiveHealth, healthReason, isOpen, suggestHealth } from "@/lib/heal
 import type { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { setTop, toggleHabit } from "@/store/actions";
-import { assigneesByTask, tasksByProject, useDelegatedTasks, useMyTasks, useProjects, useToday, useTz, useUserId } from "@/store/hooks";
+import { assigneesByTask, tasksByProject, useDelegatedTasks, useMyTasks, useNowMinutes, useProjects, useToday, useTz, useUserId } from "@/store/hooks";
 import { useUI } from "@/store/ui";
 import { byDueThenPriority } from "@/lib/filters";
 import { responsibleIds } from "@/lib/tasks/responsible";
@@ -302,5 +302,59 @@ export function WaitingOnOthers() {
         })}
       </ul>
     </section>
+  );
+}
+
+/**
+ * "Keyingisi: 09:30 · Repslar bilan yigʻilish · 1 soat qoldi" under the greeting: the first thing a busy
+ * day needs is what comes next, not the full list. Timed tasks due today and today's time blocks.
+ */
+export function NextUp({ tasks }: { tasks: Task[] }) {
+  const t = useTranslations("home");
+  const today = useToday();
+  const tz = useTz();
+  const f = useFormat(today, tz);
+  const uid = useUserId();
+  const now = useNowMinutes();
+  const blocks = useStore((s) => s.data.time_blocks);
+  const openTask = useUI((s) => s.openTask);
+  const next = useMemo(() => {
+    const items: { start: number; end: number; at: string; title: string; taskId: string | null }[] = [];
+    for (const x of tasks) {
+      if (!x.due_at || x.due_date !== today || !isOpen(x)) continue;
+      const start = minutesOfDay(tz, x.due_at);
+      items.push({ start, end: start + (x.estimate_min ?? 30), at: x.due_at, title: x.title, taskId: x.id });
+    }
+    for (const b of Object.values(blocks)) {
+      if (b.user_id !== uid || b.date !== today) continue;
+      const task = b.task_id ? tasks.find((x) => x.id === b.task_id) : undefined;
+      if (b.task_id && task && !isOpen(task)) continue;
+      items.push({ start: minutesOfDay(tz, b.start_at), end: minutesOfDay(tz, b.end_at) || 24 * 60, at: b.start_at, title: b.title || task?.title || "—", taskId: b.task_id });
+    }
+    return items.filter((i) => i.end > now).sort((a, b) => a.start - b.start)[0] ?? null;
+  }, [tasks, blocks, uid, today, tz, now]);
+  if (!next) return null;
+  const when = next.start <= now ? t("nextNow") : t("nextIn", { duration: f.duration(next.start - now) });
+  const body = (
+    <>
+      <Clock className="size-4 shrink-0 text-brand" aria-hidden />
+      <span className="shrink-0 font-semibold tnum">{f.time(next.at)}</span>
+      <span className="min-w-0 truncate">{next.title}</span>
+      <span className={cn("ml-auto shrink-0 text-xs", next.start <= now ? "font-semibold text-brand-fg" : "text-muted-foreground")}>{when}</span>
+    </>
+  );
+  return (
+    <div className="flex items-center gap-2 text-sm">
+      <span className="shrink-0 text-muted-foreground">{t("nextUp")}</span>
+      {next.taskId ? (
+        <button type="button" onClick={() => openTask(next.taskId!)} className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border bg-card px-3 py-2 text-left shadow-elev-1 hover:bg-muted/60" title={next.title}>
+          {body}
+        </button>
+      ) : (
+        <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border bg-card px-3 py-2" title={next.title}>
+          {body}
+        </div>
+      )}
+    </div>
   );
 }

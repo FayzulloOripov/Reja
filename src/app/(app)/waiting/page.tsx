@@ -101,7 +101,7 @@ export default function WaitingPage() {
           <EmptyState compact illustration="team" title={t("waiting.mineEmpty")} body={t("waiting.mineEmptyBody")} />
         ) : (
           <div className="rounded-2xl border bg-card p-2 shadow-elev-1">
-            <TaskList groups={waitingGroups} showProject />
+            <TaskList groups={waitingGroups} showProject chase />
           </div>
         )}
       </section>
@@ -113,7 +113,7 @@ export default function WaitingPage() {
           <EmptyState compact illustration="team" title={t("waiting.delegatedEmpty")} body={t("waiting.delegatedEmptyBody")} />
         ) : (
           <div className="rounded-2xl border bg-card p-2 shadow-elev-1">
-            <TaskList groups={groups} showProject />
+            <TaskList groups={groups} showProject chase />
           </div>
         )}
       </section>

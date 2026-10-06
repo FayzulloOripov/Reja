@@ -198,7 +198,8 @@ export function DueChip({
             overdue ? "bg-danger-soft text-danger-fg" : isToday ? "bg-brand-soft text-brand-fg" : "text-muted-foreground",
           )}
         >
-          {overdue ? <AlarmClock className="size-3" aria-hidden /> : <CalendarClock className="size-3" aria-hidden />}
+          {/* under its own day's header a task without a time shows only the repeat mark, not an empty calendar */}
+          {overdue ? <AlarmClock className="size-3" aria-hidden /> : dueText ? <CalendarClock className="size-3" aria-hidden /> : null}
           {dueText && <span className="sr-only">{t("due")}:</span>}
           {dueText}
           {recurring && (

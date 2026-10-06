@@ -68,3 +68,30 @@ test("no page scrolls sideways at phone width", async ({ page }) => {
     expect(doc, path).toBeLessThanOrEqual(win);
   }
 });
+
+// A busy manager on a phone (second review round)
+
+test("inbox on a phone: one tap files a task into a project", async ({ page }) => {
+  await openDemo(page, "/inbox");
+  const row = page.locator("[data-task-id]", { hasText: "Kiyim uslubi" });
+  await row.getByRole("button", { name: "Loyihaga" }).click();
+  await page.getByRole("option", { name: /Agentlik mijozlari/ }).click();
+  await expect(page.locator("[data-task-id]", { hasText: "Kiyim uslubi" })).toHaveCount(0);
+});
+
+test("Home names what comes next, and quick add says where a delegated task went", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-10-07T03:30:00Z") }); // 08:30 in Tashkent
+  await openDemo(page);
+  await expect(page.getByText("Keyingisi")).toBeVisible();
+  await page.getByRole("button", { name: "Yangi vazifa" }).last().click();
+  const input = page.getByRole("textbox", { name: "Tezkor qoʻshish" });
+  await input.fill("Asilaga taklifni yuborish juma 15:00 #Agentlik @Hamkor");
+  await input.press("Enter");
+  await expect(page.getByText(/Agentlik mijozlari · Juma 15:00 · Hamkor/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Ochish" })).toBeVisible();
+});
+
+test("waiting list: every open item has a follow-up button", async ({ page }) => {
+  await openDemo(page, "/waiting");
+  await expect(page.getByRole("button", { name: "Soʻrash" }).first()).toBeVisible();
+});

@@ -1,21 +1,22 @@
 "use client";
 
-import { Brain, CalendarDays, Check, CheckSquare, CirclePause, GitBranch, GripVertical, MessageSquare, Star, Sun, Sunrise, Zap } from "lucide-react";
+import { Brain, CalendarDays, Check, CheckSquare, CirclePause, FolderInput, Send, GitBranch, GripVertical, MessageSquare, Star, Sun, Sunrise, Zap } from "lucide-react";
 import { animate, motion, useMotionValue, useTransform } from "motion/react";
 import { useTranslations } from "next-intl";
 import { memo, useMemo, useRef, useState, type HTMLAttributes } from "react";
 import { AvatarStack, DueChip, PriorityIcon, ProjectBadge } from "@/components/common/bits";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { addDays } from "@/lib/dates";
+import { useFormat } from "@/lib/format";
 import { isOverdue } from "@/lib/health";
 import { followUpDue, waitingDays } from "@/lib/org";
 import type { Task, TaskPriority } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { rescheduleTasks, setTop, toggleComplete } from "@/store/actions";
-import { assigneesByTask, checklistByTask, commentsByTask, labelsByTask, subtasksByParent, useToday } from "@/store/hooks";
+import { moveTasks, rescheduleTasks, setTop, toggleComplete } from "@/store/actions";
+import { assigneesByTask, checklistByTask, commentsByTask, labelsByTask, subtasksByParent, useToday, useTz } from "@/store/hooks";
 import { useStore } from "@/store/store";
 import { useUI } from "@/store/ui";
-import { DatePicker } from "./pickers";
+import { DatePicker, ProjectPicker } from "./pickers";
 
 const RING: Record<TaskPriority, string> = {
   urgent: "border-prio-urgent",
@@ -81,6 +82,10 @@ export interface TaskRowProps {
   showProject?: boolean;
   /** the day the surrounding group stands for: a task due that day does not repeat it */
   groupDate?: string | null;
+  /** inbox: one-tap "to a project / today / tomorrow" under the row (the keyboard keys do not exist on a phone) */
+  triage?: boolean;
+  /** waiting lists: a "Soʻrash" button that shares a ready follow-up message (Telegram, WhatsApp…) */
+  chase?: boolean;
   focused?: boolean;
   selected?: boolean;
   readOnly?: boolean;
@@ -90,9 +95,11 @@ export interface TaskRowProps {
   className?: string;
 }
 
-function TaskRowInner({ task, showProject, groupDate, focused, selected, readOnly, indent, dragHandle, onSelect, className }: TaskRowProps) {
+function TaskRowInner({ task, showProject, groupDate, triage, chase, focused, selected, readOnly, indent, dragHandle, onSelect, className }: TaskRowProps) {
   const t = useTranslations();
   const today = useToday();
+  const tz = useTz();
+  const f = useFormat(today, tz);
   const openTask = useUI((s) => s.openTask);
   const project = useStore((s) => (task.project_id ? s.data.projects[task.project_id] : undefined));
   const taskAssignees = useStore((s) => s.data.task_assignees);
@@ -245,6 +252,32 @@ function TaskRowInner({ task, showProject, groupDate, focused, selected, readOnl
             {showProject && !project && !task.project_id && <span className="text-xs text-muted-foreground">{t("nav.inbox")}</span>}
           </div>
         )}
+        {chase && !done && (
+          <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+            <button type="button" onClick={() => shareFollowUp(t("waiting.chaseText", { title: task.title, date: task.due_date ? f.relativeDay(task.due_date) : "—" }))} className="inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-medium hover:bg-muted">
+              <Send className="size-3.5" aria-hidden /> {t("waiting.chase")}
+            </button>
+          </div>
+        )}
+        {triage && !readOnly && !done && (
+          <div className="mt-2 flex flex-wrap gap-1.5" onClick={(e) => e.stopPropagation()}>
+            <ProjectPicker value={task.project_id} allowInbox={false} onChange={(projectId, sectionId) => moveTasks([task.id], { projectId, sectionId })}>
+              <button type="button" className="inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-medium hover:bg-muted">
+                <FolderInput className="size-3.5" aria-hidden /> {t("inbox.toProject")}
+              </button>
+            </ProjectPicker>
+            {task.due_date !== today && (
+              <button type="button" onClick={() => rescheduleTasks([task.id], today)} className="inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-medium hover:bg-muted">
+                <Sun className="size-3.5" aria-hidden /> {t("common.today")}
+              </button>
+            )}
+            {task.due_date !== addDays(today, 1) && (
+              <button type="button" onClick={() => rescheduleTasks([task.id], addDays(today, 1))} className="inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-medium hover:bg-muted">
+                <Sunrise className="size-3.5" aria-hidden /> {t("common.tomorrow")}
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {!readOnly && (
@@ -330,3 +363,12 @@ function TaskRowInner({ task, showProject, groupDate, focused, selected, readOnl
 }
 
 export const TaskRow = memo(TaskRowInner);
+
+/** The phone's share sheet when there is one (Telegram, WhatsApp…), otherwise Telegram's share page. */
+function shareFollowUp(text: string) {
+  if (typeof navigator !== "undefined" && navigator.share) {
+    navigator.share({ text }).catch(() => {});
+    return;
+  }
+  window.open(`https://t.me/share/url?url=${encodeURIComponent(text)}`, "_blank", "noopener");
+}
