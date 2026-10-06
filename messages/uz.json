@@ -130,7 +130,9 @@
     "skipToContent": "Asosiy qismga oʻtish",
     "mainNav": "Asosiy menyu",
     "accountMenu": "Hisob menyusi: {name}",
-    "leaveDemo": "Demodan chiqish va roʻyxatdan oʻtish"
+    "leaveDemo": "Demodan chiqish va roʻyxatdan oʻtish",
+    "waiting": "Kutilmoqda",
+    "noArea": "Sohasiz"
   },
   "auth": {
     "title": "Reja’ga xush kelibsiz",
@@ -453,7 +455,8 @@
     "swipeLater": "Keyinga",
     "dragHandle": "Sudrab tartibini oʻzgartirish",
     "dueHint": "Ishni qaysi kuni qilishni rejalashtirgansiz",
-    "chooseFile": "Fayl tanlash"
+    "chooseFile": "Fayl tanlash",
+    "createdByYou": "Siz yaratgansiz · {date}"
   },
   "quickAdd": {
     "title": "Tezkor qoʻshish",
@@ -542,10 +545,10 @@
       "title": "nomi",
       "status": "holati",
       "priority": "muhimligi",
-      "due_date": "muddati",
+      "due_date": "sanasi",
       "due_at": "vaqti",
       "start_date": "boshlanishi",
-      "deadline": "deadline",
+      "deadline": "oxirgi muddati",
       "project_id": "loyihasi",
       "section_id": "boʻlimi",
       "top_date": "asosiy ish",
@@ -556,7 +559,10 @@
       "name": "nomi",
       "health": "holati",
       "target_date": "yakunlash sanasi"
-    }
+    },
+    "movedToSection": "{actor} «{title}» ni «{section}» boʻlimiga koʻchirdi",
+    "movedToProject": "{actor} «{title}» ni «{project}» ga koʻchirdi",
+    "assignedTo": "{actor} «{title}» ni {person} ga topshirdi"
   },
   "notifications": {
     "title": "Bildirishnomalar",
@@ -705,7 +711,14 @@
     "overloaded": "Ortiqcha yuklama",
     "capacity": "Kuniga {count} tadan ortiq — ortiqcha",
     "unassigned": "Ijrochisiz",
-    "empty": "Muddat va ijrochisi bor vazifalar yoʻq"
+    "empty": "Muddat va ijrochisi bor vazifalar yoʻq",
+    "overLegend": "Sigʻimdan oshgan",
+    "dayOffLegend": "Dam olish kuni",
+    "ownerRule": "Ijrochi belgilanmagan vazifa uni yaratgan kishiniki hisoblanadi.",
+    "myCapacity": "Mening sigʻimim: kuniga {count} ta vazifa",
+    "cellTasks": "{count, plural, one {# ta vazifa} other {# ta vazifa}}",
+    "dayOff": "dam olish kuni",
+    "capacityOf": "sigʻim {count} ta"
   },
   "settings": {
     "title": "Sozlamalar",
@@ -1081,7 +1094,9 @@
     "delete": "Sohani oʻchirish",
     "deleteHint": "Loyihalar oʻchmaydi, faqat sohasiz qoladi",
     "all": "Barcha sohalar",
-    "filter": "Soha boʻyicha"
+    "filter": "Soha boʻyicha",
+    "makePrivate": "Faqat oʻzimga koʻrinsin",
+    "makeShared": "Ish maydoniga koʻrinsin"
   },
   "import": {
     "formats": "JSON (eski rejalashtiruvchi) yoki CSV (Excel, Google Sheets, Todoist…)",
@@ -1132,5 +1147,28 @@
     "run": "Hisobimga oʻtkazish",
     "discard": "Kerak emas, oʻchirish",
     "done": "{tasks} ta vazifa hisobingizga oʻtkazildi"
+  },
+  "waiting": {
+    "title": "Kutilmoqda",
+    "subtitle": "Boshqalarga topshirgan va kutayotgan ishlaringiz",
+    "delegated": "Boshqalardan kutilayotgan",
+    "delegatedEmpty": "Hozircha hech kimdan hech narsa kutmayapsiz",
+    "delegatedEmptyBody": "Vazifani hamkasbga topshirsangiz (@ism), u shu yerda sana bilan koʻrinadi.",
+    "homeCard": "Boshqalardan kutilayotgan",
+    "homeEmpty": "Hech kimdan kutayotgan ishingiz yoʻq",
+    "seeAll": "Hammasi"
+  },
+  "projects": {
+    "title": "Loyihalar",
+    "subtitle": "{count, plural, one {# ta loyiha} other {# ta loyiha}}, sohalar boʻyicha",
+    "search": "Loyihani qidirish",
+    "statusOpen": "Faol va toʻxtatilgan",
+    "anyHealth": "Har qanday holat",
+    "newInArea": "«{area}» sohasiga yangi loyiha",
+    "areaMenu": "«{area}» sohasi amallari",
+    "projectMenu": "«{name}» amallari",
+    "dragHandle": "«{name}» ni sudrab, tartibini yoki sohasini oʻzgartirish",
+    "dropToArea": "Loyihani shu sohaga sudrab tashlang",
+    "allProjects": "Barcha loyihalar"
   }
 }

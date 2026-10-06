@@ -130,7 +130,9 @@
     "skipToContent": "Skip to content",
     "mainNav": "Main navigation",
     "accountMenu": "Account menu: {name}",
-    "leaveDemo": "Leave the demo and sign up"
+    "leaveDemo": "Leave the demo and sign up",
+    "waiting": "Waiting for",
+    "noArea": "No area"
   },
   "auth": {
     "title": "Welcome to Reja",
@@ -453,7 +455,8 @@
     "swipeLater": "Later",
     "dragHandle": "Drag to reorder",
     "dueHint": "The day you plan to work on it",
-    "chooseFile": "Choose a file"
+    "chooseFile": "Choose a file",
+    "createdByYou": "Created by you · {date}"
   },
   "quickAdd": {
     "title": "Quick add",
@@ -542,7 +545,7 @@
       "title": "title",
       "status": "status",
       "priority": "priority",
-      "due_date": "due date",
+      "due_date": "date",
       "due_at": "due time",
       "start_date": "start date",
       "deadline": "deadline",
@@ -556,7 +559,10 @@
       "name": "name",
       "health": "health",
       "target_date": "target date"
-    }
+    },
+    "movedToSection": "{actor} moved “{title}” to “{section}”",
+    "movedToProject": "{actor} moved “{title}” to “{project}”",
+    "assignedTo": "{actor} gave “{title}” to {person}"
   },
   "notifications": {
     "title": "Notifications",
@@ -705,7 +711,14 @@
     "overloaded": "Overloaded",
     "capacity": "More than {count} a day is overloaded",
     "unassigned": "Unassigned",
-    "empty": "No tasks with an assignee and a date"
+    "empty": "No tasks with an assignee and a date",
+    "overLegend": "Over capacity",
+    "dayOffLegend": "Day off",
+    "ownerRule": "A task with no assignee counts for the person who created it.",
+    "myCapacity": "My capacity: {count} tasks a day",
+    "cellTasks": "{count, plural, one {# task} other {# tasks}}",
+    "dayOff": "day off",
+    "capacityOf": "capacity {count}"
   },
   "settings": {
     "title": "Settings",
@@ -1081,7 +1094,9 @@
     "delete": "Delete area",
     "deleteHint": "Projects stay; they just lose their area",
     "all": "All areas",
-    "filter": "By area"
+    "filter": "By area",
+    "makePrivate": "Only visible to me",
+    "makeShared": "Visible to the workspace"
   },
   "import": {
     "formats": "JSON (old planner) or CSV (Excel, Google Sheets, Todoist…)",
@@ -1132,5 +1147,28 @@
     "run": "Move to my account",
     "discard": "No thanks, delete it",
     "done": "{tasks} tasks moved to your account"
+  },
+  "waiting": {
+    "title": "Waiting for",
+    "subtitle": "Work you handed to others and are waiting on",
+    "delegated": "Waiting on others",
+    "delegatedEmpty": "You are not waiting on anyone right now",
+    "delegatedEmptyBody": "When you give a task to someone (@name), it shows up here with its date.",
+    "homeCard": "Waiting on others",
+    "homeEmpty": "Nothing you are waiting on",
+    "seeAll": "All"
+  },
+  "projects": {
+    "title": "Projects",
+    "subtitle": "{count, plural, one {# project} other {# projects}}, by area",
+    "search": "Search projects",
+    "statusOpen": "Active and paused",
+    "anyHealth": "Any health",
+    "newInArea": "New project in “{area}”",
+    "areaMenu": "Actions for area “{area}”",
+    "projectMenu": "Actions for “{name}”",
+    "dragHandle": "Drag “{name}” to reorder or move to another area",
+    "dropToArea": "Drag a project into this area",
+    "allProjects": "All projects"
   }
 }

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { isMove } from "@/lib/activity";
 import { useFormat } from "@/lib/format";
 import type { ActivityEntry, Comment, Profile, RichDoc, Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -24,7 +25,7 @@ import {
   updateChecklistItem,
   uploadAttachment,
 } from "@/store/actions";
-import { useAllTasks, useChecklist, useSubtasks, useToday, useTz, useUserId } from "@/store/hooks";
+import { useActivity, useAllTasks, useChecklist, useSubtasks, useToday, useTz, useUserId } from "@/store/hooks";
 import { useStore } from "@/store/store";
 import { useUI } from "@/store/ui";
 import { InlineAdd } from "./task-list";
@@ -336,20 +337,14 @@ export function CommentsAndActivity({ task, writable, people }: { task: Task; wr
   const all = useStore((s) => s.data.comments);
   const reactions = useStore((s) => s.data.comment_reactions);
   const profiles = useStore((s) => s.data.profiles);
-  const adapter = useStore((s) => s.adapter);
   const comments = useMemo(
     () => Object.values(all).filter((c) => c.task_id === task.id && !c.deleted_at).sort((a, b) => a.created_at.localeCompare(b.created_at)),
     [all, task.id],
   );
   const [draft, setDraft] = useState<{ doc: RichDoc; text: string; mentions: string[] }>({ doc: null, text: "", mentions: [] });
   const [editorKey, setEditorKey] = useState(0);
-  const [activity, setActivity] = useState<ActivityEntry[] | null>(null);
   const [tab, setTab] = useState("comments");
-
-  useEffect(() => {
-    if (tab !== "activity" || !adapter) return;
-    void adapter.loadActivity({ taskId: task.id }, 100).then(setActivity).catch(() => setActivity([]));
-  }, [tab, adapter, task.id, task.updated_at]);
+  const activity = useActivity({ taskId: task.id }, 100, tab === "activity");
 
   useEffect(() => {
     const hash = typeof window !== "undefined" ? window.location.hash : "";
@@ -465,30 +460,47 @@ export function ActivityList({ entries, showTitle }: { entries: ActivityEntry[] 
   const today = useToday();
   const tz = useTz();
   const f = useFormat(today, tz);
+  const uid = useUserId();
   const profiles = useStore((s) => s.data.profiles);
+  const sections = useStore((s) => s.data.sections);
+  const projects = useStore((s) => s.data.projects);
   if (entries === null) return <div className="h-16 animate-pulse rounded-lg bg-muted" />;
   if (entries.length === 0) return <p className="py-4 text-center text-sm text-muted-foreground">{t("overview.activityEmpty")}</p>;
+  const person = (id: unknown) => (id === uid ? t("common.you") : (profiles[String(id)]?.name ?? t("common.someone")));
   return (
     <ol className="relative space-y-3 border-l pl-4">
       {entries.map((e) => {
-        const actor = e.actor_id ? (profiles[e.actor_id]?.name ?? t("common.someone")) : t("common.system");
+        const actor = e.actor_id ? person(e.actor_id) : t("common.system");
         const title = String(e.diff._title ?? e.diff.title ?? e.diff._name ?? e.diff.name ?? "");
-        const key =
-          e.entity_type === "project"
-            ? `activity.project${e.action[0].toUpperCase()}${e.action.slice(1)}`
-            : `activity.${e.action}`;
         const fields = Object.keys(e.diff).filter((k) => !k.startsWith("_") && k !== "title" && k !== "name" && k !== "user_id" && k !== "snippet");
+        let text: string;
+        if (isMove(e)) {
+          const to = (k: string) => ((e.diff[k] as unknown[] | undefined)?.[1] as string | null | undefined) ?? null;
+          const sectionId = to("section_id");
+          const projectId = to("project_id");
+          text =
+            "project_id" in e.diff
+              ? tx("activity.movedToProject", { actor, title, project: projectId ? (projects[projectId]?.name ?? "…") : t("nav.inbox") })
+              : tx("activity.movedToSection", { actor, title, section: sectionId ? (sections[sectionId]?.name ?? "…") : t("project.noSection") });
+        } else if (e.action === "assigned") {
+          text = tx("activity.assignedTo", { actor, title, person: person(e.diff.user_id) });
+        } else {
+          const key = e.entity_type === "project" ? `activity.project${e.action[0].toUpperCase()}${e.action.slice(1)}` : `activity.${e.action}`;
+          text = tx.has(key) ? tx(key, { actor, title }) : `${actor} · ${e.action}`;
+        }
         return (
           <li key={e.id} className="relative text-13">
-            <span className="absolute top-1.5 -left-[21px] size-2.5 rounded-full border-2 border-background bg-border-strong" />
+            <span className="absolute top-1.5 -left-[21px] size-2.5 rounded-full border-2 border-background bg-border-strong" aria-hidden />
             <p>
-              {tx.has(key) ? tx(key, { actor, title }) : `${actor} · ${e.action}`}
-              {e.action === "updated" && fields.length > 0 && (
+              {text}
+              {e.action === "updated" && !isMove(e) && fields.length > 0 && (
                 <span className="text-muted-foreground"> — {fields.map((k) => (tx.has(`activity.field.${k}`) ? tx(`activity.field.${k}`) : k)).join(", ")}</span>
               )}
             </p>
             {typeof e.diff.snippet === "string" && <p className="mt-0.5 line-clamp-2 text-muted-foreground">“{e.diff.snippet}”</p>}
-            <time className="text-xs text-muted-foreground" dateTime={e.created_at}>{f.ago(e.created_at)}</time>
+            <time className="text-xs text-muted-foreground" dateTime={e.created_at}>
+              {f.ago(e.created_at)}
+            </time>
             {showTitle && null}
           </li>
         );

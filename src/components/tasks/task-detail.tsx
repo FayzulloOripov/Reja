@@ -415,7 +415,9 @@ function TaskDetailBody({ task, onClose, fullPage }: { task: Task; onClose?: () 
         <CommentsAndActivity task={task} writable={writable} people={people} />
 
         <p className="pb-4 text-xs text-muted-foreground">
-          {t("task.createdBy", { name: profiles[task.created_by ?? ""]?.name ?? t("common.system"), date: f.ago(task.created_at) })}
+          {task.created_by === uid
+            ? t("task.createdByYou", { date: f.ago(task.created_at) })
+            : t("task.createdBy", { name: profiles[task.created_by ?? ""]?.name ?? t("common.system"), date: f.ago(task.created_at) })}
           {task.source === "telegram" && ` · ${t("inbox.fromTelegram")}`}
         </p>
       </div>

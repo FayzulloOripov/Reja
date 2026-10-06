@@ -5,12 +5,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
-import { ProjectDot } from "@/components/common/bits";
 import { LogoMark } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { useCurrentWorkspace, useProjects } from "@/store/hooks";
 import { useUI } from "@/store/ui";
 import { UserMenu, WorkspaceSwitcher, useNavItems } from "./sidebar";
 
@@ -19,11 +17,8 @@ export function MobileTabBar() {
   const t = useTranslations("nav");
   const pathname = usePathname();
   const openQuickAdd = useUI((s) => s.openQuickAdd);
-  const [sheet, setSheet] = useState<null | "projects" | "more">(null);
+  const [sheet, setSheet] = useState<null | "more">(null);
   const { primary, secondary } = useNavItems();
-  const ws = useCurrentWorkspace();
-  const projects = useProjects(ws?.id);
-  const setNewProject = useUI((s) => s.setNewProject);
 
   const tab = (href: string, label: string, Icon: typeof Inbox, badge?: number) => {
     const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -58,17 +53,11 @@ export function MobileTabBar() {
               <Plus className="size-7" />
             </button>
           </div>
-          <button
-            onClick={() => setSheet("projects")}
-            className={cn("flex flex-1 flex-col items-center gap-0.5 pt-2 pb-1.5 text-[11px] font-medium", pathname.startsWith("/projects") ? "text-brand-fg" : "text-muted-foreground")}
-          >
-            <FolderKanban className="size-[22px]" />
-            {t("projects")}
-          </button>
+          {tab("/projects", t("projects"), FolderKanban)}
           <button onClick={() => setSheet("more")} className="relative flex flex-1 flex-col items-center gap-0.5 pt-2 pb-1.5 text-[11px] font-medium text-muted-foreground">
             <Menu className="size-[22px]" />
             {t("more")}
-            {!!primary[4].badge && <span className="absolute top-1.5 left-1/2 ml-2 size-2 rounded-full bg-destructive" />}
+            {!!primary.find((i) => i.href === "/notifications")?.badge && <span className="absolute top-1.5 left-1/2 ml-2 size-2 rounded-full bg-destructive" />}
           </button>
         </div>
       </nav>
@@ -76,26 +65,9 @@ export function MobileTabBar() {
       <Sheet open={sheet !== null} onOpenChange={(o) => !o && setSheet(null)}>
         <SheetContent side="bottom" className="max-h-[85dvh] rounded-t-2xl p-0">
           <SheetHeader className="border-b px-4 py-3">
-            <SheetTitle>{sheet === "projects" ? t("projects") : t("more")}</SheetTitle>
+            <SheetTitle>{t("more")}</SheetTitle>
           </SheetHeader>
           <div className="overflow-y-auto px-3 pb-8">
-            {sheet === "projects" ? (
-              <ul className="py-2">
-                {projects.map((p) => (
-                  <li key={p.id}>
-                    <Link href={`/projects/${p.id}`} onClick={() => setSheet(null)} className="flex h-12 items-center gap-3 rounded-xl px-3 text-[15px] hover:bg-muted">
-                      <ProjectDot color={p.color} size="lg" />
-                      <span className="truncate">{p.name}</span>
-                    </Link>
-                  </li>
-                ))}
-                <li className="pt-2">
-                  <Button variant="outline" className="h-11 w-full" onClick={() => { setSheet(null); setNewProject(true); }}>
-                    <Plus /> {t("newProject")}
-                  </Button>
-                </li>
-              </ul>
-            ) : (
               <div className="space-y-3 py-3">
                 <WorkspaceSwitcher />
                 <ul className="grid grid-cols-3 gap-2">
@@ -134,7 +106,6 @@ export function MobileTabBar() {
                 </ul>
                 <UserMenu />
               </div>
-            )}
           </div>
         </SheetContent>
       </Sheet>

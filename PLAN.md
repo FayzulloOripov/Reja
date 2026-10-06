@@ -122,7 +122,7 @@ AUDIT.md tracks every item. Phases:
 
 - [x] 1 Audit and bugs — AUDIT.md; section 1 items 3–4, 7–15, 17–22, 24–29 fixed with tests (`e2e/demo`, `tests/unit/testing-fixes.test.ts`, `tests/db/testing-fixes.test.ts`); migration `20261006000001_testing_fixes.sql`
 - [x] 2 Backend — Supabase as default, demo at /demo, demo-data import, first-run wizard, import rewrite, areas schema (`20261006000002_areas_and_setup.sql`). Connecting the live project waits for keys.
-- [ ] 3 Projects and areas — Projects page, areas, workload, activity log, delegated view
+- [x] 3 Projects and areas — Projects page, areas everywhere, workload (owner rule, work days, capacity), activity in the demo and live feeds, delegated view
 - [ ] 4 Check list — everything in «not tested yet», fixed and tested
 - [ ] 5 Organisation — waiting-for, contacts, meetings, weekly review, daily shutdown, routines
 - [ ] 6 Business modules — pipeline, money, docs, goals fed by data

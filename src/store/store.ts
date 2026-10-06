@@ -62,7 +62,7 @@ export function setOpErrorListener(fn: ErrorListener) {
 }
 
 // ------------------------------------------------------------------ persistence
-const SNAPSHOT_VERSION = 4;
+const SNAPSHOT_VERSION = 5;
 const snapshotKey = (uid: string) => `reja:snapshot:v${SNAPSHOT_VERSION}:${uid}`;
 let persistTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -70,10 +70,11 @@ function persistNow() {
   if (persistTimer) clearTimeout(persistTimer);
   persistTimer = null;
   lastPersist = Date.now();
-  const { userId, data, outbox, lastSyncedAt } = getState();
+  const { userId, data, outbox, lastSyncedAt, adapter } = getState();
   if (!userId) return;
-  // comments/attachments/activity are fetched on demand and not needed offline
-  const slim = { ...data, comments: {}, comment_reactions: {}, attachments: {}, activity_log: {} };
+  // comments/attachments/activity are fetched on demand and not needed offline — except in the
+  // demo, where this snapshot is the only copy
+  const slim = adapter?.kind === "demo" ? data : { ...data, comments: {}, comment_reactions: {}, attachments: {}, activity_log: {} };
   void set(snapshotKey(userId), { data: slim, outbox, lastSyncedAt }).catch(() => {});
 }
 
@@ -312,11 +313,11 @@ export async function refresh() {
     const fresh = await adapter.loadAll(userId);
     setState((st) => {
       const base = { ...emptyData(), ...fresh };
-      // keep lazily-loaded detail rows
-      base.comments = st.data.comments;
-      base.comment_reactions = st.data.comment_reactions;
-      base.attachments = st.data.attachments;
-      base.activity_log = st.data.activity_log;
+      // keep lazily-loaded detail rows (the demo adapter returns them with everything else)
+      base.comments = { ...(fresh.comments ?? {}), ...st.data.comments };
+      base.comment_reactions = { ...(fresh.comment_reactions ?? {}), ...st.data.comment_reactions };
+      base.attachments = { ...(fresh.attachments ?? {}), ...st.data.attachments };
+      base.activity_log = { ...(fresh.activity_log ?? {}), ...st.data.activity_log };
       return {
         data: reapplyOutbox(base, st.outbox),
         status: "ready",

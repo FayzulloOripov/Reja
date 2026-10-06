@@ -5,18 +5,18 @@ Status of every feature in the original spec and in the fix prompt.
 
 Tests: `tests/unit` (Vitest), `tests/db` (Postgres/RLS on PGlite), `e2e/demo` (Playwright against the in-browser demo, runs anywhere), `e2e/*.spec.ts` (Playwright against a real Supabase project, needs keys).
 
-_Last updated: phase 2 (backend prep)._
+_Last updated: phase 3 (projects and areas)._
 
 ## 1. Bugs from user testing
 
 | # | Bug | Status | Fix (files) | Test |
 |---|---|---|---|---|
 | 1 | Demo mode only, nothing reaches a server | blocked (keys) | Supabase is the default; the demo is `/demo` (cookie) or `NEXT_PUBLIC_DEMO=1` — `src/app/demo`, `src/lib/demo/server.ts`, `src/proxy.ts`; «Roʻyxatdan oʻtish» from the demo; after sign-up «Demodagi maʼlumotlaringiz» moves what was typed (`lib/demo/import.ts`, `settings/demo-import.tsx`, onboarding import step). Connecting the live project needs the Supabase keys. | unit `demo-import` · e2e `backend.spec` |
-| 2 | No projects page | missing | phase 3 | — |
+| 2 | No projects page | done | `/projects`: grouped by area, search, status/area/health filters, progress, health with reason, next date, favourite, archive/restore, delete with confirm, drag to reorder or move between areas; the phone tab opens it | e2e `projects.spec` |
 | 3 | Broken initials «H(» | done | `src/lib/text.ts` `initials()` | unit `testing-fixes` · e2e `initials skip brackets` |
 | 4 | Upcoming «12-okt · 12-okt», empty-day headers | done | `src/app/(app)/upcoming/page.tsx`, `TaskList` gap rows, `useFormat().weekdayDate` | unit `format` · e2e `upcoming shows weekday…` |
-| 5 | Activity feed empty | missing | phase 3 (demo adapter writes no activity) | — |
-| 6 | Workload misleading | partial | overview counts use labelled numbers; creator-as-owner and capacity in phase 3 | — |
+| 5 | Activity feed empty | done | database triggers already log create/update/complete/comment/assign/move; the demo now mirrors them (`lib/activity.ts`) and keeps them; feeds reload after changes (`useActivity`); moves and assignments read as sentences | unit `activity` · e2e `activity feed…` |
+| 6 | Workload misleading | done | one owner rule everywhere (`lib/tasks/responsible.ts`: assignees, else the creator — same as reminders in the database), each person's work days (days off hatched) and daily capacity in tasks or hours (Settings → Profile) | unit `workload` · e2e `workload counts…` |
 | 7 | Garbled overview row | done | `src/app/(app)/overview/page.tsx` | e2e `overview workload row…` |
 | 8 | Locale formatting (1.0, raw minutes) | done | `formatNumber` (hand-rolled: browsers ship incomplete Uzbek ICU), `useFormat().num/hoursTick`, reports time axis in hours | unit `format` · e2e `reports…` |
 | 9 | Report period mismatch | done | every KPI and card follows the selected weeks and says so — `reports/page.tsx`, `lib/reports.ts` | e2e `reports…` |
@@ -26,20 +26,26 @@ _Last updated: phase 2 (backend prep)._
 | 13 | Unlabelled icon buttons | done | icon buttons get an automatic desktop tooltip from `aria-label` (`ui/button.tsx`), tooltips off on touch (`ui/tooltip.tsx`), Uzbek close labels, priority = coloured flag with its word as name, status/priority read once | e2e `every visible button and link has an accessible name` (9 pages) |
 | 14 | Settings hard to find | done | gear in the sidebar footer, «Sozlamalar» tile in «Yana», section list on phones — `components/settings/settings-shell.tsx` | e2e desktop + mobile settings tests |
 | 15 | Demo banner wastes space | done | collapses to a pill after «Yashirish», remembered — `components/shell/demo-banner.tsx` | e2e `demo banner collapses…` |
-| 16 | Delegated tasks disappear | missing | phase 3 (with «Kutilmoqda») | — |
+| 16 | Delegated tasks disappear | done | «Kutilmoqda» page (`/waiting`, grouped by person) and Home card «Boshqalardan kutilayotgan»; waiting-for items join the same page in phase 5 | unit `responsible` · e2e `delegated tasks stay visible` |
 | 17 | Raw ISO date in toast | done | shared formatter for non-React code (`lib/i18n-client.ts formatter()`) → «Keyingisi: ertaga, 6-okt» | e2e `completing a recurring task…` |
 | 18 | Two unlabelled dates | done | due date = calendar icon, deadline = violet signpost, both with label/tooltip; one «next date» rule (`lib/tasks/key-dates.ts`) used by overview, project overview, deadlines list | unit `next key date` · e2e `project list labels…` |
 | 19 | Empty board columns vanish | done | all columns always shown with a drop hint — `board-view.tsx` | e2e `board keeps empty columns…` |
 | 20 | Mobile board and calendar | done | 85 vw columns with scroll-snap and «1/4» indicator; calendar opens as agenda on phones, plus 3-day, week, month | e2e `board columns snap…`, `calendar opens as an agenda…` |
 | 21 | Timeline cluttered | done | finished work hidden (toggle), «Sanasi yoʻq» tray draggable onto the chart, days off from the user's work days | e2e `timeline hides finished work…` |
 | 22 | «At risk» without a reason | done | reason next to the badge everywhere («5 kun qoldi, 50% bajarildi, 1 ta kechikkan»), owner override with a note (`projects.health_note`) | unit `health reason` · db `project health note` · e2e `health badge explains…` |
-| 23 | Activity empty after real actions | missing | phase 3 | — |
+| 23 | Activity empty after real actions | done | see 5; task history says «Siz yaratgansiz» / the person's name | e2e `activity feed…` |
 | 24 | Focus numbers contradict | done | finished sessions are time entries with `source='focus'` (task optional); Home and Focus read the same rows; stopped sessions log time to the task only; break starts when the work phase ended (survives lock/reload) | unit `focus summary` · db `focus sessions` · e2e `focus page and Home…` |
 | 25 | Goal percentages unexplained | done | «qanday hisoblangan» popover, start value shown, pace marker and sentence, confirm before deleting a key result, goal start date | unit `goal progress` · e2e `goal percentage…` |
 | 26 | Habit heatmap unlabelled | done | month and weekday labels, legend, «odat hali yoʻq edi» style, clear «Bugun bajardim» button | e2e `habit heatmap…` |
 | 27 | Notification settings on a phone | done | one card per event with labelled switches on phones, full phrases, push refusal only after trying, one enable button, quiet hours 22:00–07:00 shown, default reminder 15 min (timed) / 09:00 (all-day) in app and database | e2e mobile settings · unit + db reminder timing |
 | 28 | Developer text shown to users | done | friendly «Telegram bot hozircha ishlamayapti…», single connect button | e2e `Telegram settings…` |
 | 29 | Small polish | done | quick-add close button; tooltips off on touch and row toolbar hidden on touch; subtask input stays open; «Fayl tanlash» on phones; mention list opens above when there is no room; palette reads status once; one add row on Home today; search shows dates; overdue group has no add row | e2e `quick add…`, `subtask input…`, `file area…`, `search results…` |
+
+### Also fixed in phase 3
+
+- Home overflowed sideways at phone width once filter chips were added (grid track sized to content): pinned to `minmax(0,1fr)`; new e2e check that no page scrolls sideways at 390 px.
+- Escape did not close the task panel (global shortcuts ignored keys while any dialog was open, including the non-modal panel).
+- The demo dropped its seeded comments and activity on load.
 
 ### Also fixed in phase 2
 
@@ -66,7 +72,7 @@ All items in section 2 «Not tested yet» of the fix prompt: pending.
 
 | Feature | Status |
 |---|---|
-| Areas above projects | partial — table, RLS, picker, wizard; sidebar/Home/reports grouping in phase 3 |
+| Areas above projects | done — table + RLS (shared/private, guests see areas of their projects), picker, wizard, Projects page, sidebar grouping, Home and Reports area filter | db `areas` |
 | Waiting-for list | missing |
 | Outside contacts | missing |
 | Meetings and agenda | missing |
@@ -114,7 +120,7 @@ All items in section 2 «Not tested yet» of the fix prompt: pending.
 | Command palette, shortcuts | done | `command-palette.tsx`, `shortcuts.tsx` |
 | ICS feed | done | `src/app/api/ics` |
 | Notifications inbox | done | `notifications/page.tsx` |
-| Workload | partial | `workload/page.tsx` (phase 3) |
+| Workload | done | `workload/page.tsx`, `lib/workload.ts` |
 | Reminders, pg_cron, push, email, Telegram bot | done in code, blocked live | `src/server/*`, `supabase/migrations/*_cron.sql` |
 | Digest, weekly review prompt, overdue nudge | done in code, blocked live | `server/scheduler/core.ts` |
 | Goals, habits, focus, reports | done | `src/app/(app)/*` |

@@ -5,8 +5,9 @@
 
 import { buildDemoData } from "@/lib/demo/seed";
 import { todayIn } from "@/lib/dates";
+import { activityFor } from "@/lib/activity";
 import { indexRows } from "./supabase-adapter";
-import type { DataAdapter, StoreData } from "./tables";
+import { PK, type DataAdapter, type StoreData } from "./tables";
 
 export function createDemoAdapter(lang: "uz" | "en"): DataAdapter {
   const files = new Map<string, string>();
@@ -27,8 +28,20 @@ export function createDemoAdapter(lang: "uz" | "en"): DataAdapter {
       return seeded;
     },
 
-    async exec() {
-      // nothing to send: the change is already in the store and the snapshot
+    async exec(op) {
+      // nothing to send: the change is already in the store and the snapshot. Like the database
+      // triggers, record what happened in the activity log.
+      const { useStore } = await import("./store");
+      const st = useStore.getState();
+      const key = PK[op.table].map((c) => op.key[c]).join("|");
+      const next = (st.data[op.table] as unknown as Record<string, Record<string, unknown>>)[key] ?? null;
+      const entries = activityFor(
+        { table: op.table, kind: op.kind, prev: op.prev ?? null, next: op.kind === "delete" ? null : next },
+        { actorId: st.userId ?? "", now: new Date().toISOString(), newId: () => crypto.randomUUID(), taskById: (id) => st.data.tasks[id] as unknown as Record<string, unknown> },
+      );
+      if (entries.length) {
+        useStore.setState((s) => ({ data: { ...s.data, activity_log: { ...s.data.activity_log, ...Object.fromEntries(entries.map((e) => [e.id, e])) } } }));
+      }
     },
 
     subscribe() {
@@ -39,8 +52,12 @@ export function createDemoAdapter(lang: "uz" | "en"): DataAdapter {
       return {};
     },
 
-    async loadActivity() {
-      return [];
+    async loadActivity(scope, limit = 50) {
+      const { useStore } = await import("./store");
+      return Object.values(useStore.getState().data.activity_log)
+        .filter((e) => (scope.taskId ? e.task_id === scope.taskId : scope.projectId ? e.project_id === scope.projectId : scope.workspaceId ? e.workspace_id === scope.workspaceId : true))
+        .sort((a, b) => b.created_at.localeCompare(a.created_at))
+        .slice(0, limit);
     },
 
     async loadTrash() {

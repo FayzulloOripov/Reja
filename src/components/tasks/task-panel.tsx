@@ -17,6 +17,7 @@ export function TaskPanel() {
       <SheetContent
         side="right"
         showCloseButton={false}
+        data-task-panel
         onInteractOutside={(e) => {
           // keep the panel open while using popovers, toasts and the list behind it
           const target = e.target as HTMLElement;

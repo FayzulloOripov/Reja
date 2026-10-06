@@ -1,10 +1,10 @@
 "use client";
 
-import { AlertTriangle, ArrowDownRight, ArrowUpRight, Check, CheckCircle2, Flame, Moon, Plus, Star, Timer } from "lucide-react";
+import { AlertTriangle, ArrowDownRight, ArrowUpRight, Check, CheckCircle2, Flame, Hourglass, Moon, Plus, Star, Timer } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
-import { ProjectDot } from "@/components/common/bits";
+import { DueChip, ProjectDot, UserAvatar } from "@/components/common/bits";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { safeColor } from "@/lib/colors";
@@ -16,7 +16,10 @@ import { isOpen, suggestHealth, effectiveHealth } from "@/lib/health";
 import type { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { setTop, toggleHabit } from "@/store/actions";
-import { tasksByProject, useMyTasks, useProjects, useToday, useTz, useUserId } from "@/store/hooks";
+import { assigneesByTask, tasksByProject, useDelegatedTasks, useMyTasks, useProjects, useToday, useTz, useUserId } from "@/store/hooks";
+import { useUI } from "@/store/ui";
+import { byDueThenPriority } from "@/lib/filters";
+import { responsibleIds } from "@/lib/tasks/responsible";
 import { useStore } from "@/store/store";
 import { toast } from "sonner";
 
@@ -251,5 +254,46 @@ export function PlanTomorrow({ evening }: { evening: boolean }) {
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+/** Home card: tasks I handed to others (or follow) that they still owe, soonest first. */
+export function WaitingOnOthers() {
+  const t = useTranslations("waiting");
+  const delegated = useDelegatedTasks();
+  const assignees = useStore((s) => s.data.task_assignees);
+  const profiles = useStore((s) => s.data.profiles);
+  const openTask = useUI((s) => s.openTask);
+  const list = useMemo(() => [...delegated].sort(byDueThenPriority).slice(0, 5), [delegated]);
+  const by = assigneesByTask(assignees);
+  if (delegated.length === 0) return null;
+  return (
+    <section className="rounded-2xl border bg-card p-4 shadow-elev-1" aria-labelledby="waiting-card">
+      <div className="mb-2 flex items-center justify-between">
+        <h2 id="waiting-card" className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+          <Hourglass className="size-3.5 text-warning" aria-hidden /> {t("homeCard")}
+          <span className="tnum rounded-full bg-muted px-1.5 text-2xs font-semibold">{delegated.length}</span>
+        </h2>
+        <Link href="/waiting" className="text-xs font-medium text-muted-foreground hover:text-foreground">
+          {t("seeAll")} →
+        </Link>
+      </div>
+      <ul className="space-y-0.5">
+        {list.map((task) => {
+          const owner = profiles[responsibleIds(task, by)[0] ?? ""];
+          return (
+            <li key={task.id}>
+              <button onClick={() => openTask(task.id)} className="flex min-h-10 w-full items-center gap-2 rounded-lg px-1.5 py-1 text-left hover:bg-muted">
+                <UserAvatar profile={owner} size={22} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-13">{task.title}</span>
+                </span>
+                <DueChip date={task.due_date} dueAt={task.due_at} deadline={task.deadline} />
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }

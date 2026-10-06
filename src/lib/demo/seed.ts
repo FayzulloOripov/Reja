@@ -3,7 +3,9 @@
 
 import { addDays, addMonths, startOfMonth, startOfWeek, zonedToUtc } from "../dates";
 import type {
+  ActivityEntry,
   Area,
+  Comment,
   ChecklistItem,
   Goal,
   Habit,
@@ -32,6 +34,8 @@ const GUEST = "00000000-0000-4000-8000-000000000003";
 
 export interface DemoData {
   profiles: Profile[];
+  comments: Comment[];
+  activity_log: ActivityEntry[];
   areas: Area[];
   workspaces: Workspace[];
   workspace_members: WorkspaceMember[];
@@ -356,6 +360,26 @@ export function buildDemoData(userId: string, today: string, tz = "Asia/Tashkent
     created_at: ts,
   }));
 
+  // the same events as the notifications below, so the feeds and the inbox agree
+  const commentText = uz ? "Shartnoma shablonini qoʻshdim, koʻrib chiqing" : "Added the contract template, please review";
+  const comments: Comment[] = [
+    {
+      id: id(), task_id: tasks[8].id, workspace_id: wsTeam.id, author_id: PARTNER,
+      body: { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: commentText }] }] }, body_text: commentText,
+      mentions: [], created_at: at(today, "08:40"), updated_at: at(today, "08:40"), deleted_at: null,
+    },
+  ];
+  const act = (actor: string, task: Task, action: string, diff: Record<string, unknown>, when: string, entity: "task" | "comment" = "task"): ActivityEntry => ({
+    id: id(), workspace_id: task.workspace_id, project_id: task.project_id, task_id: task.id, actor_id: actor,
+    entity_type: entity, entity_id: entity === "comment" ? comments[0].id : task.id, action, diff: { _title: task.title, ...diff }, created_at: when,
+  });
+  const activity_log: ActivityEntry[] = [
+    act(PARTNER, tasks[8], "commented", { snippet: commentText }, at(today, "08:40"), "comment"),
+    act(GUEST, tasks[13], "updated", { status: ["todo", "in_progress"] }, at(addDays(today, -1), "17:10")),
+    act(userId, tasks[8], "assigned", { user_id: PARTNER }, at(addDays(today, -2), "11:00")),
+    act(userId, tasks[0], "created", { title: tasks[0].title }, at(addDays(today, -3), "09:15")),
+  ];
+
   const notifications: Notification[] = [
     {
       id: id(), user_id: userId, workspace_id: wsTeam.id, type: "comment", actor_id: PARTNER, task_id: tasks[8].id, project_id: pAgency.id,
@@ -374,6 +398,8 @@ export function buildDemoData(userId: string, today: string, tz = "Asia/Tashkent
     workspaces: [wsPersonal, wsTeam],
     workspace_members: members,
     areas,
+    comments,
+    activity_log,
     projects,
     project_members,
     sections,

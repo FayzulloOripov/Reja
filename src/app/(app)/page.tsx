@@ -7,7 +7,7 @@ import { useMemo } from "react";
 import { ProjectDot, Section } from "@/components/common/bits";
 import { EmptyState, Illustration } from "@/components/common/empty-state";
 import { DayTimeline, TASK_DRAG_TYPE } from "@/components/home/day-timeline";
-import { HabitsRow, PlanTomorrow, StatsCards } from "@/components/home/widgets";
+import { HabitsRow, PlanTomorrow, StatsCards, WaitingOnOthers } from "@/components/home/widgets";
 import { PageContainer } from "@/components/shell/app-client";
 import { InlineAdd, TaskList, type TaskGroup } from "@/components/tasks/task-list";
 import { TaskRow } from "@/components/tasks/task-row";
@@ -17,7 +17,9 @@ import { byDueThenPriority } from "@/lib/filters";
 import { capitalize, useFormat } from "@/lib/format";
 import { isOpen } from "@/lib/health";
 import { rescheduleTasks } from "@/store/actions";
-import { useMe, useMyTasks, useNowMinutes, useProjects, useToday, useTz } from "@/store/hooks";
+import { AreaFilterChips, inArea, useAreaFilter } from "@/components/projects/area-filter";
+import { useAreas, useMe, useMyTasks, useNowMinutes, useProjects, useToday, useTz } from "@/store/hooks";
+import { useStore } from "@/store/store";
 import { useUI } from "@/store/ui";
 
 export default function HomePage() {
@@ -27,7 +29,11 @@ export default function HomePage() {
   const tz = useTz();
   const f = useFormat(today, tz);
   const now = useNowMinutes();
-  const mine = useMyTasks();
+  const allMine = useMyTasks();
+  const areas = useAreas();
+  const projectsById = useStore((s) => s.data.projects);
+  const [area, setArea] = useAreaFilter("home");
+  const mine = useMemo(() => allMine.filter((x) => inArea(x, projectsById, area)), [allMine, projectsById, area]);
   const projects = useProjects(undefined, { includeArchived: true });
   const openQuickAdd = useUI((s) => s.openQuickAdd);
   const projectById = useMemo(() => Object.fromEntries(projects.map((p) => [p.id, p])), [projects]);
@@ -79,11 +85,12 @@ export default function HomePage() {
 
   return (
     <PageContainer wide>
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="min-w-0 space-y-8">
           <header className="space-y-2">
             <p className="text-13 font-medium text-brand-fg">{f.longDay(today)}</p>
             <h1 className="text-28 font-bold sm:text-36">{t(`greeting.${partOfDay(Math.floor(now / 60))}`, { name: firstName || "👋" })}</h1>
+            <AreaFilterChips areas={areas} value={area} onChange={setArea} className="pt-1" />
             <div className="flex items-center gap-3">
               <p className="text-sm text-muted-foreground">{plannedToday ? t("home.subtitleDone", { percent }) : t("home.subtitleEmpty")}</p>
               {plannedToday > 0 && (
@@ -198,6 +205,7 @@ export default function HomePage() {
           <Section title={t("home.habits")}>
             <HabitsRow />
           </Section>
+          <WaitingOnOthers />
           <StatsCards />
           <Section title={t("home.timeline")} actions={<span className="hidden text-2xs text-muted-foreground lg:inline">{t("home.timelineHint")}</span>}>
             <div className="max-h-[560px] overflow-y-auto rounded-2xl border bg-card p-3 pt-4 shadow-elev-1">

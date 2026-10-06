@@ -5,7 +5,9 @@ import { todayIn, minutesOfDay } from "@/lib/dates";
 import { DEFAULT_TIMEZONE } from "@/lib/env";
 import { suggestHealth, effectiveHealth, isOpen } from "@/lib/health";
 import { projectAccess, type Access } from "@/lib/permissions";
+import { isDelegatedBy, responsibleIds } from "@/lib/tasks/responsible";
 import type {
+  ActivityEntry,
   Area,
   ChecklistItem,
   Label,
@@ -292,8 +294,8 @@ export function useMyTasks(): Task[] {
     const byTask = assigneesByTask(assignees);
     return liveTasks(tasks).filter((t) => {
       if (t.parent_id) return false;
-      const a = byTask[t.id];
-      return a?.length ? a.some((x) => x.user_id === uid) : t.created_by === uid || !t.created_by;
+      const owners = responsibleIds(t, byTask);
+      return owners.length ? owners.includes(uid) : true;
     });
   }, [tasks, assignees, uid]);
 }
@@ -309,3 +311,49 @@ export function useOpenTasks(list: Task[]): Task[] {
 }
 
 const EMPTY: Task[] = [];
+
+// ------------------------------------------------------------------ activity
+
+/**
+ * Activity for a workspace, project or task. Reloads shortly after tasks, projects or comments
+ * change, so the feed follows what just happened (the server writes entries with triggers).
+ */
+export function useActivity(scope: { workspaceId?: string; projectId?: string; taskId?: string }, limit = 50, enabled = true): ActivityEntry[] | null {
+  const adapter = useStore((s) => s.adapter);
+  const log = useStore((s) => s.data.activity_log);
+  const tasks = useStore((s) => s.data.tasks);
+  const projects = useStore((s) => s.data.projects);
+  const comments = useStore((s) => s.data.comments);
+  const assignees = useStore((s) => s.data.task_assignees);
+  const [entries, setEntries] = useState<ActivityEntry[] | null>(null);
+  const key = `${scope.workspaceId ?? ""}|${scope.projectId ?? ""}|${scope.taskId ?? ""}`;
+  useEffect(() => {
+    if (!adapter || !enabled || key === "||") return;
+    let alive = true;
+    const [workspaceId, projectId, taskId] = key.split("|");
+    const id = setTimeout(() => {
+      adapter
+        .loadActivity({ workspaceId: workspaceId || undefined, projectId: projectId || undefined, taskId: taskId || undefined }, limit)
+        .then((e) => alive && setEntries(e))
+        .catch(() => alive && setEntries([]));
+    }, 250);
+    return () => {
+      alive = false;
+      clearTimeout(id);
+    };
+  }, [adapter, key, limit, enabled, log, tasks, projects, comments, assignees]);
+  return entries;
+}
+
+/** Open tasks I created or follow that someone else is responsible for ("Boshqalardan kutilayotgan"). */
+export function useDelegatedTasks(): Task[] {
+  const tasks = useStore((s) => s.data.tasks);
+  const assignees = useStore((s) => s.data.task_assignees);
+  const watchers = useStore((s) => s.data.task_watchers);
+  const uid = useUserId();
+  return useMemo(() => {
+    const by = assigneesByTask(assignees);
+    const watched = new Set(Object.values(watchers).filter((w) => w.user_id === uid).map((w) => w.task_id));
+    return liveTasks(tasks).filter((t) => !t.parent_id && isOpen(t) && isDelegatedBy(t, uid, by, watched.has(t.id)));
+  }, [tasks, assignees, watchers, uid]);
+}

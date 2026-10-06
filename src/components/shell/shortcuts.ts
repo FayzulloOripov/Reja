@@ -26,7 +26,8 @@ export function useGlobalShortcuts() {
         return;
       }
       if (e.metaKey || e.ctrlKey || e.altKey || isTyping(e.target)) return;
-      if (ui.quickAdd.open || ui.paletteOpen || document.querySelector("[role=dialog][data-state=open]")) return;
+      // the task panel is a non-modal sheet: shortcuts (and Escape to close it) keep working beside it
+      if (ui.quickAdd.open || ui.paletteOpen || document.querySelector("[role=dialog][data-state=open]:not([data-task-panel])")) return;
 
       if (pendingG && Date.now() - pendingG < 1200) {
         pendingG = 0;

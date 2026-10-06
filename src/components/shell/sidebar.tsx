@@ -4,6 +4,7 @@ import {
   BarChart3,
   Bell,
   CalendarRange,
+  Hourglass,
   ChevronDown,
   Check,
   Inbox,
@@ -51,6 +52,7 @@ import { isOpen } from "@/lib/health";
 import { cn } from "@/lib/utils";
 import { switchWorkspace, updateProfile } from "@/store/actions";
 import {
+  useAreas,
   useCurrentWorkspace,
   useFavorites,
   useMe,
@@ -66,6 +68,7 @@ import { useStore } from "@/store/store";
 import { useUI } from "@/store/ui";
 import { setLocaleCookie } from "@/server/actions/locale";
 import { isFullMember } from "@/lib/permissions";
+import type { Area } from "@/lib/types";
 
 interface NavItem {
   href: string;
@@ -89,6 +92,7 @@ export function useNavItems() {
     { href: "/", label: t("home"), icon: SunMedium, badge: todayCount },
     { href: "/inbox", label: t("inbox"), icon: Inbox, badge: inboxCount },
     { href: "/upcoming", label: t("upcoming"), icon: CalendarRange },
+    { href: "/waiting", label: t("waiting"), icon: Hourglass },
     { href: "/overview", label: t("overview"), icon: LayoutDashboard },
     { href: "/notifications", label: t("notifications"), icon: Bell, badge: unread, tone: "danger" },
   ];
@@ -310,6 +314,13 @@ export function Sidebar() {
   }, [tasks, projects, today]);
 
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
+  const areas = useAreas(ws?.id);
+  const byArea = useMemo(() => {
+    const known = new Set(areas.map((a) => a.id));
+    const groups = areas.map((a) => ({ key: a.id, area: a as Area | null, projects: projects.filter((p) => p.area_id === a.id) }));
+    groups.push({ key: "none", area: null, projects: projects.filter((p) => !p.area_id || !known.has(p.area_id)) });
+    return groups.filter((g) => g.projects.length > 0);
+  }, [areas, projects]);
 
   return (
     <aside
@@ -382,7 +393,13 @@ export function Sidebar() {
         <div className="space-y-1">
           {!collapsed && (
             <div className="flex items-center justify-between px-2.5">
-              <p className="text-2xs font-semibold tracking-wide text-muted-foreground uppercase">{t("projects")}</p>
+              <Link
+                href="/projects"
+                aria-current={pathname === "/projects" ? "page" : undefined}
+                className={cn("text-2xs font-semibold tracking-wide text-muted-foreground uppercase hover:text-foreground", pathname === "/projects" && "text-foreground")}
+              >
+                {t("projects")}
+              </Link>
               {isFullMember(role) && (
                 <Button variant="ghost" size="icon-xs" onClick={() => setNewProject(true)} aria-label={t("newProject")} className="text-muted-foreground">
                   <Plus />
@@ -390,13 +407,33 @@ export function Sidebar() {
               )}
             </div>
           )}
-          <ul className="space-y-0.5">
-            {projects.map((p) => (
-              <li key={p.id}>
-                <ProjectLink project={p} active={pathname.startsWith(`/projects/${p.id}`)} collapsed={collapsed} count={counts[p.id]} />
-              </li>
-            ))}
-          </ul>
+          {collapsed ? (
+            <ul className="space-y-0.5">
+              {projects.map((p) => (
+                <li key={p.id}>
+                  <ProjectLink project={p} active={pathname.startsWith(`/projects/${p.id}`)} collapsed count={counts[p.id]} />
+                </li>
+              ))}
+            </ul>
+          ) : (
+            byArea.map((g) => (
+              <div key={g.key} className="space-y-0.5">
+                {byArea.length > 1 && (
+                  <p className="flex items-center gap-1.5 px-2.5 pt-1.5 text-2xs font-medium text-muted-foreground">
+                    {g.area ? <ProjectDot color={g.area.color} size="sm" /> : null}
+                    <span className="truncate">{g.area?.name ?? t("noArea")}</span>
+                  </p>
+                )}
+                <ul className="space-y-0.5">
+                  {g.projects.map((p) => (
+                    <li key={p.id}>
+                      <ProjectLink project={p} active={pathname.startsWith(`/projects/${p.id}`)} collapsed={false} count={counts[p.id]} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))
+          )}
         </div>
 
         <ul className="space-y-0.5">

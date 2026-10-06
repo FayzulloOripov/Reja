@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { axisProps, barProps, ChartCard, ChartTooltip, gridProps, hbarProps, lineProps, SLOT, StatTile } from "@/components/charts/kit";
 import { PageHeader, ProjectDot } from "@/components/common/bits";
+import { AreaFilterChips, inArea, useAreaFilter, type AreaFilterValue } from "@/components/projects/area-filter";
 import { EmptyState } from "@/components/common/empty-state";
 import { PageContainer } from "@/components/shell/app-client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -13,8 +14,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useFormat } from "@/lib/format";
 import { isOverdue } from "@/lib/health";
+import { responsibleIds } from "@/lib/tasks/responsible";
 import { completedPerWeek, createdVsCompleted, lastWeeks, minutesByKey, onTimeRate, overdueTrend, progressOverTime } from "@/lib/reports";
-import { assigneesByTask, tasksByProject, useMyTasks, useProjects, useProfiles, useToday, useTz, useUserId } from "@/store/hooks";
+import { assigneesByTask, tasksByProject, useAreas, useMyTasks, useProjects, useProfiles, useToday, useTz, useUserId } from "@/store/hooks";
 import { useStore } from "@/store/store";
 
 export default function ReportsPage() {
@@ -24,6 +26,8 @@ export default function ReportsPage() {
   const f = useFormat(today, tz);
   const uid = useUserId();
   const [range, setRange] = useState(12);
+  const areas = useAreas();
+  const [area, setArea] = useAreaFilter("reports");
   const weeks = useMemo(() => lastWeeks(today, range), [today, range]);
   const weekLabel = (w: string | number) => f.dayMonth(String(w));
 
@@ -39,6 +43,7 @@ export default function ReportsPage() {
             <TabsTrigger value="personal">{t("reports.personal")}</TabsTrigger>
             <TabsTrigger value="project">{t("reports.project")}</TabsTrigger>
           </TabsList>
+          <AreaFilterChips areas={areas} value={area} onChange={setArea} />
           <ToggleGroup type="single" value={String(range)} onValueChange={(v) => v && setRange(Number(v))} variant="outline" size="sm" aria-label={t("reports.week")}>
             {[4, 8, 12, 16].map((n) => (
               <ToggleGroupItem key={n} value={String(n)}>{t("reports.weeks", { count: n })}</ToggleGroupItem>
@@ -46,21 +51,23 @@ export default function ReportsPage() {
           </ToggleGroup>
         </div>
         <TabsContent value="personal">
-          <Personal weeks={weeks} tz={tz} uid={uid} weekLabel={weekLabel} />
+          <Personal weeks={weeks} tz={tz} uid={uid} weekLabel={weekLabel} area={area} />
         </TabsContent>
         <TabsContent value="project">
-          <ProjectReport weeks={weeks} tz={tz} weekLabel={weekLabel} today={today} />
+          <ProjectReport weeks={weeks} tz={tz} weekLabel={weekLabel} today={today} area={area} />
         </TabsContent>
       </Tabs>
     </PageContainer>
   );
 }
 
-function Personal({ weeks, tz, uid, weekLabel }: { weeks: ReturnType<typeof lastWeeks>; tz: string; uid: string; weekLabel: (w: string | number) => string }) {
+function Personal({ weeks, tz, uid, weekLabel, area }: { weeks: ReturnType<typeof lastWeeks>; tz: string; uid: string; weekLabel: (w: string | number) => string; area: AreaFilterValue }) {
   const t = useTranslations();
   const today = useToday();
   const f = useFormat(today, tz);
-  const mine = useMyTasks();
+  const allMine = useMyTasks();
+  const projectsById = useStore((s) => s.data.projects);
+  const mine = useMemo(() => allMine.filter((x) => inArea(x, projectsById, area)), [allMine, projectsById, area]);
   const tasks = useStore((s) => s.data.tasks);
   const entries = useStore((s) => s.data.time_entries);
   const projects = useProjects(undefined, { includeArchived: true });
@@ -69,14 +76,14 @@ function Personal({ weeks, tz, uid, weekLabel }: { weeks: ReturnType<typeof last
   const onTime = useMemo(() => onTimeRate(mine, weeks, tz), [mine, weeks, tz]);
   const overdue = useMemo(() => overdueTrend(mine, weeks, tz), [mine, weeks, tz]);
   const time = useMemo(() => {
-    const myEntries = Object.values(entries).filter((e) => e.user_id === uid);
+    const myEntries = Object.values(entries).filter((e) => e.user_id === uid && (area === "all" || (e.task_id ? Boolean(tasks[e.task_id]) && inArea(tasks[e.task_id], projectsById, area) : area === "none")));
     return minutesByKey(myEntries, (taskId) => (taskId ? (tasks[taskId]?.project_id ?? "inbox") : "no-task"), weeks[0].start, tz).map(([pid, minutes]) => ({
       id: pid,
       name: pid === "inbox" ? t("nav.inbox") : pid === "no-task" ? t("reports.focusNoTask") : (projects.find((p) => p.id === pid)?.name ?? "…"),
       color: projects.find((p) => p.id === pid)?.color ?? null,
       minutes,
     }));
-  }, [entries, uid, tasks, weeks, tz, projects, t]);
+  }, [entries, uid, tasks, weeks, tz, projects, t, area, projectsById]);
 
   const total = completed.reduce((n, w) => n + w.count, 0);
   // every number on the page covers the selected period
@@ -198,11 +205,12 @@ function timeAxisTicks(max: number): number[] {
   return out;
 }
 
-function ProjectReport({ weeks, tz, weekLabel, today }: { weeks: ReturnType<typeof lastWeeks>; tz: string; weekLabel: (w: string | number) => string; today: string }) {
+function ProjectReport({ weeks, tz, weekLabel, today, area }: { weeks: ReturnType<typeof lastWeeks>; tz: string; weekLabel: (w: string | number) => string; today: string; area: AreaFilterValue }) {
   const t = useTranslations();
-  const projects = useProjects(undefined, { includeArchived: true });
+  const allProjects = useProjects(undefined, { includeArchived: true });
+  const projects = useMemo(() => allProjects.filter((p) => area === "all" || (area === "none" ? !p.area_id : p.area_id === area)), [allProjects, area]);
   const [pid, setPid] = useState<string | null>(null);
-  const projectId = pid ?? projects[0]?.id ?? null;
+  const projectId = (pid && projects.some((p) => p.id === pid) ? pid : projects[0]?.id) ?? null;
   const tasks = useStore((s) => s.data.tasks);
   const assignees = useStore((s) => s.data.task_assignees);
   const profiles = useProfiles();
@@ -214,7 +222,7 @@ function ProjectReport({ weeks, tz, weekLabel, today }: { weeks: ReturnType<type
     const counts = new Map<string, number>();
     for (const x of list) {
       if (!isOverdue(x, today)) continue;
-      const ids = (by[x.id] ?? []).map((a) => a.user_id);
+      const ids = responsibleIds(x, by);
       for (const id of ids.length ? ids : ["none"]) counts.set(id, (counts.get(id) ?? 0) + 1);
     }
     return [...counts.entries()].map(([id, count]) => ({ name: id === "none" ? t("task.unassigned") : (profiles[id]?.name ?? "…"), count })).sort((a, b) => b.count - a.count);

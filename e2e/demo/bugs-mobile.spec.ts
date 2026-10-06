@@ -37,16 +37,16 @@ test("settings: tile in the «Yana» sheet and a section list on phones", async 
 test("board columns snap and show which column is visible", async ({ page }) => {
   await openDemo(page);
   await page.goto("/");
-  await page.getByRole("button", { name: "Loyihalar" }).click();
-  await page.getByRole("link", { name: /Sotuv boʻlimi/ }).click();
+  await page.getByRole("navigation", { name: "Asosiy menyu" }).last().getByRole("link", { name: "Loyihalar" }).click();
+  await page.getByRole("main").getByRole("link", { name: /Sotuv boʻlimi/ }).click();
   await page.getByRole("button", { name: /Doska/ }).click();
   await expect(page.getByText(/^1\/4$/)).toBeVisible();
 });
 
 test("calendar opens as an agenda on phones", async ({ page }) => {
   await openDemo(page);
-  await page.getByRole("button", { name: "Loyihalar" }).click();
-  await page.getByRole("link", { name: /Sotuv boʻlimi/ }).click();
+  await page.getByRole("navigation", { name: "Asosiy menyu" }).last().getByRole("link", { name: "Loyihalar" }).click();
+  await page.getByRole("main").getByRole("link", { name: /Sotuv boʻlimi/ }).click();
   await page.getByRole("button", { name: /Kalendar/ }).click();
   await expect(page.getByRole("radio", { name: "Roʻyxat" })).toHaveAttribute("aria-checked", "true");
 });
@@ -55,4 +55,14 @@ test("file area says «Fayl tanlash» on phones", async ({ page }) => {
   await openDemo(page);
   await page.getByText("Oylik hisobotni yakunlash va menejerga topshirish").first().click();
   await expect(page.getByText("Fayl tanlash").first()).toBeVisible();
+});
+
+test("no page scrolls sideways at phone width", async ({ page }) => {
+  await openDemo(page);
+  for (const path of ["/", "/inbox", "/upcoming", "/waiting", "/projects", "/overview", "/goals", "/habits", "/focus", "/reports", "/workload", "/notifications", "/settings", "/settings/notifications", "/settings/data", "/onboarding"]) {
+    await page.goto(path);
+    await page.waitForTimeout(400);
+    const [doc, win] = await page.evaluate(() => [document.documentElement.scrollWidth, window.innerWidth]);
+    expect(doc, path).toBeLessThanOrEqual(win);
+  }
 });

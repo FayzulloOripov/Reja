@@ -3,7 +3,7 @@
 import { CalendarClock, LayoutDashboard, Target, Users } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { KeyDateChip, PageHeader, ProgressBar, ProjectDot, UserAvatar } from "@/components/common/bits";
 import { EmptyState } from "@/components/common/empty-state";
 import { HealthWithReason } from "@/components/projects/project-header";
@@ -12,11 +12,11 @@ import { ActivityList } from "@/components/tasks/task-detail-sections";
 import { Button } from "@/components/ui/button";
 import { addDays, startOfWeek } from "@/lib/dates";
 import { goalProgress } from "@/lib/goals";
+import { responsibleIds } from "@/lib/tasks/responsible";
 import { effectiveHealth, isOpen, isOverdue, suggestHealth } from "@/lib/health";
 import { nextKeyDate, nextKeyDateOf, type KeyDate } from "@/lib/tasks/key-dates";
-import type { ActivityEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { assigneesByTask, tasksByProject, useCurrentWorkspace, useMembers, useProjects, useToday } from "@/store/hooks";
+import { assigneesByTask, tasksByProject, useActivity, useCurrentWorkspace, useMembers, useProjects, useToday } from "@/store/hooks";
 import { useStore } from "@/store/store";
 import { useUI } from "@/store/ui";
 
@@ -30,15 +30,9 @@ export default function OverviewPage() {
   const assignees = useStore((s) => s.data.task_assignees);
   const goals = useStore((s) => s.data.goals);
   const krs = useStore((s) => s.data.key_results);
-  const adapter = useStore((s) => s.adapter);
   const openTask = useUI((s) => s.openTask);
   const setNewProject = useUI((s) => s.setNewProject);
-  const [activity, setActivity] = useState<ActivityEntry[] | null>(null);
-
-  useEffect(() => {
-    if (!adapter || !ws) return;
-    void adapter.loadActivity({ workspaceId: ws.id }, 25).then(setActivity).catch(() => setActivity([]));
-  }, [adapter, ws]);
+  const activity = useActivity({ workspaceId: ws?.id }, 25);
 
   const byProject = tasksByProject(tasks);
   const rows = useMemo(
@@ -72,7 +66,7 @@ export default function OverviewPage() {
     const by = assigneesByTask(assignees);
     return members
       .map((m) => {
-        const mine = Object.values(tasks).filter((x) => !x.deleted_at && isOpen(x) && x.project_id && projectIds.has(x.project_id) && (by[x.id] ?? []).some((a) => a.user_id === m.id));
+        const mine = Object.values(tasks).filter((x) => !x.deleted_at && !x.parent_id && isOpen(x) && x.project_id && projectIds.has(x.project_id) && responsibleIds(x, by).includes(m.id));
         return {
           m,
           open: mine.length,

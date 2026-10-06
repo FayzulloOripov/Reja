@@ -2,7 +2,7 @@
 
 import { AlarmClock, CheckCircle2, CircleDot, ListTodo, Milestone, Target } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
 import { KeyDateChip, ProgressBar, UserAvatar } from "@/components/common/bits";
 import { RichEditor } from "@/components/editor/rich-editor";
 import { ActivityList } from "@/components/tasks/task-detail-sections";
@@ -10,10 +10,10 @@ import { diffDays } from "@/lib/dates";
 import { useFormat } from "@/lib/format";
 import { isOpen, isOverdue } from "@/lib/health";
 import { nextKeyDate, type KeyDate } from "@/lib/tasks/key-dates";
-import type { ActivityEntry, Profile, Project, Section, Task } from "@/lib/types";
+import type { Profile, Project, Section, Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { updateProject } from "@/store/actions";
-import { assigneesByTask, useProjectHealth, useToday, useTz } from "@/store/hooks";
+import { assigneesByTask, useActivity, useProjectHealth, useToday, useTz } from "@/store/hooks";
 import { useStore } from "@/store/store";
 import { useUI } from "@/store/ui";
 import { HealthWithReason } from "./project-header";
@@ -40,14 +40,8 @@ export function OverviewTab({ project, tasks, sections, people, writable }: { pr
   const assignees = useStore((s) => s.data.task_assignees);
   const goals = useStore((s) => s.data.goals);
   const krs = useStore((s) => s.data.key_results);
-  const adapter = useStore((s) => s.adapter);
-  const [activity, setActivity] = useState<ActivityEntry[] | null>(null);
+  const activity = useActivity({ projectId: project.id }, 15);
   const descTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (!adapter) return;
-    void adapter.loadActivity({ projectId: project.id }, 15).then(setActivity).catch(() => setActivity([]));
-  }, [adapter, project.id]);
 
   const top = useMemo(() => tasks.filter((x) => !x.parent_id && x.status !== "cancelled"), [tasks]);
   const bySection = useMemo(
