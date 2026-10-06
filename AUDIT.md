@@ -162,3 +162,16 @@ Every row runs in the demo and against the real backend (`e2e/demo/checklist.spe
 | CSV + planner import | done | `lib/import/planner.ts`, `components/settings/import.tsx` |
 | Onboarding | done | `src/app/onboarding/onboarding-client.tsx` |
 | Lighthouse ≥ 90 | partial — see section 2 «Performance»: 88 / 75 performance, 100 accessibility, best practices, SEO | local Lighthouse |
+
+## 6. Test results
+
+Run on 2026-10-06 against the local production build (`next build` + `next start`) and the Supabase project.
+
+| Suite | Result |
+|---|---|
+| Typecheck, lint | clean |
+| Unit + database tests on PGlite (`npm test`) | 250 passed, 3 skipped (Supabase-only checks) |
+| Database tests on Supabase (`npm run test:db:remote`) — RLS for all 52 tables, triggers, business rules, sessions, audit log, storage/realtime/cron | 81 / 81 passed |
+| Playwright, demo (`npm run test:e2e:demo`) | 67 passed, 5 skipped, 1 failed; that test (a selector) was fixed and its spec file then passed — the whole suite was not rerun after the fix |
+| Playwright, Supabase (`npm run test:e2e:real`) — every test signs in a freshly seeded user | 70 passed, 3 skipped (demo-only behaviour) |
+| Lighthouse 12, mobile, local | sign-in: performance 88, accessibility 100, best practices 100, SEO 100 · Home: 75 / 100 / 100 / 100 |
