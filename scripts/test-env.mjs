@@ -1,7 +1,7 @@
 // Remote tests must never touch production.
 //
 // Every test that talks to Supabase (remote database tests, real-backend Playwright, their
-// teardowns, `npm run db:push:test`) calls useTestProject() first. It loads ONLY .env.test.local
+// teardowns, `npm run db:push:test`) calls loadTestProject() first. It loads ONLY .env.test.local
 // (the separate "reja-test" project) over the environment, and refuses to start when that file is
 // missing or points at the same Supabase project as .env.local (production).
 
@@ -23,7 +23,7 @@ function read(file) {
 }
 
 /** Load .env.test.local over process.env and check it is not production. Returns the test project ref. */
-export function useTestProject(purpose = "remote tests") {
+export function loadTestProject(purpose = "remote tests") {
   const test = read(".env.test.local");
   if (!test) {
     throw new Error(`${purpose} need .env.test.local with the separate "reja-test" Supabase project (never the production project in .env.local).`);

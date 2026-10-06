@@ -1,10 +1,10 @@
 import pg from "pg";
-import { useTestProject } from "../../scripts/test-env.mjs";
+import { loadTestProject } from "../../scripts/test-env.mjs";
 
 /** Remote runs only: delete every test user created by the database tests (and, by cascade, their data). */
 export default async function teardown() {
   if (process.env.DB_TARGET !== "remote") return;
-  useTestProject("Remote database teardown");
+  loadTestProject("Remote database teardown");
   if (!process.env.SUPABASE_DB_URL) return;
   const client = new pg.Client({ connectionString: process.env.SUPABASE_DB_URL.trim(), ssl: { rejectUnauthorized: false } });
   await client.connect();

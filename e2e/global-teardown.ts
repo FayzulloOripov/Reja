@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { useTestProject } from "../scripts/test-env.mjs";
+import { loadTestProject } from "../scripts/test-env.mjs";
 
 /**
  * After a run against the real backend: delete every test user (e2e+…@example.test) and, through
@@ -8,7 +8,7 @@ import { useTestProject } from "../scripts/test-env.mjs";
  */
 export default async function globalTeardown() {
   if (process.env.E2E_BACKEND !== "real") return;
-  useTestProject("Real-backend teardown");
+  loadTestProject("Real-backend teardown");
   const url = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").trim().replace(/\/rest\/v1\/?$/, "").replace(/\/+$/, "");
   const key = (process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? "").trim();
   if (!url || !key) return;

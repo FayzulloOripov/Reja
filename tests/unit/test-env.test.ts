@@ -2,7 +2,7 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { projectRef, useTestProject } from "../../scripts/test-env.mjs";
+import { projectRef, loadTestProject } from "../../scripts/test-env.mjs";
 
 // The guard that keeps every remote test away from the production Supabase project.
 
@@ -32,14 +32,14 @@ describe("test project guard", () => {
 
   it("refuses to run without .env.test.local", () => {
     inDir({ ".env.local": `NEXT_PUBLIC_SUPABASE_URL=https://${PROD}.supabase.co` });
-    expect(() => useTestProject("x")).toThrow(/need \.env\.test\.local/);
+    expect(() => loadTestProject("x")).toThrow(/need \.env\.test\.local/);
   });
 
   it("refuses when the test file points at production (URL or database)", () => {
     inDir({ ".env.local": `NEXT_PUBLIC_SUPABASE_URL=https://${PROD}.supabase.co`, ".env.test.local": `NEXT_PUBLIC_SUPABASE_URL=https://${PROD}.supabase.co` });
-    expect(() => useTestProject("x")).toThrow(/production/);
+    expect(() => loadTestProject("x")).toThrow(/production/);
     inDir({ ".env.local": `NEXT_PUBLIC_SUPABASE_URL=https://${PROD}.supabase.co`, ".env.test.local": `SUPABASE_DB_URL=postgresql://postgres.${PROD}:pw@host:5432/postgres` });
-    expect(() => useTestProject("x")).toThrow(/production/);
+    expect(() => loadTestProject("x")).toThrow(/production/);
   });
 
   it("uses only the test project's keys, never production's", () => {
@@ -48,7 +48,7 @@ describe("test project guard", () => {
       ".env.local": `NEXT_PUBLIC_SUPABASE_URL=https://${PROD}.supabase.co\nSUPABASE_SECRET_KEY=prod-secret`,
       ".env.test.local": `NEXT_PUBLIC_SUPABASE_URL=https://${TEST}.supabase.co\nSUPABASE_DB_URL=postgresql://postgres.${TEST}:pw@host:5432/postgres`,
     });
-    expect(useTestProject("x")).toBe(TEST);
+    expect(loadTestProject("x")).toBe(TEST);
     expect(process.env.NEXT_PUBLIC_SUPABASE_URL).toBe(`https://${TEST}.supabase.co`);
     expect(process.env.SUPABASE_SECRET_KEY).toBeUndefined();
   });

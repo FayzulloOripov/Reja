@@ -3,10 +3,10 @@
 //   npm run db:push:test   → the separate test project (.env.test.local, refuses production)
 import { spawnSync } from "node:child_process";
 import { config } from "dotenv";
-import { useTestProject } from "./test-env.mjs";
+import { loadTestProject } from "./test-env.mjs";
 
 const TEST = process.argv.includes("--test");
-if (TEST) useTestProject("db:push:test");
+if (TEST) loadTestProject("db:push:test");
 else config({ path: ".env.local", quiet: true });
 const url = (process.env.SUPABASE_DB_URL ?? "").trim();
 if (!/^postgres(ql)?:\/\//.test(url)) {

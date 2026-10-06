@@ -1,11 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
-import { useTestProject } from "./scripts/test-env.mjs";
+import { loadTestProject } from "./scripts/test-env.mjs";
 
 // Against the real backend the tests use the separate test project only, and start their own server
 // built with its keys (never a running server that may point at production).
 const REAL = process.env.E2E_BACKEND === "real";
 if (REAL) {
-  useTestProject("Real-backend Playwright tests");
+  loadTestProject("Real-backend Playwright tests");
   if (process.env.E2E_BASE_URL) throw new Error("E2E_BACKEND=real starts its own test server; unset E2E_BASE_URL.");
 }
 

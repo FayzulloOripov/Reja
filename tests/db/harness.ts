@@ -2,7 +2,7 @@ import { PGlite } from "@electric-sql/pglite";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import pg from "pg";
-import { useTestProject } from "../../scripts/test-env.mjs";
+import { loadTestProject } from "../../scripts/test-env.mjs";
 
 // Two targets:
 //   • default: PGlite (real Postgres in WASM) with the Supabase shim below, migrations applied fresh;
@@ -10,7 +10,7 @@ import { useTestProject } from "../../scripts/test-env.mjs";
 //     users get unique emails ("…+dbt<run>@…") and are deleted again at the end (see teardown.ts).
 export const REMOTE = process.env.DB_TARGET === "remote";
 // remote runs go to the separate test project only (refuses production)
-if (REMOTE) useTestProject("Remote database tests");
+if (REMOTE) loadTestProject("Remote database tests");
 export const RUN_TAG = `dbt${Date.now().toString(36)}`;
 
 export interface Transaction {
