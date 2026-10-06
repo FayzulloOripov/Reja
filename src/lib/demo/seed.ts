@@ -91,7 +91,7 @@ export function buildDemoData(userId: string, today: string, tz = "Asia/Tashkent
     notify_prefs: {
       in_app: { assigned: true, mentioned: true, comment: true, status_change: true, invite: true, reminder: true, due_soon: true, overdue: true },
       telegram: { assigned: true, mentioned: true, reminder: true, digest: true, review: true, overdue: true },
-      push: { assigned: true, mentioned: true, comment: true, reminder: true },
+      push: { assigned: true, mentioned: true, comment: true, reminder: true, digest: true, review: true, overdue: true },
       email: { mentioned: true, invite: true },
     },
     telegram_chat_id: null,

@@ -216,6 +216,17 @@ describe("daily digest and weekly review", () => {
     expect(html).toContain("08:00–09:00 Agentlik");
   });
 
+  it("works without Telegram: the digest and review arrive by push", async () => {
+    store.prof.set("u1", profile({ review_enabled: true, telegram_chat_id: null, notify_prefs: { in_app: {}, telegram: {}, push: { digest: true, review: true }, email: {} } }));
+    store.taskMap.get("t1")!.top_date = "2026-10-05";
+    const res = await run("2026-10-05T02:30:00Z");
+    expect(res.daily.digest).toBe(1);
+    expect(senders.telegrams).toHaveLength(0);
+    expect(senders.pushes).toContain("Xayrli tong, Fayzullo! Bugungi reja:");
+    await run("2026-10-11T04:00:00Z"); // Sunday 09:00
+    expect(senders.pushes).toContain("📊 Haftalik tahlil");
+  });
+
   it("sends the weekly review on the chosen weekday", async () => {
     store.prof.set("u1", profile({ digest_enabled: false, language: "en" }));
     const res = await run("2026-10-11T04:00:00Z"); // Sunday 09:00

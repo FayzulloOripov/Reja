@@ -12,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { VAPID_PUBLIC_KEY } from "@/lib/env";
+import { TELEGRAM_ENABLED, VAPID_PUBLIC_KEY } from "@/lib/env";
 import { isDemo } from "@/hooks/use-demo";
 import { useFormat } from "@/lib/format";
 import type { Channel, NotificationType, Profile } from "@/lib/types";
@@ -164,7 +164,7 @@ function TimeRange({ start, end, fallback, onChange, label }: { start: string | 
 }
 
 const EVENTS: (NotificationType | "digest" | "review")[] = ["reminder", "assigned", "mentioned", "comment", "status_change", "due_soon", "overdue", "invite", "digest", "review"];
-const CHANNELS: Channel[] = ["in_app", "telegram", "push", "email"];
+const CHANNELS: Channel[] = TELEGRAM_ENABLED ? ["in_app", "telegram", "push", "email"] : ["in_app", "push", "email"];
 
 export function NotificationsSection() {
   const t = useTranslations();

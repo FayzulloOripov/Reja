@@ -22,6 +22,12 @@ export const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "";
 
 export const TELEGRAM_BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME ?? "";
 
+/**
+ * Telegram is optional and currently postponed: every Telegram control is hidden (or shown as
+ * "Tez orada") until the bot's username is configured. Reminders and summaries use push and email.
+ */
+export const TELEGRAM_ENABLED = Boolean(TELEGRAM_BOT_USERNAME);
+
 export const DEFAULT_TIMEZONE = "Asia/Tashkent";
 
 export function siteUrl(): string {

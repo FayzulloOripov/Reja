@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AreaPicker } from "./area-picker";
 import { Textarea } from "@/components/ui/textarea";
-import { TELEGRAM_BOT_USERNAME } from "@/lib/env";
+import { TELEGRAM_BOT_USERNAME, TELEGRAM_ENABLED } from "@/lib/env";
 import type { Project, ProjectStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { updateProject } from "@/store/actions";
@@ -111,7 +111,7 @@ export function ProjectSettingsDialog({ project, open, onOpenChange, manager }: 
             <Textarea id="ps-goal" rows={2} value={form.goal ?? ""} onChange={(e) => setForm({ ...form, goal: e.target.value })} placeholder={t("project.goalPlaceholder")} />
           </div>
 
-          {manager && (
+          {manager && TELEGRAM_ENABLED && (
             <div className="space-y-2 rounded-xl border bg-muted/40 p-3">
               <p className="flex items-center gap-2 text-13 font-semibold">
                 <Send className="size-4 text-info" /> {t("project.telegramGroup")}

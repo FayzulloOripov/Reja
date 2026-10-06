@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useBootstrap } from "@/hooks/use-bootstrap";
 import { useIsDemo } from "@/hooks/use-demo";
 import { PROJECT_COLORS } from "@/lib/colors";
+import { TELEGRAM_ENABLED } from "@/lib/env";
 import { useFormat } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { setLocaleCookie } from "@/server/actions/locale";
@@ -92,10 +93,12 @@ export function OnboardingClient({ userId, demo }: { userId: string; demo?: bool
           {step === 2 && <AreasStep />}
           {step === 3 && (
             <div className="space-y-4">
-              <Heading icon={<BellRing className="size-5 text-brand" />} title={t("remindersTitle")} body={t("remindersBody")} />
-              <div className="[&>div>section]:shadow-none [&>div>section:nth-child(2)]:hidden">
-                <IntegrationsSection />
-              </div>
+              <Heading icon={<BellRing className="size-5 text-brand" />} title={t("remindersTitle")} body={TELEGRAM_ENABLED ? t("remindersBody") : t("remindersBodyNoTelegram")} />
+              {TELEGRAM_ENABLED && (
+                <div className="[&>div>section]:shadow-none [&>div>section:nth-child(2)]:hidden">
+                  <IntegrationsSection />
+                </div>
+              )}
               <div className="[&>section]:shadow-none">
                 <PushCard />
               </div>

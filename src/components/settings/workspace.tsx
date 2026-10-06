@@ -11,7 +11,7 @@ import { ColorPicker } from "@/components/tasks/pickers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { TELEGRAM_BOT_USERNAME } from "@/lib/env";
+import { TELEGRAM_BOT_USERNAME, TELEGRAM_ENABLED } from "@/lib/env";
 import { isDemo, useIsDemo } from "@/hooks/use-demo";
 import { downloadText, toCSV } from "@/lib/csv";
 import { EXPORT_TABLES, exportFileName, taskCsvRows } from "@/lib/export";
@@ -68,7 +68,12 @@ export function IntegrationsSection() {
   return (
     <div className="space-y-5">
       <SettingsCard title={<span className="flex items-center gap-2"><Send className="size-4 text-info" /> {t("settings.telegramTitle")}</span>} description={t("settings.telegramHint")}>
-        {status && !status.telegram ? (
+        {!TELEGRAM_ENABLED ? (
+          <p className="flex items-center gap-2 px-5 py-4 text-13 text-muted-foreground">
+            <span className="rounded-full bg-info-soft px-2 py-0.5 text-xs font-semibold text-info-fg">{t("settings.comingSoon")}</span>
+            {t("settings.telegramSoon")}
+          </p>
+        ) : status && !status.telegram ? (
           // the bot is not set up on this server: say so plainly, without configuration details
           <p className="px-5 py-4 text-13 text-muted-foreground">{t("settings.telegramUnavailable")}</p>
         ) : me.telegram_chat_id ? (

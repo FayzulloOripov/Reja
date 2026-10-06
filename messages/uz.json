@@ -837,7 +837,7 @@
     "sectionHints": {
       "profile": "Ism, til, mavzu, vaqt mintaqasi, ish kunlari",
       "notifications": "Qaysi xabar qaysi kanalga keladi, sokin soatlar",
-      "integrations": "Telegram bot, push, kalendar",
+      "integrations": "Push, kalendar, Telegram (tez orada)",
       "workspace": "Nomi, aʼzolar va takliflar",
       "labels": "Umumiy teglar",
       "templates": "Loyiha shablonlari",
@@ -876,7 +876,9 @@
     "capacityTasks": "Kuniga vazifalar soni",
     "capacityTasksUnit": "ta vazifa",
     "capacityHours": "Kuniga soat",
-    "capacityHoursUnit": "soat"
+    "capacityHoursUnit": "soat",
+    "comingSoon": "Tez orada",
+    "telegramSoon": "Telegram orqali eslatmalar va kunlik xulosa tez orada qoʻshiladi. Hozircha ular push va email orqali keladi."
   },
   "invite": {
     "title": "Taklif",
@@ -940,7 +942,8 @@
     "inviteHint": "Taklif 7 kun amal qiladi. Keyinroq Sozlamalar → Ish maydoni orqali ham taklif qilasiz.",
     "finish": "Boshlash",
     "reopen": "Sozlash ustasini qayta ochish",
-    "projectPlaceholder": "Birinchi loyiha nomi"
+    "projectPlaceholder": "Birinchi loyiha nomi",
+    "remindersBodyNoTelegram": "Eslatmalar va kunlik xulosa telefon va kompyuteringizga push orqali keladi. Telegram tez orada qoʻshiladi."
   },
   "empty": {
     "notesTitle": "Qaydlar yoʻq",
@@ -1170,5 +1173,9 @@
     "dragHandle": "«{name}» ni sudrab, tartibini yoki sohasini oʻzgartirish",
     "dropToArea": "Loyihani shu sohaga sudrab tashlang",
     "allProjects": "Barcha loyihalar"
+  },
+  "push": {
+    "digestBody": "Asosiy: {top} · Bugun: {today} · Kechikkan: {overdue}",
+    "overdueTitle": "{count} ta vazifaning muddati oʻtgan"
   }
 }

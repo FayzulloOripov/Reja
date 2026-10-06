@@ -313,6 +313,8 @@ async function sendDaily(store: SchedulerStore, senders: Senders, t: Translate, 
   let html = "";
   let email: EmailContent | null = null;
   let channelKey: "digest" | "review" | "overdue" = kind;
+  // short push version of the same summary
+  let push: { title: string; body: string } | null = null;
 
   if (kind === "digest") {
     const d = await collectDigest(store, p, date);
@@ -324,6 +326,12 @@ async function sendDaily(store: SchedulerStore, senders: Senders, t: Translate, 
     ].filter((s) => s.items.length);
     html = `<b>${esc(tr("bot.digestTitle", { name: first }))}</b>\n\n${sections.length ? sections.map((s) => `<b>${esc(s.title)}</b>\n${list(s.items)}`).join("\n\n") : esc(tr("bot.empty"))}`;
     email = { heading: tr("email.digestHeading", { name: first }), sections, button: tr("email.openApp"), url: siteUrl };
+    push = {
+      title: tr("bot.digestTitle", { name: first }),
+      body: d.top.length + d.today.length + d.overdue.length
+        ? tr("push.digestBody", { top: d.top.length, today: d.today.length, overdue: d.overdue.length })
+        : tr("bot.empty"),
+    };
   } else if (kind === "review") {
     const weekStart = startOfWeek(date);
     const lastWeekStart = addDays(weekStart, -7);
@@ -341,12 +349,14 @@ async function sendDaily(store: SchedulerStore, senders: Senders, t: Translate, 
       button: tr("email.openApp"),
       url: siteUrl,
     };
+    push = { title: tr("bot.reviewTitle"), body: `${tr("bot.reviewDone", { count: done })} · ${tr("bot.reviewSlipped", { count: slipped.length })}` };
   } else {
     const open = await store.responsibleTasks(p.id, date);
     const overdue = open.filter((x) => x.due_date && x.due_date < date);
     if (overdue.length === 0) return false;
     html = `${esc(tr("bot.overdueNudge", { count: overdue.length }))}\n${list(overdue.map((x) => `${x.title} (${formatDay(x.due_date!, p.language)})`))}`;
     channelKey = "overdue";
+    push = { title: tr("push.overdueTitle", { count: overdue.length }), body: overdue.slice(0, 3).map((x) => x.title).join(" · ") };
   }
 
   let sent = false;
@@ -354,6 +364,9 @@ async function sendDaily(store: SchedulerStore, senders: Senders, t: Translate, 
   if (p.telegram_chat_id && pref(p, "telegram", channelKey)) {
     await senders.telegram(p.telegram_chat_id, html, button);
     sent = true;
+  }
+  if (push && pref(p, "push", channelKey)) {
+    if (await pushAll(store, senders, p.id, { ...push, url: siteUrl, tag: `reja-${kind}` })) sent = true;
   }
   if (email && p.email && pref(p, "email", channelKey)) {
     const subject = kind === "digest" ? tr("email.digestSubject", { date: formatDay(date, p.language) }) : tr("email.reviewSubject");

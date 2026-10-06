@@ -5,7 +5,10 @@ Status of every feature in the original spec and in the fix prompt.
 
 Tests: `tests/unit` (Vitest), `tests/db` (Postgres/RLS on PGlite), `e2e/demo` (Playwright against the in-browser demo, runs anywhere), `e2e/*.spec.ts` (Playwright against a real Supabase project, needs keys).
 
-_Last updated: phase 3 (projects and areas)._
+_Last updated: switch to the real backend (before phase 5)._
+
+**Telegram is postponed** (no bot token): every Telegram item below is marked *postponed*, its controls are hidden or shown as «Tez orada», and reminders, the daily digest, the weekly review and the overdue nudge go out by web push (and email once Resend is set up). The app runs fully without `TELEGRAM_BOT_TOKEN`.
+**Email is waiting** for the Resend key and a verified domain: email sending is skipped while `RESEND_API_KEY` is empty.
 
 ## 1. Bugs from user testing
 
@@ -38,7 +41,7 @@ _Last updated: phase 3 (projects and areas)._
 | 25 | Goal percentages unexplained | done | «qanday hisoblangan» popover, start value shown, pace marker and sentence, confirm before deleting a key result, goal start date | unit `goal progress` · e2e `goal percentage…` |
 | 26 | Habit heatmap unlabelled | done | month and weekday labels, legend, «odat hali yoʻq edi» style, clear «Bugun bajardim» button | e2e `habit heatmap…` |
 | 27 | Notification settings on a phone | done | one card per event with labelled switches on phones, full phrases, push refusal only after trying, one enable button, quiet hours 22:00–07:00 shown, default reminder 15 min (timed) / 09:00 (all-day) in app and database | e2e mobile settings · unit + db reminder timing |
-| 28 | Developer text shown to users | done | friendly «Telegram bot hozircha ishlamayapti…», single connect button | e2e `Telegram settings…` |
+| 28 | Developer text shown to users | done (Telegram itself postponed) | no variable names shown; the Telegram card says «Tez orada» while the bot is postponed | e2e `Telegram settings…` |
 | 29 | Small polish | done | quick-add close button; tooltips off on touch and row toolbar hidden on touch; subtask input stays open; «Fayl tanlash» on phones; mention list opens above when there is no room; palette reads status once; one add row on Home today; search shows dates; overdue group has no add row | e2e `quick add…`, `subtask input…`, `file area…`, `search results…` |
 
 ### Also fixed in phase 3
@@ -82,9 +85,9 @@ All items in section 2 «Not tested yet» of the fix prompt: pending.
 | Pipeline | missing |
 | Money | missing |
 | Docs with version history | missing |
-| Telegram group digests | missing |
-| Telegram replies → comments | missing |
-| Email digest fallback | partial (digest by email exists when the channel is on) |
+| Telegram group digests | postponed (no bot token) |
+| Telegram replies → comments | postponed (no bot token) |
+| Email digest fallback | waiting (Resend key) — built: digest/review emails when the email channel is on; push carries the summaries meanwhile |
 | Prayer-aware planning | missing |
 | Energy labels | missing |
 | Planner JSON import with real file | done — each planner area → area + project (or existing/inbox), confirmed in a preview; `created` kept; tested against the real file (30 tasks, 5 areas) |
@@ -96,7 +99,7 @@ All items in section 2 «Not tested yet» of the fix prompt: pending.
 | Two-way Google Calendar | missing |
 | Goals fed by real data | missing |
 | PWA badge, share target | missing |
-| First-run wizard (full) | done — name/time zone, work days and hours (Mon–Sat, 10:00–19:00), areas + first projects, Telegram + push, import (planner/CSV/demo), invite a partner; every step skippable, reopen from Settings → Profile |
+| First-run wizard (full) | done — name/time zone, work days and hours (Mon–Sat, 10:00–19:00), areas + first projects, push (Telegram postponed), import (planner/CSV/demo), invite a partner; every step skippable, reopen from Settings → Profile |
 
 ## 5. Original spec
 
@@ -121,7 +124,9 @@ All items in section 2 «Not tested yet» of the fix prompt: pending.
 | ICS feed | done | `src/app/api/ics` |
 | Notifications inbox | done | `notifications/page.tsx` |
 | Workload | done | `workload/page.tsx`, `lib/workload.ts` |
-| Reminders, pg_cron, push, email, Telegram bot | done in code, blocked live | `src/server/*`, `supabase/migrations/*_cron.sql` |
+| Reminders, pg_cron, push | done in code, live check pending | `src/server/*`, `supabase/migrations/*_cron.sql`; digest/review/overdue also by push (`20261006000004_push_summaries.sql`) |
+| Email (invites, digest, review) | waiting (Resend key) | `src/server/email.ts` |
+| Telegram bot (link, commands, forwarding, inline buttons, Telegram reminders) | postponed (no bot token) | code kept in `src/server/telegram.ts`, `src/app/api/telegram`; hidden in the UI |
 | Digest, weekly review prompt, overdue nudge | done in code, blocked live | `server/scheduler/core.ts` |
 | Goals, habits, focus, reports | done | `src/app/(app)/*` |
 | Settings | done | `components/settings/*` |
