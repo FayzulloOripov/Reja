@@ -15,8 +15,9 @@
     "seed:demo": "tsx scripts/seed-demo.ts",
     "icons": "node scripts/icons.mjs",
     "db:push": "node scripts/db-push.mjs",
+    "db:push:test": "node scripts/db-push.mjs --test",
     "test:e2e:demo": "playwright test --project=demo",
-    "test:e2e:real": "E2E_BACKEND=real playwright test --project=demo --workers=1",
+    "test:e2e:real": "E2E_BACKEND=real E2E_BASE_URL= playwright test --project=demo --workers=1",
     "test:db:remote": "DB_TARGET=remote vitest run tests/db"
   },
   "dependencies": {

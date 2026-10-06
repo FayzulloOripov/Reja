@@ -1,16 +1,16 @@
 import { PGlite } from "@electric-sql/pglite";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { config } from "dotenv";
 import pg from "pg";
+import { useTestProject } from "../../scripts/test-env.mjs";
 
 // Two targets:
 //   • default: PGlite (real Postgres in WASM) with the Supabase shim below, migrations applied fresh;
 //   • DB_TARGET=remote: the Supabase project in SUPABASE_DB_URL (migrations already pushed). Test
 //     users get unique emails ("…+dbt<run>@…") and are deleted again at the end (see teardown.ts).
-config({ path: ".env.test.local" });
-config({ path: ".env.local" });
 export const REMOTE = process.env.DB_TARGET === "remote";
+// remote runs go to the separate test project only (refuses production)
+if (REMOTE) useTestProject("Remote database tests");
 export const RUN_TAG = `dbt${Date.now().toString(36)}`;
 
 export interface Transaction {
@@ -23,7 +23,7 @@ export interface Db extends Transaction {
 
 let pool: pg.Pool | null = null;
 function remoteDb(): Db {
-  if (!process.env.SUPABASE_DB_URL) throw new Error("DB_TARGET=remote needs SUPABASE_DB_URL in .env.local");
+  if (!process.env.SUPABASE_DB_URL) throw new Error("DB_TARGET=remote needs SUPABASE_DB_URL in .env.test.local");
   pool ??= new pg.Pool({ connectionString: process.env.SUPABASE_DB_URL, max: 3, ssl: { rejectUnauthorized: false } });
   const p = pool;
   const wrap = (c: pg.PoolClient | pg.Pool): Transaction => ({

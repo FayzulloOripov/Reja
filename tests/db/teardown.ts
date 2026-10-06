@@ -1,11 +1,11 @@
-import { config } from "dotenv";
 import pg from "pg";
+import { useTestProject } from "../../scripts/test-env.mjs";
 
 /** Remote runs only: delete every test user created by the database tests (and, by cascade, their data). */
 export default async function teardown() {
-  config({ path: ".env.test.local" });
-  config({ path: ".env.local" });
-  if (process.env.DB_TARGET !== "remote" || !process.env.SUPABASE_DB_URL) return;
+  if (process.env.DB_TARGET !== "remote") return;
+  useTestProject("Remote database teardown");
+  if (!process.env.SUPABASE_DB_URL) return;
   const client = new pg.Client({ connectionString: process.env.SUPABASE_DB_URL.trim(), ssl: { rejectUnauthorized: false } });
   await client.connect();
   // one at a time, like real account deletions: a shared workspace passes to a remaining member,

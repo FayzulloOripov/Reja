@@ -1,10 +1,15 @@
 import { defineConfig, devices } from "@playwright/test";
-import { config } from "dotenv";
+import { useTestProject } from "./scripts/test-env.mjs";
 
-config({ path: ".env.test.local" });
-config({ path: ".env.local" });
+// Against the real backend the tests use the separate test project only, and start their own server
+// built with its keys (never a running server that may point at production).
+const REAL = process.env.E2E_BACKEND === "real";
+if (REAL) {
+  useTestProject("Real-backend Playwright tests");
+  if (process.env.E2E_BASE_URL) throw new Error("E2E_BACKEND=real starts its own test server; unset E2E_BASE_URL.");
+}
 
-const baseURL = process.env.E2E_BASE_URL ?? "http://localhost:3100";
+const baseURL = REAL ? "http://localhost:3200" : (process.env.E2E_BASE_URL ?? "http://localhost:3100");
 
 export default defineConfig({
   testDir: "./e2e",
@@ -22,7 +27,9 @@ export default defineConfig({
     // in-browser demo (/demo): runs anywhere, no keys needed
     { name: "demo", use: { ...devices["Desktop Chrome"] }, testMatch: /demo\/.*\.spec\.ts/ },
   ],
-  webServer: process.env.E2E_BASE_URL
-    ? undefined
-    : { command: "npm run build && npx next start -p 3100", url: baseURL, timeout: 240_000, reuseExistingServer: true },
+  webServer: REAL
+    ? { command: "npx next build && npx next start -p 3200", url: baseURL, timeout: 400_000, reuseExistingServer: false, env: { NEXT_DIST_DIR: ".next-test" } }
+    : process.env.E2E_BASE_URL
+      ? undefined
+      : { command: "npm run build && npx next start -p 3100", url: baseURL, timeout: 240_000, reuseExistingServer: true },
 });
