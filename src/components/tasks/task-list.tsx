@@ -259,6 +259,7 @@ export function TaskList({ groups, showProject, sortable, readOnly, allowAdd, on
               const props = {
                 task,
                 showProject,
+                groupDate: g.defaults?.dueDate ?? null,
                 readOnly,
                 focused: focusId ? focusId === task.id : i === 0 && g === groups.find((x) => x.tasks.length),
                 selected: selection.includes(task.id),

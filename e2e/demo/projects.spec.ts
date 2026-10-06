@@ -37,7 +37,7 @@ test("favourite from the projects page shows in the sidebar", async ({ page }) =
 test("activity feed shows what just happened, with names", async ({ page }) => {
   await openDemo(page);
   await page.getByRole("link", { name: /Agentlik mijozlari/ }).first().click();
-  await expect(page.getByRole("textbox", { name: "Nomi" })).toHaveValue("Agentlik mijozlari");
+  await expect(page.getByRole("heading", { level: 1, name: "Agentlik mijozlari" })).toBeVisible();
   // add a task with a subtask
   await page.getByRole("button", { name: "Vazifa qoʻshish" }).first().click();
   await page.getByRole("textbox", { name: "Vazifa qoʻshish" }).fill("Faollik sinovi");

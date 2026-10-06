@@ -49,7 +49,7 @@ export default function ContactsPage() {
       ) : contacts.length === 0 ? (
         <EmptyState illustration="team" title={t("contacts.empty")} body={t("contacts.emptyBody")} action={<Button onClick={() => setEditing("new")}><Plus /> {t("contacts.new")}</Button>} />
       ) : (
-        <ul className="grid gap-3 md:grid-cols-2">
+        <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {contacts.map((c) => {
             const waiting = waitingBy.get(c.id) ?? [];
             return (

@@ -48,13 +48,13 @@ export default function RoutinesPage() {
           {due.length > 0 && (
             <section aria-labelledby="r-today" className="mb-6 space-y-2">
               <h2 id="r-today" className="px-1 font-sans text-13 font-semibold tracking-normal text-muted-foreground">{t("routines.today")}</h2>
-              <div className="grid gap-3 md:grid-cols-2">{due.map((r) => <RoutineCard key={r.id} routine={r} date={today} />)}</div>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">{due.map((r) => <RoutineCard key={r.id} routine={r} date={today} />)}</div>
             </section>
           )}
           {other.length > 0 && (
             <section aria-labelledby="r-other" className="space-y-2">
               <h2 id="r-other" className="px-1 font-sans text-13 font-semibold tracking-normal text-muted-foreground">{t("routines.notToday")}</h2>
-              <div className="grid gap-3 md:grid-cols-2">{other.map((r) => <RoutineCard key={r.id} routine={r} date={today} idle />)}</div>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">{other.map((r) => <RoutineCard key={r.id} routine={r} date={today} idle />)}</div>
             </section>
           )}
         </>

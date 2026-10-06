@@ -240,7 +240,7 @@
   --color-sidebar-ring: var(--sidebar-ring);
 
   --font-sans: var(--font-onest), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-schibsted), var(--font-onest), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-uz-apostrophe), var(--font-schibsted), var(--font-onest), ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-display);
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
 
@@ -308,6 +308,12 @@
   h1, h2, h3 {
     @apply font-display tracking-tight;
   }
+  /* A horizontal scroller must contain its absolutely positioned children (sr-only labels, badges):
+     otherwise they escape it, widen the page and phones zoom the whole app out. */
+  .overflow-x-auto,
+  .overflow-auto {
+    position: relative;
+  }
   :focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
@@ -318,7 +324,10 @@
 }
 
 @layer utilities {
-  .tnum { font-variant-numeric: tabular-nums; }
+  /* Onest's "1" is half as wide as the other digits; padded to tabular width it reads as "1 1:00".
+     Numbers keep their natural widths; .tnum-fixed is only for running timers, where digits must not jump. */
+  .tnum { font-variant-numeric: proportional-nums; }
+  .tnum-fixed { font-variant-numeric: tabular-nums; }
   .surface { background: var(--card); box-shadow: var(--elev-1); }
   .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
   .pt-safe { padding-top: env(safe-area-inset-top); }

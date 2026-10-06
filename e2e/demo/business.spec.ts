@@ -46,7 +46,7 @@ test("pipeline: stale warnings, a lost deal needs a reason, a won deal becomes a
   await page.getByRole("menuitem", { name: "Yutildi" }).click();
   await expect(page.getByRole("dialog")).toContainText("yutildi!");
   await page.getByRole("button", { name: "Loyiha yaratish" }).click();
-  await expect(page.getByRole("textbox", { name: "Nomi" })).toHaveValue("TexnoSoft (demo) — CRM joriy etish");
+  await expect(page.getByRole("heading", { level: 1, name: "TexnoSoft (demo) — CRM joriy etish" })).toBeVisible();
   await settled(page);
 
   if (REAL) {

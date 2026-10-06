@@ -118,7 +118,7 @@ function MeetingDetail({ meeting }: { meeting: Meeting }) {
         <Attendees meeting={meeting} writable={writable} />
       </header>
 
-      <div className="grid gap-5 lg:grid-cols-[1fr_1fr]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_1fr]">
         <ItemSection meeting={meeting} kind="agenda" items={agenda} writable={writable} />
         <ItemSection meeting={meeting} kind="decision" items={decisions} writable={writable} />
       </div>

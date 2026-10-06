@@ -197,30 +197,33 @@ function GoalCard({ goal, krs, writable }: { goal: Goal; krs: KeyResult[]; writa
       <ul className="divide-y border-t">
         {krs.map((k) => (
           <li key={k.id} className="px-5 py-3">
-            <div className="flex items-center gap-3">
-              <div className="min-w-0 flex-1">
+            {/* the title keeps at least 12rem; on a phone the buttons drop below it instead of squeezing it */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <div className="min-w-48 flex-1">
                 <p className="text-sm break-words">{k.title}</p>
                 <p className="text-xs text-muted-foreground tnum">
                   {Number(k.start_value) !== 0 && <>{t("goals.krFrom", { value: value(k.start_value) })} → </>}
                   {value(k.current)} / {value(k.target, k.unit)} · <b className="text-foreground">{f.num(krProgress(k))}%</b>
                 </p>
               </div>
-              {k.source !== "manual" ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-info-soft px-2 py-0.5 text-2xs font-medium text-info-fg" title={t("goals.autoHint")}>
-                  <Zap className="size-3" /> {t(`goals.sources.${k.source}`)}
-                </span>
-              ) : (
-                <CheckIn kr={k} disabled={!writable} unitLabel={value(k.target, k.unit)} />
-              )}
-              {writable && <KrSource kr={k} workspaceId={goal.workspace_id} />}
-              <Button variant="ghost" size="icon-sm" aria-label={t("goals.history")} aria-pressed={chartFor === k.id} onClick={() => setChartFor(chartFor === k.id ? null : k.id)}>
-                <LineIcon />
-              </Button>
-              {writable && (
-                <Button variant="ghost" size="icon-sm" aria-label={t("goals.deleteKr", { title: k.title })} onClick={() => setConfirmDelete(k)}>
-                  <X />
+              <div className="ml-auto flex shrink-0 items-center gap-1">
+                {k.source !== "manual" ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-info-soft px-2 py-0.5 text-2xs font-medium text-info-fg" title={t("goals.autoHint")}>
+                    <Zap className="size-3" /> {t(`goals.sources.${k.source}`)}
+                  </span>
+                ) : (
+                  <CheckIn kr={k} disabled={!writable} unitLabel={value(k.target, k.unit)} />
+                )}
+                {writable && <KrSource kr={k} workspaceId={goal.workspace_id} />}
+                <Button variant="ghost" size="icon-sm" aria-label={t("goals.history")} aria-pressed={chartFor === k.id} onClick={() => setChartFor(chartFor === k.id ? null : k.id)}>
+                  <LineIcon />
                 </Button>
-              )}
+                {writable && (
+                  <Button variant="ghost" size="icon-sm" aria-label={t("goals.deleteKr", { title: k.title })} onClick={() => setConfirmDelete(k)}>
+                    <X />
+                  </Button>
+                )}
+              </div>
             </div>
             <ProgressBar value={krProgress(k)} color={goal.color} className="mt-2" label={k.title} />
             {chartFor === k.id && (

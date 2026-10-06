@@ -131,7 +131,7 @@ export default function MoneyPage() {
         </section>
       )}
 
-      <div className="mb-5 grid gap-4 lg:grid-cols-[3fr_2fr]">
+      <div className="mb-5 grid grid-cols-1 gap-4 lg:grid-cols-[3fr_2fr]">
         <ChartCard
           title={t("money.byMonth")}
           csvName="money-by-month"

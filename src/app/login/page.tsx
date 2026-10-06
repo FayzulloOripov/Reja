@@ -17,7 +17,7 @@ export default async function LoginPage(props: PageProps<"/login">) {
   const fromDemo = sp.from === "demo";
 
   return (
-    <main className="grid min-h-dvh lg:grid-cols-[1.05fr_1fr]">
+    <main className="grid grid-cols-1 min-h-dvh lg:grid-cols-[1.05fr_1fr]">
       <section className="relative hidden overflow-hidden bg-[oklch(0.25_0.03_45)] p-12 text-[oklch(0.96_0.02_70)] lg:flex lg:flex-col lg:justify-between">
         <div aria-hidden className="pointer-events-none absolute inset-0">
           <div className="absolute -left-24 top-24 size-[420px] rounded-full bg-[oklch(0.66_0.17_50/0.35)] blur-3xl" />

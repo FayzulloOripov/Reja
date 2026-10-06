@@ -104,7 +104,7 @@ function Personal({ weeks, tz, uid, weekLabel, area }: { weeks: ReturnType<typeo
         <StatTile icon={<Gauge />} label={t("reports.onTimeRate")} value={rate === null ? "—" : `${f.num(rate)}%`} hint={period} />
         <StatTile icon={<Clock />} label={t("reports.focusTime")} value={f.duration(totalMinutes)} hint={period} />
       </div>
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ChartCard
           title={t("reports.completedPerWeek")}
           csvName="completed-per-week"
@@ -244,7 +244,7 @@ function ProjectReport({ weeks, tz, weekLabel, today, area }: { weeks: ReturnTyp
           ))}
         </SelectContent>
       </Select>
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ChartCard
           title={t("reports.progressOverTime")}
           csvName="progress"

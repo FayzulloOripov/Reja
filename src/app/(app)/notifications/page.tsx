@@ -89,7 +89,7 @@ export default function NotificationsPage() {
           <ToggleGroupItem value="all">{t("notifications.all")}</ToggleGroupItem>
           <ToggleGroupItem value="unread">{t("notifications.unread")}</ToggleGroupItem>
         </ToggleGroup>
-        <ToggleGroup type="single" value={filter === "all" ? "" : filter} onValueChange={(v) => setFilter((v || "all") as Filter)} size="sm" aria-label={t("common.filter")}>
+        <ToggleGroup type="single" value={filter === "all" ? "" : filter} onValueChange={(v) => setFilter((v || "all") as Filter)} size="sm" aria-label={t("common.filter")} className="w-auto max-w-full flex-wrap">
           {FILTERS.map(({ key, icon: Icon }) => (
             <ToggleGroupItem key={key} value={key} className="gap-1.5">
               <Icon className="size-3.5" aria-hidden /> {t(`notifications.filters.${key}`)}

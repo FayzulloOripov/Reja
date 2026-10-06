@@ -39,7 +39,7 @@ export function ShortcutsDialog() {
           <DialogTitle>{t("title")}</DialogTitle>
           <DialogDescription className="sr-only">{t("title")}</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-6 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
           {groups.map((g, i) => (
             <ul key={i} className="space-y-2.5">
               {g.map((row) => (

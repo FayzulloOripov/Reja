@@ -91,10 +91,10 @@ export default function OverviewPage() {
       {rows.length === 0 ? (
         <EmptyState illustration="folder" title={t("overview.noProjects")} body={t("project.noProjectsBody")} action={<Button onClick={() => setNewProject(true)}>{t("nav.newProject")}</Button>} />
       ) : (
-        <div className="grid gap-5 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
           <section className="space-y-3 xl:col-span-2" aria-labelledby="ov-projects">
             <h2 id="ov-projects" className="font-sans text-13 font-semibold tracking-normal text-muted-foreground">{t("overview.projects")}</h2>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {rows.map(({ p, s, next }) => (
                 <Link
                   key={p.id}

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Onest, Schibsted_Grotesk } from "next/font/google";
+import localFont from "next/font/local";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
 import { RootProviders } from "@/components/providers/root-providers";
@@ -18,6 +19,16 @@ const display = Schibsted_Grotesk({
   variable: "--font-schibsted",
   weight: ["600", "700", "800"],
   display: "swap",
+});
+
+// Schibsted Grotesk spaces the Uzbek ʻ (U+02BB) half an em wide, so headings read "bo ʻlimi".
+// Onest's ʻ and ʼ, subset to a 1 KB file (OFL, renamed), sit first in the heading stack.
+const uzApostrophe = localFont({
+  src: "./fonts/uz-apostrophe.woff2",
+  variable: "--font-uz-apostrophe",
+  weight: "100 900",
+  display: "swap",
+  declarations: [{ prop: "unicode-range", value: "U+02BB-02BC" }],
 });
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -48,7 +59,7 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const locale = await getLocale();
   return (
-    <html lang={locale} suppressHydrationWarning className={`${onest.variable} ${display.variable}`}>
+    <html lang={locale} suppressHydrationWarning className={`${onest.variable} ${display.variable} ${uzApostrophe.variable}`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>

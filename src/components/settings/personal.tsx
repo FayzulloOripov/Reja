@@ -52,7 +52,7 @@ export function ProfileSection() {
     <SettingsCard title={t("settings.profile")}>
       <div className="flex items-center gap-4 px-5 py-4">
         <UserAvatar profile={{ ...me, avatar_url: avatar || null }} size={56} />
-        <div className="grid flex-1 gap-2 sm:grid-cols-2">
+        <div className="grid grid-cols-1 flex-1 gap-2 sm:grid-cols-2">
           <Input value={name} onChange={(e) => setName(e.target.value)} onBlur={() => name.trim() && name !== me.name && updateProfile({ name: name.trim() })} aria-label={t("settings.name")} placeholder={t("settings.name")} />
           <Input value={avatar} onChange={(e) => setAvatar(e.target.value)} onBlur={() => avatar !== (me.avatar_url ?? "") && updateProfile({ avatar_url: /^https:\/\//.test(avatar) ? avatar : null })} aria-label={t("settings.avatar")} placeholder="https://…" />
         </div>

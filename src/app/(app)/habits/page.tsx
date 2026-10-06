@@ -52,7 +52,7 @@ export default function HabitsPage() {
       {list.length === 0 && !adding ? (
         <EmptyState illustration="sprout" title={t("habits.empty")} body={t("habits.emptyBody")} action={<Button onClick={() => setAdding(true)}><Plus /> {t("habits.new")}</Button>} />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {list.map((h) => (
             <HabitCard key={h.id} habit={h} done={doneBy.get(h.id) ?? new Set()} today={today} />
           ))}

@@ -92,7 +92,7 @@ export function ProjectSettingsDialog({ project, open, onOpenChange, manager }: 
               </div>
             </div>
           )}
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="ps-start">{t("project.startDate")}</Label>
               <Input id="ps-start" type="date" value={form.start_date ?? ""} onChange={(e) => setForm({ ...form, start_date: e.target.value || null })} />

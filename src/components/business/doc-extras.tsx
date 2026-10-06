@@ -81,7 +81,7 @@ function VersionsDialog({ note, writable, onClose, onRestored }: { note: Note; w
         {versions.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">{loading ? "…" : t("docs.noVersions")}</p>
         ) : (
-          <div className="grid min-h-0 gap-3 md:grid-cols-[14rem_1fr]">
+          <div className="grid grid-cols-1 min-h-0 gap-3 md:grid-cols-[14rem_1fr]">
             <ul className="max-h-[60vh] space-y-1 overflow-y-auto" aria-label={t("docs.versions")}>
               {versions.map((v) => (
                 <li key={v.id}>
