@@ -104,10 +104,15 @@ export function ChecklistSection({ task, writable }: { task: Task; writable: boo
                 if (v && v !== item.text) updateChecklistItem(item.id, { text: v });
               }}
               onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+              aria-label={t("task.checklistItem", { text: item.text })}
               className={cn("flex-1 bg-transparent text-sm outline-none", item.done && "text-muted-foreground line-through")}
             />
             {writable && (
-              <button onClick={() => deleteChecklistItem(item.id)} aria-label={t("common.delete")} className="text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-foreground">
+              <button
+                onClick={() => deleteChecklistItem(item.id)}
+                aria-label={t("task.deleteChecklistItem", { text: item.text })}
+                className="text-muted-foreground opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 hover:text-foreground [@media(hover:none)]:opacity-100"
+              >
                 <X className="size-3.5" />
               </button>
             )}
@@ -129,6 +134,7 @@ export function ChecklistSection({ task, writable }: { task: Task; writable: boo
             }}
             onBlur={() => !draft.trim() && setAdding(false)}
             placeholder={t("task.addChecklist")}
+            aria-label={t("task.addChecklist")}
             className="mt-1 h-8 w-full rounded-md border bg-card px-2.5 text-sm outline-none focus:ring-2 focus:ring-ring/30"
           />
         ) : (

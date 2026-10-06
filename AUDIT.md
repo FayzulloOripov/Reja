@@ -3,7 +3,7 @@
 Status of every feature in the original spec and in the fix prompt.
 **done** = built and tested · **partial** = works but something is missing (noted) · **missing** = not built · **broken** = built but wrong · **blocked** = needs credentials or an outside service.
 
-Tests: `tests/unit` (Vitest), `tests/db` (Postgres/RLS on PGlite), `e2e/demo` (Playwright against the in-browser demo, runs anywhere), `e2e/*.spec.ts` (Playwright against a real Supabase project, needs keys).
+Tests: `tests/unit` (Vitest) · `tests/db` (Postgres/RLS — on PGlite by default, and against the Supabase project with `npm run test:db:remote`) · `e2e/demo` (Playwright — against the in-browser demo with `npm run test:e2e:demo`, and the same tests against the real Supabase backend with `npm run test:e2e:real`, each test signing in a freshly seeded real account).
 
 _Last updated: switch to the real backend (before phase 5)._
 
@@ -14,7 +14,7 @@ _Last updated: switch to the real backend (before phase 5)._
 
 | # | Bug | Status | Fix (files) | Test |
 |---|---|---|---|---|
-| 1 | Demo mode only, nothing reaches a server | blocked (keys) | Supabase is the default; the demo is `/demo` (cookie) or `NEXT_PUBLIC_DEMO=1` — `src/app/demo`, `src/lib/demo/server.ts`, `src/proxy.ts`; «Roʻyxatdan oʻtish» from the demo; after sign-up «Demodagi maʼlumotlaringiz» moves what was typed (`lib/demo/import.ts`, `settings/demo-import.tsx`, onboarding import step). Connecting the live project needs the Supabase keys. | unit `demo-import` · e2e `backend.spec` |
+| 1 | Demo mode only, nothing reaches a server | done | Supabase is the default; the demo is `/demo` (cookie) or `NEXT_PUBLIC_DEMO=1` — `src/app/demo`, `src/lib/demo/server.ts`, `src/proxy.ts`; «Roʻyxatdan oʻtish» from the demo; after sign-up «Demodagi maʼlumotlaringiz» moves what was typed (`lib/demo/import.ts`, `settings/demo-import.tsx`, onboarding import step). Connected to the Supabase project: all migrations applied (`npm run db:push`), RLS checked on the real database, the Playwright suite passes against it, and the demo → account import is verified end to end. | unit `demo-import` · e2e `backend.spec` · real e2e `demo-import.spec` |
 | 2 | No projects page | done | `/projects`: grouped by area, search, status/area/health filters, progress, health with reason, next date, favourite, archive/restore, delete with confirm, drag to reorder or move between areas; the phone tab opens it | e2e `projects.spec` |
 | 3 | Broken initials «H(» | done | `src/lib/text.ts` `initials()` | unit `testing-fixes` · e2e `initials skip brackets` |
 | 4 | Upcoming «12-okt · 12-okt», empty-day headers | done | `src/app/(app)/upcoming/page.tsx`, `TaskList` gap rows, `useFormat().weekdayDate` | unit `format` · e2e `upcoming shows weekday…` |
@@ -43,6 +43,12 @@ _Last updated: switch to the real backend (before phase 5)._
 | 27 | Notification settings on a phone | done | one card per event with labelled switches on phones, full phrases, push refusal only after trying, one enable button, quiet hours 22:00–07:00 shown, default reminder 15 min (timed) / 09:00 (all-day) in app and database | e2e mobile settings · unit + db reminder timing |
 | 28 | Developer text shown to users | done (Telegram itself postponed) | no variable names shown; the Telegram card says «Tez orada» while the bot is postponed | e2e `Telegram settings…` |
 | 29 | Small polish | done | quick-add close button; tooltips off on touch and row toolbar hidden on touch; subtask input stays open; «Fayl tanlash» on phones; mention list opens above when there is no room; palette reads status once; one add row on Home today; search shows dates; overdue group has no add row | e2e `quick add…`, `subtask input…`, `file area…`, `search results…` |
+
+### Found while switching to the real backend
+
+- Deleting an account failed for anyone who owned a workspace (`workspaces.owner_id` had no delete rule). Now the personal workspace goes with the account and a shared one passes to another admin/member (`20261006000005_account_deletion.sql`, db test `account deletion`).
+- The demo → account import sent its rows as deletes (the items had no operation kind, hidden by a cast). Items are explicit inserts now, the adapter refuses unknown operations, and sample rows the visitor changed (e.g. completed) are imported too. Verified against Supabase (`e2e/demo/demo-import.spec.ts`).
+- Checklist inputs had no accessible names.
 
 ### Also fixed in phase 3
 
@@ -108,8 +114,9 @@ All items in section 2 «Not tested yet» of the fix prompt: pending.
 | Uzbek UI + English toggle, ʻ apostrophe | done | `messages/`, `tests/unit/i18n.test.ts` |
 | PWA, offline lists, offline quick add | done | `public/sw.js`, store outbox + IndexedDB |
 | Optimistic updates, realtime, skeletons | done | `src/store/*` |
-| RLS on every table | done | `supabase/migrations/*_rls.sql`, `tests/db/rls.test.ts` |
-| Free-tier deploy | blocked (keys) | README |
+| RLS on every table | done | `supabase/migrations/*_rls.sql`; `tests/db/rls-matrix.test.ts` covers all 35 tables (owner, full member, project viewer, outsider, signed-out) and fails when a table is added without coverage; passes on PGlite and on the Supabase project |
+| Supabase backend | done | project connected, migrations applied, storage/realtime/cron verified (`tests/db/supabase-only.test.ts`) |
+| Free-tier deploy (Vercel) | pending | README |
 | UTC storage, user zone | done | `lib/dates.ts` |
 | 30-day trash, undo, export | done | settings trash/data, undo toast |
 | Accessibility | done (phase 1 pass) | e2e accessible-name test |

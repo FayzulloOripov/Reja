@@ -180,3 +180,20 @@ describe("notifications and activity", () => {
     expect(childProject).toBe(other);
   });
 });
+
+describe("account deletion", () => {
+  it("deletes the personal workspace and hands a shared one to another member", async () => {
+    const carol = await createUser(db, "carol@example.test", "Carol");
+    const dave = await createUser(db, "dave@example.test", "Dave");
+    const shared = await as(db, carol, async (tx) => {
+      const id = (await tx.query<{ id: string }>(`insert into workspaces (name, owner_id) values ('Shared', $1) returning id`, [carol.id])).rows[0].id;
+      await tx.query(`insert into workspace_members (workspace_id, user_id, role) values ($1, $2, 'member')`, [id, dave.id]);
+      return id;
+    });
+    await db.query(`delete from auth.users where id = $1`, [carol.id]); // as the auth service does
+    const rows = await asService(db, async (tx) => (await tx.query<{ id: string; owner_id: string }>(`select id, owner_id from workspaces where id in ($1, $2)`, [shared, carol.personalWorkspace])).rows);
+    expect(rows).toEqual([{ id: shared, owner_id: dave.id }]);
+    const role = await asService(db, async (tx) => (await tx.query<{ role: string }>(`select role from workspace_members where workspace_id = $1 and user_id = $2`, [shared, dave.id])).rows[0].role);
+    expect(role).toBe("owner");
+  });
+});

@@ -28,7 +28,9 @@ test("settings: tile in the «Yana» sheet and a section list on phones", async 
   await page.getByRole("link", { name: /Bildirishnomalar/ }).click();
   // one card per event with labelled switches, full phrases
   await expect(page.getByRole("listitem").getByText("Kimdir sizga vazifa berdi")).toBeVisible();
-  await expect(page.getByRole("switch", { name: "Kimdir sizga vazifa berdi: Telegram" })).toBeVisible();
+  await expect(page.getByRole("switch", { name: "Kimdir sizga vazifa berdi: Push" })).toBeVisible();
+  // Telegram is postponed: no Telegram switches
+  await expect(page.getByRole("switch", { name: /: Telegram$/ })).toHaveCount(0);
   // push does not claim the browser refused before the user tried
   await expect(page.getByText(/toʻsib qoʻygan|ruxsat bermadi/)).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Shu qurilmada yoqish" })).toHaveCount(1);

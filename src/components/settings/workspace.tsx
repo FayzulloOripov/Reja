@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { TELEGRAM_BOT_USERNAME, TELEGRAM_ENABLED } from "@/lib/env";
 import { isDemo, useIsDemo } from "@/hooks/use-demo";
 import { downloadText, toCSV } from "@/lib/csv";
+import { DEMO_EDITED } from "@/lib/demo/import";
 import { EXPORT_TABLES, exportFileName, taskCsvRows } from "@/lib/export";
 import { useFormat } from "@/lib/format";
 import { isWorkspaceAdmin } from "@/lib/permissions";
@@ -32,7 +33,9 @@ import { useSyncedState } from "@/hooks/use-synced-state";
 function exportInBrowser(ws: { id: string; name: string }, format: "json" | "csv") {
   const d = useStore.getState().data;
   const rows = (table: (typeof EXPORT_TABLES)[number]) =>
-    Object.values(d[table] as unknown as Record<string, Record<string, unknown>>).filter((r) => r.workspace_id === ws.id);
+    Object.values(d[table] as unknown as Record<string, Record<string, unknown>>)
+      .filter((r) => r.workspace_id === ws.id)
+      .map(({ [DEMO_EDITED]: _edited, ...r }) => (void _edited, r));
   if (format === "csv") {
     downloadText(exportFileName(ws.name, "csv"), toCSV(taskCsvRows(rows("tasks"), rows("projects"), rows("sections"))));
     return;

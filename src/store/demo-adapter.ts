@@ -6,6 +6,7 @@
 import { buildDemoData } from "@/lib/demo/seed";
 import { todayIn } from "@/lib/dates";
 import { activityFor } from "@/lib/activity";
+import { DEMO_EDITED } from "@/lib/demo/import";
 import { indexRows } from "./supabase-adapter";
 import { PK, type DataAdapter, type StoreData } from "./tables";
 
@@ -41,6 +42,13 @@ export function createDemoAdapter(lang: "uz" | "en"): DataAdapter {
       );
       if (entries.length) {
         useStore.setState((s) => ({ data: { ...s.data, activity_log: { ...s.data.activity_log, ...Object.fromEntries(entries.map((e) => [e.id, e])) } } }));
+      }
+      // remember which sample rows the visitor changed, so "only what I entered" brings them along
+      if (op.kind === "update" && next && !next[DEMO_EDITED]) {
+        useStore.setState((s) => {
+          const table = s.data[op.table] as unknown as Record<string, Record<string, unknown>>;
+          return table[key] ? { data: { ...s.data, [op.table]: { ...table, [key]: { ...table[key], [DEMO_EDITED]: true } } } } : {};
+        });
       }
     },
 

@@ -1,11 +1,12 @@
 import { expect, test } from "@playwright/test";
-import { openDemo } from "./helpers";
+import { demoOnly, openDemo } from "./helpers";
 
 // Phase 2: demo separation, export in the demo, import with review and summary, first-run wizard.
 
 test.use({ viewport: { width: 1280, height: 860 } });
 
 test("the demo lives behind /demo and can be left for sign-up", async ({ page }) => {
+  demoOnly();
   await openDemo(page);
   await expect(page.getByText("Demo rejim: maʼlumotlar faqat shu brauzerda saqlanadi")).toBeVisible();
   await page.getByRole("link", { name: "Roʻyxatdan oʻtish" }).click();
@@ -13,11 +14,11 @@ test("the demo lives behind /demo and can be left for sign-up", async ({ page })
   await expect(page.getByText(/Demoda kiritganlaringiz shu brauzerda saqlanib qoldi/)).toBeVisible();
 });
 
-test("export works in the demo (built in the browser)", async ({ page }) => {
+test("export downloads JSON and CSV (in the browser for the demo, from the server otherwise)", async ({ page }) => {
   await openDemo(page, "/settings/data");
-  const [json] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "JSON yuklab olish" }).click()]);
+  const [json] = await Promise.all([page.waitForEvent("download"), page.getByText("JSON yuklab olish").click()]);
   expect(json.suggestedFilename()).toMatch(/^reja-.*\.json$/);
-  const [csv] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Vazifalar CSV" }).click()]);
+  const [csv] = await Promise.all([page.waitForEvent("download"), page.getByText("Vazifalar CSV").click()]);
   expect(csv.suggestedFilename()).toMatch(/^reja-.*\.csv$/);
 });
 

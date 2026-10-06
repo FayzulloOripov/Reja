@@ -136,9 +136,12 @@ export function createSupabaseAdapter(): DataAdapter {
         if (!error && (res.data?.length ?? 0) === 0) {
           throw new AdapterError("permission", false, "42501");
         }
-      } else {
+      } else if (op.kind === "delete") {
         const res = await table.delete().match(op.key);
         error = res.error;
+      } else {
+        // never let a malformed operation fall through to a delete
+        throw new AdapterError(`unknown operation "${String(op.kind)}" on ${op.table}`, false, "22023");
       }
       if (error) throw new AdapterError(error.message, isNetworkError(error.message), error.code);
     },

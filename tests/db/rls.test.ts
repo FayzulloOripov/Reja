@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { as, asService, createDb, createUser, rejects, type Db, type TestUser } from "./harness";
+import { as, asService, createDb, createUser, plainEmail, rejects, type Db, type TestUser } from "./harness";
 
 /**
  * Sharing model under test:
@@ -88,7 +88,7 @@ describe("workspace membership", () => {
         `select p.email, m.role from workspace_members m join profiles p on p.id = m.user_id
          where m.workspace_id = $1 order by p.email`,
         [W],
-      )).rows,
+      )).rows.map((r) => ({ ...r, email: plainEmail(r.email) })),
     );
     expect(roles).toEqual([
       { email: "consultant@example.test", role: "guest" },
@@ -212,7 +212,7 @@ describe("project guest (consultant)", () => {
 
   it("sees people who can work in their project, but not other guests", async () => {
     const emails = await as(db, guest, async (tx) =>
-      (await tx.query<{ email: string }>(`select email from profiles order by email`)).rows.map((r) => r.email),
+      (await tx.query<{ email: string }>(`select email from profiles order by email`)).rows.map((r) => plainEmail(r.email)),
     );
     // full members can open every workspace project, so they are visible; the other guest is not
     expect(emails).toEqual(["consultant@example.test", "owner@example.test", "partner@example.test"]);

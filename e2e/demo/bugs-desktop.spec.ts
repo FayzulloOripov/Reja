@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { openDemo, unnamedControls } from "./helpers";
+import { demoOnly, openDemo, unnamedControls } from "./helpers";
 
 // Regression tests for the bugs found in the first round of user testing (desktop, 1280 px).
 // Each test names the bug it reproduces. They run against the in-browser demo (/demo).
@@ -86,8 +86,9 @@ test("completing a recurring task shows a readable next date and can be undone f
 });
 
 test("every visible button and link has an accessible name", async ({ page }) => {
+  await openDemo(page);
   for (const path of ["/", "/upcoming", "/overview", "/goals", "/habits", "/focus", "/reports", "/notifications", "/settings/notifications"]) {
-    await openDemo(page, path);
+    await page.goto(path);
     await page.waitForTimeout(300);
     expect(await unnamedControls(page), path).toEqual([]);
   }
@@ -100,6 +101,7 @@ test("settings are reachable from the sidebar gear", async ({ page }) => {
 });
 
 test("demo banner collapses to a pill and stays collapsed", async ({ page }) => {
+  demoOnly();
   await openDemo(page);
   await page.getByRole("button", { name: "Yashirish" }).click();
   await page.reload();

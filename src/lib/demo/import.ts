@@ -20,6 +20,7 @@ export interface DemoImportOptions {
 
 export interface DemoImportItem {
   table: string;
+  kind: "insert";
   row: Row;
 }
 
@@ -28,6 +29,9 @@ export interface DemoImportSummary {
   tasks: number;
   other: number;
 }
+
+/** Marker the demo adapter puts on sample rows the visitor changed (never sent to the server). */
+export const DEMO_EDITED = "__demoEdited";
 
 /** Ids created by the seed look like 00000000-0000-4000-9000-…; anything else was typed by the visitor. */
 export function isSeedId(id: unknown): boolean {
@@ -68,11 +72,11 @@ export function planDemoImport(snap: Snapshot, opts: DemoImportOptions): { items
   const chosen: Record<string, Row[]> = {};
   for (const table of ORDER) chosen[table] = [];
 
-  // "mine": rows the visitor created
+  // "mine": rows the visitor created, and sample rows they changed (e.g. completed a sample task)
   for (const table of ORDER) {
     for (const row of list(snap, table)) {
       if (table === "habit_logs" || table === "task_labels" || table === "task_assignees") continue; // decided by their parents below
-      if (opts.mode === "all" || !isSeedId(row.id)) chosen[table].push(row);
+      if (opts.mode === "all" || !isSeedId(row.id) || row[DEMO_EDITED]) chosen[table].push(row);
     }
   }
 
@@ -135,7 +139,11 @@ export function planDemoImport(snap: Snapshot, opts: DemoImportOptions): { items
   const ws = opts.workspaceId;
   const me = opts.userId;
   const items: DemoImportItem[] = [];
-  const push = (table: string, row: Row) => items.push({ table, row });
+  const push = (table: string, row: Row) => {
+    const { [DEMO_EDITED]: _edited, ...clean } = row;
+    void _edited;
+    items.push({ table, kind: "insert", row: clean });
+  };
 
   for (const r of chosen.areas) push("areas", { ...r, id: map(r.id), workspace_id: ws, owner_id: me, created_at: now, updated_at: now });
   for (const r of chosen.projects)

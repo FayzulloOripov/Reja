@@ -456,7 +456,9 @@
     "dragHandle": "Drag to reorder",
     "dueHint": "The day you plan to work on it",
     "chooseFile": "Choose a file",
-    "createdByYou": "Created by you · {date}"
+    "createdByYou": "Created by you · {date}",
+    "checklistItem": "Checklist item: {text}",
+    "deleteChecklistItem": "Delete “{text}”"
   },
   "quickAdd": {
     "title": "Quick add",

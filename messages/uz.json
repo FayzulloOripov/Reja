@@ -456,7 +456,9 @@
     "dragHandle": "Sudrab tartibini oʻzgartirish",
     "dueHint": "Ishni qaysi kuni qilishni rejalashtirgansiz",
     "chooseFile": "Fayl tanlash",
-    "createdByYou": "Siz yaratgansiz · {date}"
+    "createdByYou": "Siz yaratgansiz · {date}",
+    "checklistItem": "Nazorat bandi: {text}",
+    "deleteChecklistItem": "«{text}» bandini oʻchirish"
   },
   "quickAdd": {
     "title": "Tezkor qoʻshish",

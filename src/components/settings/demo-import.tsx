@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { uuid } from "@/store/factories";
 import { useCurrentWorkspace, useUserId } from "@/store/hooks";
 import { deleteSnapshots, mutate, readSnapshot, type MutationInput } from "@/store/store";
+import type { TableName } from "@/store/tables";
 
 /**
  * After sign-up: offers to move what was typed in the demo (still in this browser) into the account.
@@ -67,7 +68,8 @@ export function DemoImportCard({ className }: { className?: string }) {
           disabled={plan.items.length === 0 || state === "busy"}
           onClick={async () => {
             setState("busy");
-            mutate(plan.items as unknown as MutationInput[]);
+            // every item is a new row in the account (new ids), written in dependency order
+            mutate(plan.items.map((i): MutationInput => ({ table: i.table as TableName, kind: i.kind, row: i.row })));
             await deleteSnapshots(DEMO_USER_ID);
             setState("done");
             toast.success(t("done", { tasks: plan.summary.tasks }));

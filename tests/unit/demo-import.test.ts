@@ -38,6 +38,19 @@ describe("planDemoImport", () => {
     expect(task.workspace_id).toBe(WS);
     expect(isSeedId(task.id)).toBe(false);
     expect(items.findIndex((i) => i.table === "projects")).toBeLessThan(items.findIndex((i) => i.table === "tasks"));
+    // every item is an insert (a missing kind once turned the import into deletes)
+    expect(items.every((i) => i.kind === "insert")).toBe(true);
+  });
+
+  it("brings sample rows the visitor changed, without the marker", () => {
+    const snap = snapshot();
+    const sample = Object.values(snap.tasks!).find((t) => !t.parent_id && t.project_id)!;
+    snap.tasks![String(sample.id)] = { ...sample, status: "done", __demoEdited: true };
+    const { items } = planDemoImport(snap, { userId: ME, workspaceId: WS, mode: "mine", newId });
+    const task = items.find((i) => i.table === "tasks" && i.row.title === sample.title)!;
+    expect(task.row).toMatchObject({ status: "done" });
+    expect("__demoEdited" in task.row).toBe(false);
+    expect(items.some((i) => i.table === "projects")).toBe(true);
   });
 
   it("re-points every reference and drops invented people in 'all' mode", () => {

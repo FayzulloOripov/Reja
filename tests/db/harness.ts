@@ -1,6 +1,63 @@
-import { PGlite, type Transaction } from "@electric-sql/pglite";
+import { PGlite } from "@electric-sql/pglite";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { config } from "dotenv";
+import pg from "pg";
+
+// Two targets:
+//   • default: PGlite (real Postgres in WASM) with the Supabase shim below, migrations applied fresh;
+//   • DB_TARGET=remote: the Supabase project in SUPABASE_DB_URL (migrations already pushed). Test
+//     users get unique emails ("…+dbt<run>@…") and are deleted again at the end (see teardown.ts).
+config({ path: ".env.test.local" });
+config({ path: ".env.local" });
+export const REMOTE = process.env.DB_TARGET === "remote";
+export const RUN_TAG = `dbt${Date.now().toString(36)}`;
+
+export interface Transaction {
+  query<T = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<{ rows: T[] }>;
+  exec(sql: string): Promise<unknown>;
+}
+export interface Db extends Transaction {
+  transaction<T>(fn: (tx: Transaction) => Promise<T>): Promise<T>;
+}
+
+let pool: pg.Pool | null = null;
+function remoteDb(): Db {
+  if (!process.env.SUPABASE_DB_URL) throw new Error("DB_TARGET=remote needs SUPABASE_DB_URL in .env.local");
+  pool ??= new pg.Pool({ connectionString: process.env.SUPABASE_DB_URL, max: 3, ssl: { rejectUnauthorized: false } });
+  const p = pool;
+  const wrap = (c: pg.PoolClient | pg.Pool): Transaction => ({
+    query: async <T,>(sql: string, params?: unknown[]) => ({ rows: (await c.query(sql, params as unknown[])).rows as T[] }),
+    exec: (sql: string) => c.query(sql),
+  });
+  return {
+    ...wrap(p),
+    async transaction(fn) {
+      const client = await p.connect();
+      try {
+        await client.query("begin");
+        const out = await fn(wrap(client));
+        await client.query("commit");
+        return out;
+      } catch (e) {
+        await client.query("rollback").catch(() => {});
+        throw e;
+      } finally {
+        client.release();
+      }
+    },
+  };
+}
+
+/** The email as written in the test (remote runs add a "+dbt…" tag). */
+export function plainEmail(email: string): string {
+  return email.replace(/\+dbt[a-z0-9]+@/, "@");
+}
+
+export async function closeRemote() {
+  await pool?.end();
+  pool = null;
+}
 
 /**
  * Real Postgres (PGlite/WASM) with a minimal Supabase shim: the anon/authenticated/service_role
@@ -28,10 +85,9 @@ $$;
 grant execute on all functions in schema auth to anon, authenticated, service_role;
 `;
 
-export type Db = PGlite;
-
 export async function createDb(): Promise<Db> {
-  const db = new PGlite();
+  if (REMOTE) return remoteDb();
+  const db = new PGlite() as unknown as Db & PGlite;
   await db.exec(SHIM);
   const dir = join(process.cwd(), "supabase/migrations");
   for (const file of readdirSync(dir).filter((f) => f.endsWith(".sql")).sort()) {
@@ -53,8 +109,12 @@ export interface TestUser {
 }
 
 export async function createUser(db: Db, email: string, name?: string): Promise<TestUser> {
+  if (REMOTE) email = email.replace("@", `+${RUN_TAG}@`);
   const { rows } = await db.query<{ id: string }>(
-    `insert into auth.users (email, raw_user_meta_data) values ($1, $2) returning id`,
+    REMOTE
+      ? `insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
+         values (gen_random_uuid(), '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', $1, $2, now(), now()) returning id`
+      : `insert into auth.users (email, raw_user_meta_data) values ($1, $2) returning id`,
     [email, JSON.stringify({ full_name: name ?? email.split("@")[0] })],
   );
   const id = rows[0].id;

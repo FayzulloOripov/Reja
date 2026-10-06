@@ -10,5 +10,7 @@ export default defineConfig({
     environment: "node",
     testTimeout: 60_000,
     hookTimeout: 120_000,
+    // DB_TARGET=remote runs the database tests against the Supabase project; clean up its test users
+    globalSetup: ["./tests/db/teardown-setup.ts"],
   },
 });
