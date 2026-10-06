@@ -4,11 +4,11 @@ import { ArrowLeft, Loader2, Mail } from "lucide-react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { sendMagicLink } from "@/server/actions/auth";
+import { sendMagicLink, verifyEmailCode } from "@/server/actions/auth";
 import { setLocaleCookie } from "@/server/actions/locale";
 
 export function LoginForm({ next, initialError, demo, fromDemo }: { next?: string; initialError?: string; demo: boolean; fromDemo?: boolean }) {
@@ -20,14 +20,46 @@ export function LoginForm({ next, initialError, demo, fromDemo }: { next?: strin
   const [error, setError] = useState<string | null>(initialError === "link" ? t("linkError") : null);
   const [pending, start] = useTransition();
   const [google, setGoogle] = useState(false);
+  const [code, setCode] = useState("");
+  const [cooldown, setCooldown] = useState(0);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  // "send again" unlocks after a minute, counting down on the button
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const id = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(id);
+  }, [cooldown]);
+
+  function send(again = false) {
+    setError(null);
+    setNotice(null);
+    start(async () => {
+      // a dropped connection or an unreachable server must not take the whole page down
+      const res = await sendMagicLink({ email, next, language: locale as "uz" | "en" }).catch(() => ({ ok: false as const, error: "failed" as const }));
+      if (res.ok) {
+        setSent(true);
+        setCooldown(60);
+        if (again) setNotice(t("resent"));
+      } else setError(res.error === "invalid" ? t("invalidEmail") : res.error === "rate_limited" ? t("rateLimited") : t("sendFailed"));
+    });
+  }
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
+    send();
+  }
+
+  function submitCode(e: React.FormEvent) {
+    e.preventDefault();
     setError(null);
+    setNotice(null);
     start(async () => {
-      const res = await sendMagicLink({ email, next, language: locale as "uz" | "en" });
-      if (res.ok) setSent(true);
-      else setError(res.error === "invalid" ? t("invalidEmail") : res.error === "rate_limited" ? t("rateLimited") : (res.message ?? t("linkError")));
+      const res = await verifyEmailCode({ email, code }).catch(() => ({ ok: false as const, error: "failed" as const }));
+      if (res.ok) {
+        router.replace(next ?? "/");
+        router.refresh();
+      } else setError(res.error === "rate_limited" ? t("rateLimited") : res.error === "failed" ? t("sendFailed") : t("codeWrong"));
     });
   }
 
@@ -36,10 +68,13 @@ export function LoginForm({ next, initialError, demo, fromDemo }: { next?: strin
     const redirectTo = new URL("/auth/callback", window.location.origin);
     if (next) redirectTo.searchParams.set("next", next);
     // the Supabase client loads only when it is needed (keeps the sign-in page light)
-    const { getBrowserSupabase } = await import("@/lib/supabase/client");
-    const { error } = await getBrowserSupabase().auth.signInWithOAuth({ provider: "google", options: { redirectTo: redirectTo.toString() } });
+    const { error } = await import("@/lib/supabase/client")
+      .then(({ getBrowserSupabase }) => getBrowserSupabase().auth.signInWithOAuth({ provider: "google", options: { redirectTo: redirectTo.toString() } }))
+      .catch((e: Error) => ({ error: e }));
     if (error) {
-      setError(error.message);
+      // e.g. "Unsupported provider: provider is not enabled" — never shown as is
+      console.error("google sign-in", error.message);
+      setError(t("googleFailed"));
       setGoogle(false);
     }
   }
@@ -57,7 +92,7 @@ export function LoginForm({ next, initialError, demo, fromDemo }: { next?: strin
           type="button"
           onClick={() => switchLocale(l)}
           aria-pressed={locale === l}
-          className="rounded-md px-2 py-1 font-medium text-muted-foreground uppercase aria-pressed:bg-muted aria-pressed:text-foreground"
+          className="min-h-9 rounded-md px-2.5 font-medium text-muted-foreground uppercase aria-pressed:bg-muted aria-pressed:text-foreground"
         >
           {l === "uz" ? "Oʻzbekcha" : "English"}
         </button>
@@ -75,9 +110,58 @@ export function LoginForm({ next, initialError, demo, fromDemo }: { next?: strin
           <h1 className="text-28 font-bold">{t("checkEmail")}</h1>
           <p className="text-muted-foreground">{t("checkEmailBody", { email })}</p>
         </div>
-        <Button variant="ghost" onClick={() => setSent(false)} className="-ml-2">
-          <ArrowLeft /> {t("useDifferent")}
-        </Button>
+        <form onSubmit={submitCode} className="space-y-3" noValidate>
+          <div className="space-y-1.5">
+            <Label htmlFor="code">{t("codeLabel")}</Label>
+            <Input
+              id="code"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9]*"
+              maxLength={6}
+              placeholder="••••••"
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              className="h-12 text-center font-mono text-xl tracking-[0.5em]"
+              aria-invalid={Boolean(error)}
+              aria-describedby={error ? "login-error" : "code-hint"}
+            />
+            <p id="code-hint" className="text-xs text-muted-foreground">{t("codeHint")}</p>
+          </div>
+          {error && (
+            <p id="login-error" role="alert" className="text-sm text-danger-fg">
+              {error}
+            </p>
+          )}
+          {notice && (
+            <p role="status" className="text-sm text-success-fg">
+              {notice}
+            </p>
+          )}
+          <Button type="submit" size="lg" className="h-11 w-full text-base" disabled={pending || code.length !== 6}>
+            {pending ? <Loader2 className="animate-spin" /> : null}
+            {pending ? t("verifying") : t("codeSubmit")}
+          </Button>
+        </form>
+        <div className="space-y-3 border-t pt-5">
+          <p className="text-13 text-muted-foreground">{t("noEmail")}</p>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => send(true)} disabled={pending || cooldown > 0}>
+              {cooldown > 0 ? t("resendIn", { seconds: cooldown }) : t("resend")}
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setSent(false);
+                setCode("");
+                setError(null);
+                setNotice(null);
+              }}
+            >
+              <ArrowLeft /> {t("useDifferent")}
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -114,6 +198,7 @@ export function LoginForm({ next, initialError, demo, fromDemo }: { next?: strin
                 placeholder={t("emailPlaceholder")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onBlur={() => setEmail((v) => v.trim())}
                 className="h-11 text-base"
                 aria-invalid={Boolean(error)}
                 aria-describedby={error ? "login-error" : undefined}
@@ -124,7 +209,7 @@ export function LoginForm({ next, initialError, demo, fromDemo }: { next?: strin
                 {error}
               </p>
             )}
-            <Button type="submit" size="lg" className="h-11 w-full text-base" disabled={pending || !email}>
+            <Button type="submit" size="lg" className="h-11 w-full text-base" disabled={pending || !email.trim()}>
               {pending ? <Loader2 className="animate-spin" /> : null}
               {pending ? t("sending") : t("sendLink")}
             </Button>

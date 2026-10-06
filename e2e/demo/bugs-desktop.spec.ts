@@ -15,6 +15,8 @@ test("initials skip brackets: «Hamkor (demo)» shows H, not H(", async ({ page 
 
 test("upcoming shows weekday and date for every day and collapses empty days", async ({ page }) => {
   await openDemo(page, "/upcoming");
+  // wait for the day list itself: reading the headers before it renders found none (flaky)
+  await expect(page.locator("main h3", { hasText: /Dushanba|Seshanba|Chorshanba|Payshanba|Juma|Shanba|Yakshanba/ }).first()).toBeVisible();
   const headers = await page.locator("main h3").allTextContents();
   for (const h of headers) {
     // never "12-okt · 12-okt": every day header carries its weekday
@@ -195,4 +197,14 @@ test("search results show the task's date", async ({ page }) => {
   await page.keyboard.press("Control+k");
   await page.getByRole("combobox").fill("Sport zaliga");
   await expect(page.getByRole("option", { name: /Sport zaliga yozilish/ })).toContainText(/Payshanba|Chorshanba|Juma|Shanba|Yakshanba|Dushanba|Seshanba|Ertaga|Bugun|\d+-\w+/);
+});
+
+test("sign-in: an email with a trailing space is accepted, and a failed send never shows the error page", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByLabel("Email manzil").fill("ali@example.test ");
+  await page.getByRole("button", { name: "Kirish", exact: true }).click();
+  // with a backend: the "check your email" screen with the 6-digit code; without one: a message under the field
+  await expect(page.getByRole("heading", { name: "Pochtangizni tekshiring" }).or(page.getByText("Xatni yuborib boʻlmadi"))).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText("Toʻgʻri email kiriting")).toHaveCount(0);
+  await expect(page.getByText("Nimadir notoʻgʻri ketdi")).toHaveCount(0);
 });

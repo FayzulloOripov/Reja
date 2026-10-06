@@ -1,9 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { safeNext } from "@/lib/safe-next";
 import { getServerSupabase } from "@/lib/supabase/server";
-
-function safeNext(value: string | null): string {
-  return value && /^\/(?!\/)/.test(value) ? value : "/";
-}
 
 // OAuth and PKCE magic links land here with ?code=…
 export async function GET(request: NextRequest) {

@@ -22,6 +22,7 @@ import { useMe, useToday, useTz, useUserId } from "@/store/hooks";
 import { setLocaleCookie } from "@/server/actions/locale";
 import { sendTestNotification } from "@/server/actions/notifications";
 import { getBrowserSupabase } from "@/lib/supabase/client";
+import { timezoneLabel } from "@/lib/timezones";
 import { PrayerCard } from "./prayer";
 import { DevicesCard } from "./trust";
 import { SettingsCard, SettingsRow, timeValue } from "./common";
@@ -77,7 +78,7 @@ export function ProfileSection() {
         <Select value={me.timezone} onValueChange={(v) => updateProfile({ timezone: v })}>
           <SelectTrigger aria-label={t("settings.timezone")} className="w-56"><SelectValue /></SelectTrigger>
           <SelectContent className="max-h-80">
-            {zones.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}
+            {zones.map((z) => <SelectItem key={z} value={z}>{timezoneLabel(z, locale)}</SelectItem>)}
           </SelectContent>
         </Select>
       </SettingsRow>

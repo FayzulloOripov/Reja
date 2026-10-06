@@ -59,7 +59,14 @@ Copy `.env.example` to `.env.local` and fill it in. Nothing here is ever committ
    npm run db:push
    ```
 3. **Auth → URL Configuration:** Site URL = your production URL; Redirect URLs = `https://<app>/auth/callback`, `https://<app>/auth/confirm` (plus `http://localhost:3000/**` for development).
-4. **Auth → Email templates → Magic link:** `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=magiclink`
+4. **Auth → Email templates** — set **both** «Magic link» (returning users) and «Confirm signup» (a person's very first sign-in) so the email carries the link *and* a 6-digit code. The code is what an app installed on a phone's home screen needs: the phone opens the link in the browser, not in the app, so the person types the code into the sign-in screen instead. Body for both:
+   ```html
+   <h2>Rejaga kirish</h2>
+   <p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email">Kirish uchun shu yerni bosing</a></p>
+   <p>Yoki ilovada shu kodni kiriting: <strong style="font-size:22px;letter-spacing:4px">{{ .Token }}</strong></p>
+   <p>Havola va kod 1 soat amal qiladi. Siz soʻramagan boʻlsangiz, bu xatga eʼtibor bermang.</p>
+   ```
+   (Auth → Providers → Email: keep the OTP length at 6 digits.)
 5. **Auth → SMTP:** custom SMTP with Resend (host `smtp.resend.com`, port `465`, user `resend`, password = Resend API key, sender on your verified domain). The built-in sender allows 2 emails per hour.
 6. **Google sign-in (optional):** Google Cloud Console → Credentials → OAuth client (Web), redirect URI `https://<project-ref>.supabase.co/auth/v1/callback`; paste ID and secret into Supabase → Auth → Providers → Google.
 7. **Reminder job** — once the app is deployed, in the SQL Editor:
