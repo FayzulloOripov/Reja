@@ -104,7 +104,7 @@ test.describe("phone gestures", () => {
     await page.getByRole("button", { name: /Keyingi hafta/ }).click();
     await expect(page.getByRole("button", { name: "Qaytarish" })).toBeVisible();
     await page.getByRole("button", { name: "Qaytarish" }).click();
-    await expect(page.locator("section", { has: page.getByRole("heading", { name: /^Ertaga/ }) })).toContainText("Oktabr maqsadini menejer bilan kelishish");
+    await expect(page.getByRole("rowgroup").filter({ has: page.getByRole("heading", { name: /^Ertaga/ }) })).toContainText("Oktabr maqsadini menejer bilan kelishish");
   });
 });
 

@@ -6,7 +6,8 @@
 //   3. daily digest, weekly review and overdue nudge at each user's local time
 //   4. Telegram group posts for projects connected to a group
 
-import { addDays, startOfWeek, timeIn, zonedToUtc } from "@/lib/dates";
+import { addDays, startOfWeek, timeIn, todayIn, zonedToUtc } from "@/lib/dates";
+import { prayerBlockEnd, type PrayerSettings } from "@/lib/prayer";
 import { deliveryTime, dueDailySlots, inQuietHours, type DailySlotKind, type DailySlotProfile } from "@/lib/reminders";
 import type { Channel, NotificationType, NotifyPrefs } from "@/lib/types";
 
@@ -20,6 +21,11 @@ export interface SchedProfile extends DailySlotProfile {
   quiet_end: string;
   notify_prefs: NotifyPrefs;
   telegram_chat_id: number | null;
+  prayer_enabled?: boolean;
+  prayer_lat?: number | null;
+  prayer_lng?: number | null;
+  prayer_madhab?: "hanafi" | "shafi";
+  prayer_minutes?: number;
 }
 
 export interface SchedTask {
@@ -73,6 +79,8 @@ export interface SchedulerStore {
   claimDaily(userId: string, kind: DailySlotKind, date: string): Promise<boolean>;
   responsibleTasks(userId: string, until: string): Promise<SchedTask[]>;
   timeBlocks(userId: string, date: string): Promise<{ title: string; start_at: string; end_at: string }[]>;
+  /** JSON exports of the workspaces this user owns (the weekly backup) */
+  backupFor(userId: string): Promise<{ filename: string; content: string; workspace: string }[]>;
   completedCount(userId: string, from: string, to: string): Promise<number>;
   pushSubscriptions(userId: string): Promise<PushSub[]>;
   removePushSubscription(id: string): Promise<void>;
@@ -97,7 +105,7 @@ export interface EmailContent {
 export interface Senders {
   telegram(chatId: number, html: string, buttons?: Button[][]): Promise<void>;
   push(sub: PushSub, payload: { title: string; body?: string; url?: string; tag?: string }): Promise<"ok" | "gone" | "error">;
-  email(to: string, subject: string, content: EmailContent, lang: string): Promise<boolean>;
+  email(to: string, subject: string, content: EmailContent, lang: string, attachments?: { filename: string; content: string }[]): Promise<boolean>;
 }
 
 export type Translate = (locale: string) => (key: string, values?: Record<string, string | number>) => string;
@@ -105,7 +113,7 @@ export type Translate = (locale: string) => (key: string, values?: Record<string
 export interface RunResult {
   reminders: { claimed: number; sent: number; deferred: number; dismissed: number; failed: number };
   notifications: { claimed: number; delivered: number; deferred: number };
-  daily: { digest: number; review: number; overdue: number; shutdown: number };
+  daily: { digest: number; review: number; overdue: number; shutdown: number; backup: number };
   groupPosts: number;
   errors: string[];
 }
@@ -129,7 +137,7 @@ export async function runScheduler(opts: { store: SchedulerStore; senders: Sende
   const result: RunResult = {
     reminders: { claimed: 0, sent: 0, deferred: 0, dismissed: 0, failed: 0 },
     notifications: { claimed: 0, delivered: 0, deferred: 0 },
-    daily: { digest: 0, review: 0, overdue: 0, shutdown: 0 },
+    daily: { digest: 0, review: 0, overdue: 0, shutdown: 0, backup: 0 },
     groupPosts: 0,
     errors: [],
   };
@@ -148,7 +156,13 @@ export async function runScheduler(opts: { store: SchedulerStore; senders: Sende
         result.reminders.dismissed++;
         continue;
       }
-      const when = deliveryTime(now, p.timezone, quiet(p));
+      let when = deliveryTime(now, p.timezone, quiet(p));
+      // keep reminders out of prayer time (when the user has prayer-aware planning on)
+      if (p.prayer_enabled) {
+        const local = todayIn(p.timezone || "Asia/Tashkent", when);
+        const end = prayerBlockEnd(when, p as unknown as PrayerSettings, local, addDays(local, -1));
+        if (end) when = end;
+      }
       if (when.getTime() > now.getTime()) {
         await store.updateReminder(r.id, { status: "pending", remind_at: when.toISOString(), claimed_at: null, attempts: Math.max(0, r.attempts - 1) });
         result.reminders.deferred++;
@@ -301,6 +315,19 @@ export async function collectDigest(store: SchedulerStore, p: SchedProfile, date
 
 async function sendDaily(store: SchedulerStore, senders: Senders, t: Translate, siteUrl: string, p: SchedProfile, kind: DailySlotKind, date: string): Promise<boolean> {
   const tr = t(p.language);
+  if (kind === "backup") {
+    // email only (Telegram is postponed); skipped quietly while email is not set up
+    if (!p.email) return false;
+    const files = await store.backupFor(p.id);
+    if (!files.length) return false;
+    return senders.email(
+      p.email,
+      tr("email.backupSubject", { date: formatDay(date, p.language) }),
+      { heading: tr("email.backupHeading"), intro: tr("email.backupIntro", { count: files.length }), sections: [{ title: tr("email.backupFiles"), items: files.map((f) => f.workspace) }], button: tr("email.openApp"), url: `${siteUrl}/settings/data` },
+      p.language,
+      files.map(({ filename, content }) => ({ filename, content })),
+    );
+  }
   if (kind === "shutdown") {
     // a gentle push only: what is still open today, and a link to close the day
     const open = await store.responsibleTasks(p.id, date);
@@ -323,7 +350,7 @@ async function sendDaily(store: SchedulerStore, senders: Senders, t: Translate, 
 
   let html = "";
   let email: EmailContent | null = null;
-  let channelKey: "digest" | "review" | "overdue" = kind;
+  let channelKey = kind as "digest" | "review" | "overdue";
   // short push version of the same summary
   let push: { title: string; body: string } | null = null;
 
@@ -377,7 +404,7 @@ async function sendDaily(store: SchedulerStore, senders: Senders, t: Translate, 
     sent = true;
   }
   if (push && pref(p, "push", channelKey)) {
-    if (await pushAll(store, senders, p.id, { ...push, url: siteUrl, tag: `reja-${kind}` })) sent = true;
+    if (await pushAll(store, senders, p.id, { ...push, url: kind === "review" ? `${siteUrl}/review` : siteUrl, tag: `reja-${kind}` })) sent = true;
   }
   if (email && p.email && pref(p, "email", channelKey)) {
     const subject = kind === "digest" ? tr("email.digestSubject", { date: formatDay(date, p.language) }) : tr("email.reviewSubject");

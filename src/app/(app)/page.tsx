@@ -8,7 +8,7 @@ import { ProjectDot, Section } from "@/components/common/bits";
 import { EmptyState, Illustration } from "@/components/common/empty-state";
 import { DayTimeline, TASK_DRAG_TYPE } from "@/components/home/day-timeline";
 import { HabitsRow, PlanTomorrow, StatsCards, WaitingOnOthers } from "@/components/home/widgets";
-import { RoutinesRow, ShutdownCard } from "@/components/home/org-widgets";
+import { EnergyCard, RoutinesRow, ShutdownCard } from "@/components/home/org-widgets";
 import { PageContainer } from "@/components/shell/app-client";
 import { InlineAdd, TaskList, type TaskGroup } from "@/components/tasks/task-list";
 import { TaskRow } from "@/components/tasks/task-row";
@@ -119,13 +119,13 @@ export default function HomePage() {
                 </div>
               </div>
             ) : (
-              <div className="space-y-1">
+              <div className="space-y-1" role="grid" aria-label={t("home.top3")}>
                 {top.map((x) => (
                   <div key={x.id} draggable onDragStart={(e) => e.dataTransfer.setData(TASK_DRAG_TYPE, x.id)} className="rounded-xl bg-card/80 shadow-elev-1">
                     <TaskRow task={x} showProject />
                   </div>
                 ))}
-                {top.length > 3 && <p className="px-2 pt-1 text-xs text-warning-fg">{t("home.top3Full")}</p>}
+                {top.length > 3 && <p role="row" className="px-2 pt-1 text-xs text-warning-fg"><span role="gridcell">{t("home.top3Full")}</span></p>}
               </div>
             )}
           </section>
@@ -149,7 +149,7 @@ export default function HomePage() {
               }
             >
               <div className="rounded-2xl border border-destructive/25 bg-danger-soft/40 p-1.5">
-                <div className="space-y-px">
+                <div className="space-y-px" role="grid" aria-label={t("home.overdue")}>
                   {overdue.map((x) => (
                     <div key={x.id} draggable onDragStart={(e) => e.dataTransfer.setData(TASK_DRAG_TYPE, x.id)}>
                       <TaskRow task={x} showProject />
@@ -203,6 +203,7 @@ export default function HomePage() {
 
         <aside className="space-y-6 lg:sticky lg:top-6 lg:self-start">
           <ShutdownCard />
+          <EnergyCard />
           <PlanTomorrow evening={now >= 17 * 60} />
           <Section title={t("home.habits")}>
             <HabitsRow />

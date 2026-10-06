@@ -20,6 +20,8 @@ const TABLES = [
   "activity_log", "goals", "key_results", "key_result_history", "notes", "habits", "habit_logs", "time_blocks", "saved_views",
   "templates", "rate_limits", "areas",
   "contacts", "meetings", "meeting_attendees", "meeting_items", "weekly_reviews", "daily_shutdowns", "routines", "routine_runs",
+  "deal_stages", "deals", "deal_stage_history", "money_entries", "note_versions", "note_tasks",
+  "google_connections", "calendar_events", "audit_log",
 ] as const;
 type Table = (typeof TABLES)[number];
 
@@ -68,12 +70,21 @@ const FIXTURE: Record<Table, () => string> = {
   daily_shutdowns: () => `user_id = '${owner.id}'`,
   routines: () => `workspace_id = '${ids.W}'`,
   routine_runs: () => `workspace_id = '${ids.W}'`,
+  deal_stages: () => `workspace_id = '${ids.W}'`,
+  deals: () => `workspace_id = '${ids.W}'`,
+  deal_stage_history: () => `workspace_id = '${ids.W}'`,
+  money_entries: () => `workspace_id = '${ids.W}'`,
+  note_versions: () => `workspace_id = '${ids.W}'`,
+  note_tasks: () => `workspace_id = '${ids.W}'`,
+  google_connections: () => `user_id = '${owner.id}'`,
+  calendar_events: () => `user_id = '${owner.id}'`,
+  audit_log: () => `workspace_id = '${ids.W}'`,
 };
 
 /** Rows only the owner may ever see (partner, viewer and outsider see none). */
 const PRIVATE: Table[] = [
   "push_subscriptions", "telegram_link_codes", "project_favorites", "reminders", "notifications", "habits", "habit_logs", "time_blocks",
-  "weekly_reviews", "daily_shutdowns", "routines", "routine_runs",
+  "weekly_reviews", "daily_shutdowns", "routines", "routine_runs", "calendar_events",
 ];
 /** Writes a project viewer must not be able to make. */
 const VIEWER_READ_ONLY: Table[] = ["projects", "sections", "tasks", "checklist_items", "task_labels", "task_assignees", "notes"];
@@ -135,12 +146,20 @@ beforeAll(async () => {
     await tx.query(`insert into daily_shutdowns (user_id, date, data) values ($1, '2030-01-10', '{}')`, [owner.id]);
     ids.R = await one(`insert into routines (workspace_id, owner_id, name, items) values ($1, $2, 'Morning', '["Water","Plan"]') returning id`, [ids.W, owner.id]);
     await tx.query(`insert into routine_runs (routine_id, user_id, date, checked) values ($1, $2, '2030-01-10', '[0]')`, [ids.R, owner.id]);
+    ids.DS = await one(`insert into deal_stages (workspace_id, name) values ($1, 'Lead') returning id`, [ids.W]);
+    await tx.query(`insert into deals (workspace_id, stage_id, title, value) values ($1, $2, 'Deal', 1000)`, [ids.W, ids.DS]);
+    await tx.query(`insert into money_entries (workspace_id, project_id, kind, amount) values ($1, $2, 'income', 500000)`, [ids.W, ids.P]);
+    ids.N = await one(`select id from notes where project_id = $1`, [ids.P]);
+    await tx.query(`update notes set content = '{"type":"doc"}' where id = $1`, [ids.N]);
+    await tx.query(`insert into note_tasks (note_id, task_id) values ($1, $2)`, [ids.N, ids.T]);
   });
   // rows that only the server writes
   await asService(db, async (tx) => {
     await tx.query(`insert into notifications (user_id, type, title) values ($1, 'reminder', 'Hello')`, [owner.id]);
     await tx.query(`insert into telegram_link_codes (user_id, code, expires_at) values ($1, $2, now() + interval '15 minutes')`, [owner.id, `M${owner.id.slice(0, 8)}`]);
     await tx.query(`insert into rate_limits (key, window_start, count) values ($1, now(), 1)`, [`matrix:${owner.id}`]);
+    await tx.query(`insert into google_connections (user_id, refresh_token) values ($1, 'secret')`, [owner.id]);
+    await tx.query(`insert into calendar_events (user_id, google_id, title, start_at, end_at) values ($1, 'g1', 'Busy', '2030-01-10T05:00:00Z', '2030-01-10T06:00:00Z')`, [owner.id]);
   });
 });
 
@@ -161,7 +180,7 @@ describe("RLS matrix (every table)", () => {
 
   it("the owner can read their row in every table (rate_limits is server-only)", async () => {
     for (const table of TABLES) {
-      if (table === "rate_limits") continue;
+      if (table === "rate_limits" || table === "google_connections") continue;
       expect(await count(owner, table), table).toBeGreaterThan(0);
     }
   });
@@ -176,7 +195,7 @@ describe("RLS matrix (every table)", () => {
   // ~150 sequential round trips: needs more than the default when run against Supabase
   it("an outsider sees nothing and can change nothing in any table", { timeout: 300_000 }, async () => {
     for (const table of TABLES) {
-      if (table === "rate_limits") {
+      if (table === "rate_limits" || table === "google_connections") {
         expect(await rejects(count(outsider, table))).toMatch(/permission denied/);
         continue;
       }
@@ -184,7 +203,7 @@ describe("RLS matrix (every table)", () => {
       // a profile is visible only to people who share a workspace with it
       expect(visible, `${table} visible to outsider`).toBe(0);
     }
-    for (const table of ["workspaces", "projects", "sections", "tasks", "labels", "checklist_items", "comments", "goals", "key_results", "notes", "saved_views", "templates", "areas", "invitations", "attachments", "time_entries", "habits", "time_blocks", "reminders", "contacts", "meetings", "meeting_items", "weekly_reviews", "daily_shutdowns", "routines", "routine_runs"] as Table[]) {
+    for (const table of ["workspaces", "projects", "sections", "tasks", "labels", "checklist_items", "comments", "goals", "key_results", "notes", "saved_views", "templates", "areas", "invitations", "attachments", "time_entries", "habits", "time_blocks", "reminders", "contacts", "meetings", "meeting_items", "weekly_reviews", "daily_shutdowns", "routines", "routine_runs", "deal_stages", "deals", "money_entries"] as Table[]) {
       expect(await updated(outsider, table, "created_at"), `${table} update by outsider`).toBe(0);
       expect(await deleted(outsider, table), `${table} delete by outsider`).toBe(0);
     }
@@ -195,13 +214,14 @@ describe("RLS matrix (every table)", () => {
 
   it("a full member (partner) sees shared work but never the owner's private rows", async () => {
     for (const table of PRIVATE) expect(await count(partner, table), `${table} visible to partner`).toBe(0);
-    for (const table of ["projects", "tasks", "comments", "notes", "goals", "areas", "labels", "time_entries", "activity_log", "contacts", "meetings", "meeting_items", "meeting_attendees"] as Table[]) {
+    for (const table of ["projects", "tasks", "comments", "notes", "goals", "areas", "labels", "time_entries", "activity_log", "contacts", "meetings", "meeting_items", "meeting_attendees", "deal_stages", "deals", "deal_stage_history", "money_entries", "note_versions", "note_tasks"] as Table[]) {
       expect(await count(partner, table), `${table} hidden from partner`).toBeGreaterThan(0);
     }
-    // a personal saved view stays personal
+    // a personal saved view stays personal; the audit log is for admins
     expect(await count(partner, "saved_views")).toBe(0);
+    expect(await count(partner, "audit_log")).toBe(0);
     for (const table of PRIVATE) {
-      if (table === "telegram_link_codes") continue; // no update grant at all
+      if (table === "telegram_link_codes" || table === "calendar_events") continue; // no write grant at all
       expect(await deleted(partner, table), `${table} delete by partner`).toBe(0);
     }
   });
@@ -221,6 +241,11 @@ describe("RLS matrix (every table)", () => {
     for (const table of PRIVATE) expect(await count(viewer, table), `${table} visible to viewer`).toBe(0);
     expect(await count(viewer, "invitations")).toBe(0);
     // guests never see the address book or workspace meetings
-    for (const table of ["contacts", "meetings", "meeting_items", "meeting_attendees"] as Table[]) expect(await count(viewer, table), `${table} visible to viewer`).toBe(0);
+    for (const table of ["contacts", "meetings", "meeting_items", "meeting_attendees", "deal_stages", "deals", "deal_stage_history", "money_entries", "audit_log"] as Table[]) {
+      expect(await count(viewer, table), `${table} visible to viewer`).toBe(0);
+    }
+    // documents follow the project: the viewer reads versions and links, but cannot add links
+    for (const table of ["note_versions", "note_tasks"] as Table[]) expect(await count(viewer, table), `${table} hidden from viewer`).toBeGreaterThan(0);
+    expect(await rejects(as(db, viewer, (tx) => tx.query(`insert into note_tasks (note_id, task_id) values ($1, $2)`, [ids.N, ids.T2])))).toMatch(/row-level security|permission/);
   });
 });

@@ -1,11 +1,12 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, Check, ClipboardCheck, History } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, ClipboardCheck, History, Star } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { StatTile } from "@/components/charts/kit";
-import { PageHeader } from "@/components/common/bits";
+import { PageHeader, ProgressBar, ProjectDot } from "@/components/common/bits";
+import { HealthWithReason } from "@/components/projects/project-header";
 import { EmptyState } from "@/components/common/empty-state";
 import { PageContainer } from "@/components/shell/app-client";
 import { TaskList } from "@/components/tasks/task-list";
@@ -17,14 +18,15 @@ import { byDueThenPriority } from "@/lib/filters";
 import { useFormat } from "@/lib/format";
 import { isOpen } from "@/lib/health";
 import { followUpDue, waitingTasks, weekNumbers } from "@/lib/org";
-import type { WeeklyReview, WeeklyReviewData } from "@/lib/types";
+import { goalPace, goalProgress } from "@/lib/goals";
+import type { Project, Task, WeeklyReview, WeeklyReviewData } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { rescheduleTasks } from "@/store/actions";
+import { rescheduleTasks, setTop } from "@/store/actions";
 import { saveReview } from "@/store/org-actions";
-import { useMyTasks, useToday, useTz, useUserId } from "@/store/hooks";
+import { useMyTasks, useProjectHealth, useProjects, useToday, useTz, useUserId } from "@/store/hooks";
 import { useStore } from "@/store/store";
 
-const STEPS = ["inbox", "numbers", "overdue", "waiting", "next", "reflect"] as const;
+const STEPS = ["inbox", "overdue", "projects", "goals", "next", "monday"] as const;
 
 /** Guided weekly review: six short steps, saved as you go, with a history of past weeks. */
 export default function ReviewPage() {
@@ -108,13 +110,6 @@ function Wizard({ weekStart, review, onDone }: { weekStart: string; review: Week
 
       {key === "inbox" &&
         (inbox.length ? <TaskList groups={[{ key: "inbox", tasks: inbox, noAdd: true }]} /> : <Clear text={t("review.inboxClear")} />)}
-      {key === "numbers" && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <StatTile label={t("review.done")} value={f.num(stats.done)} />
-          <StatTile label={t("review.overdueNow")} value={f.num(stats.overdue)} />
-          <StatTile label={t("review.tracked")} value={f.duration(stats.minutes)} />
-        </div>
-      )}
       {key === "overdue" &&
         (overdue.length ? (
           <>
@@ -126,15 +121,15 @@ function Wizard({ weekStart, review, onDone }: { weekStart: string; review: Week
         ) : (
           <Clear text={t("review.noOverdue")} />
         ))}
-      {key === "waiting" &&
-        (waiting.length ? (
-          <>
-            {waiting.some((w) => followUpDue(w, today)) && <p className="mb-2 text-13 font-medium text-warning-fg">{t("review.chaseHint")}</p>}
-            <TaskList groups={[{ key: "waiting", tasks: waiting, noAdd: true }]} showProject />
-          </>
-        ) : (
-          <Clear text={t("review.noWaiting")} />
-        ))}
+      {key === "overdue" && waiting.length > 0 && (
+        <div className="mt-4">
+          <h3 className="mb-1 text-13 font-semibold">{t("review.waitingTitle", { count: waiting.length })}</h3>
+          {waiting.some((w) => followUpDue(w, today)) && <p className="mb-2 text-13 font-medium text-warning-fg">{t("review.chaseHint")}</p>}
+          <TaskList groups={[{ key: "waiting", tasks: waiting, noAdd: true }]} showProject />
+        </div>
+      )}
+      {key === "projects" && <ProjectsStep />}
+      {key === "goals" && <GoalsStep />}
       {key === "next" && (
         <div className="space-y-3">
           {nextWeek.length ? <TaskList groups={[{ key: "next", tasks: nextWeek, noAdd: true }]} showProject /> : <Clear text={t("review.nextWeekEmpty")} />}
@@ -144,15 +139,21 @@ function Wizard({ weekStart, review, onDone }: { weekStart: string; review: Week
           </div>
         </div>
       )}
-      {key === "reflect" && (
-        <div className="space-y-3">
+      {key === "monday" && (
+        <div className="space-y-4">
+          <MondayTop3 monday={nextMonday} candidates={[...overdue, ...nextWeek].filter((x, i, a) => a.findIndex((y) => y.id === x.id) === i)} />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <StatTile label={t("review.done")} value={f.num(stats.done)} />
+            <StatTile label={t("review.overdueNow")} value={f.num(stats.overdue)} />
+            <StatTile label={t("review.tracked")} value={f.duration(stats.minutes)} />
+          </div>
           <div className="space-y-1.5">
             <Label htmlFor="r-wins">{t("review.wins")}</Label>
-            <Textarea id="r-wins" rows={3} maxLength={2000} value={text.wins} onChange={(e) => setText({ ...text, wins: e.target.value })} />
+            <Textarea id="r-wins" rows={2} maxLength={2000} value={text.wins} onChange={(e) => setText({ ...text, wins: e.target.value })} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="r-lessons">{t("review.lessons")}</Label>
-            <Textarea id="r-lessons" rows={3} maxLength={2000} value={text.lessons} onChange={(e) => setText({ ...text, lessons: e.target.value })} />
+            <Textarea id="r-lessons" rows={2} maxLength={2000} value={text.lessons} onChange={(e) => setText({ ...text, lessons: e.target.value })} />
           </div>
         </div>
       )}
@@ -214,6 +215,99 @@ function ReviewHistory({ reviews }: { reviews: WeeklyReview[] }) {
       <p className="px-1 pt-2 text-xs text-muted-foreground">
         <Link href="/settings" className="underline-offset-2 hover:underline">{t("review.reminderHint")}</Link>
       </p>
+    </section>
+  );
+}
+
+function ProjectsStep() {
+  const t = useTranslations();
+  const projects = useProjects(undefined);
+  const active = projects.filter((p) => p.status === "active");
+  if (!active.length) return <Clear text={t("review.noProjects")} />;
+  return (
+    <ul className="divide-y rounded-xl border">
+      {active.map((p) => <ProjectHealthRow key={p.id} project={p} />)}
+    </ul>
+  );
+}
+
+function ProjectHealthRow({ project }: { project: Project }) {
+  const health = useProjectHealth(project);
+  return (
+    <li className="flex flex-wrap items-center gap-2 px-3 py-2.5">
+      <ProjectDot color={project.color} />
+      <Link href={`/projects/${project.id}`} className="min-w-0 flex-1 truncate text-sm font-medium hover:underline">{project.name}</Link>
+      {health && <HealthWithReason project={project} result={health} />}
+    </li>
+  );
+}
+
+function GoalsStep() {
+  const t = useTranslations();
+  const today = useToday();
+  const tz = useTz();
+  const f = useFormat(today, tz);
+  const goals = useStore((s) => s.data.goals);
+  const krs = useStore((s) => s.data.key_results);
+  const active = useMemo(() => Object.values(goals).filter((g) => !g.deleted_at && g.status === "active"), [goals]);
+  if (!active.length) return <Clear text={t("review.noGoals")} />;
+  return (
+    <ul className="space-y-2">
+      {active.map((g) => {
+        const list = Object.values(krs).filter((k) => k.goal_id === g.id);
+        const pace = goalPace(g, list, today);
+        const pct = goalProgress(list);
+        return (
+          <li key={g.id} data-color={g.color} className="rounded-xl border px-3 py-2.5">
+            <div className="flex items-center gap-2">
+              <Link href="/goals" className="min-w-0 flex-1 truncate text-sm font-medium hover:underline">{g.title}</Link>
+              <span className="text-13 font-semibold tnum">{f.num(pct)}%</span>
+            </div>
+            <ProgressBar value={pct} color={g.color} className="mt-1.5" label={g.title} />
+            {pace && (
+              <p className={cn("mt-1 text-xs", pace.pace === "behind" ? "text-danger-fg" : pace.pace === "ahead" ? "text-success-fg" : "text-muted-foreground")}>
+                {t(`goals.pace.${pace.pace}`, { elapsed: f.num(pace.elapsed), progress: f.num(pace.progress) })}
+              </p>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/** Pick Monday's three most important tasks (they show on Home that day). */
+function MondayTop3({ monday, candidates }: { monday: string; candidates: Task[] }) {
+  const t = useTranslations();
+  const count = candidates.filter((x) => x.top_date === monday).length;
+  return (
+    <section aria-labelledby="r-monday">
+      <h3 id="r-monday" className="mb-1.5 flex items-center gap-2 text-13 font-semibold">
+        {t("review.mondayTop3")} <span className="ml-auto text-xs font-medium text-muted-foreground tnum">{count}/3</span>
+      </h3>
+      {candidates.length === 0 ? (
+        <p className="text-13 text-muted-foreground">{t("review.nextWeekEmpty")}</p>
+      ) : (
+        <ul className="space-y-1">
+          {candidates.map((task) => {
+            const on = task.top_date === monday;
+            return (
+              <li key={task.id}>
+                <button
+                  type="button"
+                  aria-pressed={on}
+                  disabled={!on && count >= 3}
+                  onClick={() => setTop(task, !on, monday)}
+                  className={cn("flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm hover:bg-muted disabled:opacity-50", on && "bg-warning-soft/60")}
+                >
+                  <Star className={cn("size-4 shrink-0", on ? "fill-warning text-warning" : "text-muted-foreground")} />
+                  <span className="min-w-0 flex-1 truncate">{task.title}</span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </section>
   );
 }

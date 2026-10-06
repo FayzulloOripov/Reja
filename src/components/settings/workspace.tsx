@@ -24,6 +24,9 @@ import { useCurrentWorkspace, useLabels, useMe, useMembers, useToday, useTz, use
 import { mergeRows, mutate, useStore } from "@/store/store";
 import { createInvitation } from "@/server/actions/invitations";
 import { integrationStatus, sendTestNotification, type IntegrationStatus } from "@/server/actions/notifications";
+import { GoogleCalendarCard } from "./google";
+import { AuditCard, BackupCard } from "./trust";
+import { ModulesCard, MoneySettingsCard } from "./modules";
 import { SettingsCard, SettingsRow } from "./common";
 import { DemoImportCard } from "./demo-import";
 import { ImportPanel } from "./import";
@@ -132,6 +135,8 @@ export function IntegrationsSection() {
         )}
       </SettingsCard>
 
+      <GoogleCalendarCard />
+
       <SettingsCard title={<span className="flex items-center gap-2"><CalendarDays className="size-4 text-success" /> {t("settings.calendarTitle")}</span>} description={t("settings.calendarHint")}>
         <div className="flex flex-col gap-2 px-5 py-4 sm:flex-row sm:items-center">
           <Input readOnly value={icsUrl} className="flex-1 font-mono text-xs" aria-label={t("settings.calendarTitle")} onFocus={(e) => e.target.select()} />
@@ -202,6 +207,10 @@ export function WorkspaceSection() {
       </SettingsCard>
 
       <MembersCard workspaceId={ws.id} admin={admin} />
+
+      <ModulesCard ws={ws} admin={admin} />
+      {admin && !ws.is_personal && <AuditCard workspaceId={ws.id} />}
+      {ws.modules?.money && <MoneySettingsCard ws={ws} admin={admin} />}
 
       <SettingsCard title={t("settings.workspacesTitle")}>
         <ul className="divide-y">
@@ -513,6 +522,7 @@ export function DataSection() {
   const t = useTranslations();
   const demo = useIsDemo();
   const ws = useCurrentWorkspace();
+  const me = useMe();
 
   if (!ws) return null;
   return (
@@ -533,6 +543,7 @@ export function DataSection() {
           )}
         </div>
       </SettingsCard>
+      {me && <BackupCard me={me} />}
       <DemoImportCard />
       <SettingsCard title={t("settings.importTitle")} description={t("settings.importHint")}>
         <div className="px-5 py-4">

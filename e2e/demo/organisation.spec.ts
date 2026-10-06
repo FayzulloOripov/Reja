@@ -105,9 +105,9 @@ test("meetings: the weekly partner meeting template fills Friday 19:30 and the a
 test("weekly review: six steps, saved, shows in history", async ({ page }) => {
   await openDemo(page, "/review");
   await expect(page.getByRole("heading", { name: "Kiruvchini tozalang" })).toBeVisible();
-  for (const next of ["Hafta raqamlarda", "Kechikkanlar", "Kutilayotganlar", "Keyingi hafta", "Xulosa"]) {
+  for (const next of ["Kechikkanlar", "Loyihalar holati", "Maqsadlar", "Keyingi hafta ustuvorliklari", "Dushanbaning 3 ta asosiysi"]) {
     await page.getByRole("button", { name: "Keyingi" }).click();
-    await expect(page.getByRole("heading", { name: next })).toBeVisible();
+    await expect(page.getByRole("heading", { name: next, level: 2 })).toBeVisible();
   }
   await page.getByLabel("Yutuqlar").fill("Hamkor uchrashuvi oʻz vaqtida");
   await page.getByRole("button", { name: "Tahlilni yakunlash" }).click();

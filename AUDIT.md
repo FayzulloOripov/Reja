@@ -97,7 +97,7 @@ Every row runs in the demo and against the real backend (`e2e/demo/checklist.spe
 | Home day timeline: right times, hours outside the user's day hidden | done — visible hours from Settings (default 07:00–22:00), growing to fit anything planned outside; task times and planned blocks labelled differently | e2e `Home day timeline…` |
 | Offline: lists readable, quick add queues and syncs | done | real e2e `offline: …` (service worker + outbox → row in Supabase) |
 | Empty, loading and error states on every page | done — new error screen with retry when the first load fails | real e2e `a brand-new empty account…` |
-| Performance: Lighthouse ≥ 90, no layout shift | pending (phase 8, on the deployed site) | — |
+| Performance: Lighthouse ≥ 90, no layout shift | partial — local production build, Lighthouse 12 mobile (simulated slow 4G): sign-in page **88** performance, app Home **75**; accessibility, best practices and SEO **100** on both; layout shift 0 (sign-in) and 0.05 (Home). Observed LCP is 0.26 s and 0.36 s; the simulated LCP (3.8 s / 5.6 s) comes from the JavaScript the app downloads before its client-side store renders. Done in phase 8: zod/papaparse and the Supabase client out of the first load, task panel/editor/palette loaded after the page is on screen (Home JS 997 → 659 KiB). To reach 90 on Home the first view must be rendered on the server — not done. Not yet measured on the deployed site (not deployed) | Lighthouse JSON reports (local) |
 
 ## 4. Missing features (phases 3, 5–8)
 
@@ -107,26 +107,26 @@ Every row runs in the demo and against the real backend (`e2e/demo/checklist.spe
 | Waiting-for list | done — task panel «Kutilmoqda»: a teammate or an outside contact, days waiting, follow-up date that creates a reminder at the start of the working day; chip on task rows (amber when it's time to chase); `/waiting` «Men kutayotganlar» grouped by who, chase count first | unit `org` · db `organisation` · e2e `waiting-for` |
 | Outside contacts | done — `contacts` table (full members only, guests never see it), `/contacts` page, create from the waiting picker, a contact must be in the task's workspace (trigger), shown on meetings | db `rls-matrix`, `organisation` · e2e `contacts` |
 | Meetings and agenda | done — `/meetings` list and detail: attendees (people and contacts), agenda with ticks, decisions → task (linked back), notes; finishing a recurring meeting creates the next one with the open agenda points; «Haftalik hamkor uchrashuvi» template (Friday 19:30, weekly, agenda with last week's numbers and overdue tasks) | unit `org` · e2e `meetings` ×2 |
-| Guided weekly review | done — `/review`: six steps (inbox, numbers, overdue, waiting, next week, reflection), saved per step, history of past weeks; the weekly push links to it | e2e `weekly review` |
-| Daily shutdown | done — `/shutdown`: done today, move leftovers to tomorrow, pick tomorrow's top 3, note; Settings → Bildirishnomalar «Kunni yakunlash» + time; Home card after that time; scheduler push in the `shutdown` slot (once a day) | unit `scheduler` · e2e `daily shutdown`, `settings` |
+| Guided weekly review | done — `/review` (reminder Sunday 09:00 by default): clear the inbox, review overdue (and who you're waiting on), each active project's health with its reason, goals with pace, next week's priorities, Monday's top 3 and a short reflection; saved per step, past weeks readable; the weekly push opens it | e2e `weekly review` |
+| Daily shutdown | done — `/shutdown`: done today; each leftover goes to tomorrow, later (next Monday) or is dropped — or all to tomorrow at once; pick tomorrow's top 3; note; Settings → Bildirishnomalar «Kunni yakunlash» + time; Home card after that time; scheduler push in the `shutdown` slot (once a day) | unit `scheduler` · e2e `daily shutdown`, `settings` |
 | Routines | done — `/routines`: checklists on a schedule (daily, weekdays, weekly, monthly), private or shared with the team, one run per day, Home row with progress | unit `org` · db `organisation` · e2e `routines` |
-| Pipeline | missing |
-| Money | missing |
-| Docs with version history | missing |
+| Pipeline | done — module switched on per workspace (Settings → Ish maydoni → Modullar; default stages added the first time); `/pipeline` board by stage with value (UZS/USD), owner, contact, source, next step and date; stale warnings (no move for 14 days, next step overdue, no next step); open value, won this month, conversion; stage history written by the database; a lost deal needs a reason (enforced by the database); a won deal becomes a project from a built-in or workspace template | db `business` · unit `business` · e2e `pipeline` |
+| Money | done — module per workspace; `/money` month by month: income/expenses per project, partner, method (cash/card/transfer) and currency (UZS, USD at the rate in settings, converted by the database), 6-month chart with a table view; partner split rule (direct costs → N% common fund → shares; overhead paid from the fund) with who pays whom; expenses at or above the threshold wait for the other partner's approval (the author cannot approve; changing the amount sends it back) | db `business` · unit `business` · e2e `money` |
+| Docs with version history | done — module per workspace; project notes become documents: rich text, linked tasks, version history (the database keeps the previous text, at most one version per author per 10 minutes) with restore; `/docs` lists and searches every document | db `business` · e2e `docs` |
 | Telegram group digests | postponed (no bot token) |
 | Telegram replies → comments | postponed (no bot token) |
 | Email digest fallback | waiting (Resend key) — built: digest/review emails when the email channel is on; push carries the summaries meanwhile |
-| Prayer-aware planning | missing |
-| Energy labels | missing |
+| Prayer-aware planning | done — off by default; Settings → Profil «Namoz vaqtlari»: city (14 cities of Uzbekistan), Hanafi/Shafi'i asr, minutes per prayer; the five prayers show on the day timeline as fixed blocks; the scheduler holds reminders that fall inside a prayer block until it ends (MWL calculation via the `adhan` library) | unit `personal`, `scheduler` · e2e `prayer times` |
+| Energy labels | done — «Chuqur ish» / «Tez ish» on a task (panel, icon on every row); Home «Hozir nima qilay?» suggests deep tasks before noon and quick tasks that fit the next free gap (time blocks, prayers and calendar events count as busy) | unit `personal` · e2e `energy` |
 | Planner JSON import with real file | done — each planner area → area + project (or existing/inbox), confirmed in a preview; `created` kept; tested against the real file (30 tasks, 5 areas) |
 | CSV import mapping/preview/duplicates/summary | done — `settings/import.tsx`, `lib/import/planner.ts`; unit + e2e |
 | Export download button in demo | done (built in the browser) |
-| Weekly backups to owner | missing |
-| Session/device list | missing |
-| Audit log | missing |
-| Two-way Google Calendar | missing |
-| Goals fed by real data | missing |
-| PWA badge, share target | missing |
+| Weekly backups to owner | done in code, email waiting (Resend domain) — every Sunday 03:00 local the workspaces a user owns are emailed as JSON attachments (Settings → Zaxira nusxa, on by default; Telegram delivery postponed); «Hammasini yuklab olish» downloads every workspace + personal data in one click; nightly `pg_dump` workflow stays | unit `scheduler` · e2e `backups` |
+| Session/device list | done — Settings → Profil «Qurilmalar»: every signed-in device (browser · system, last active, IP), «Shu qurilma», sign out one device or all others (`my_sessions`/`end_session`/`end_other_sessions` on `auth.sessions`) | db `trust` · e2e `devices` (Supabase) |
+| Audit log | done — `audit_log` written by database triggers (members added/removed, role changes, projects deleted/restored, module and money settings, invitations, expense approvals) and by every export; Settings → Ish maydoni «Audit jurnali», admins only | db `trust`, `rls-matrix` · e2e `audit log` (Supabase) |
+| Two-way Google Calendar | built — waiting for a Google OAuth client (`GOOGLE_CLIENT_ID/SECRET`): connect from Settings → Integratsiyalar; busy events (recurring ones expanded, all-day, "free" skipped) show on the day timeline; a time block marked with the calendar icon is created/updated/deleted in Google; background sync every 15 min from the cron; tokens are server-only. Without keys the card says «Tez orada» and the ICS feed stays. Not tested against Google itself (no keys) | unit `personal` (mapping, push plan) · db `personal` · e2e `Google Calendar` card |
+| Goals fed by real data | done — a key result's value can come from Money (approved income this month, in soʻm / ming / mln, optionally one project), Pipeline (deals won in the goal's period) or completed tasks with a label; manual check-ins keep a history with a note, listed under the chart | unit `business` · e2e `goals` |
+| PWA badge, share target | done — app badge with today's open count (where the platform supports it); manifest share target: text/links shared from Telegram etc. become an inbox task (link kept in the description); install prompt and home-screen icons were already there | unit `personal` · e2e `share target`, `app badge` |
 | First-run wizard (full) | done — name/time zone, work days and hours (Mon–Sat, 10:00–19:00), areas + first projects, push (Telegram postponed), import (planner/CSV/demo), invite a partner; every step skippable, reopen from Settings → Profile |
 
 ## 5. Original spec
@@ -136,12 +136,12 @@ Every row runs in the demo and against the real backend (`e2e/demo/checklist.spe
 | Uzbek UI + English toggle, ʻ apostrophe | done | `messages/`, `tests/unit/i18n.test.ts` |
 | PWA, offline lists, offline quick add | done | `public/sw.js`, store outbox + IndexedDB |
 | Optimistic updates, realtime, skeletons | done | `src/store/*` |
-| RLS on every table | done | `supabase/migrations/*_rls.sql`; `tests/db/rls-matrix.test.ts` covers all 35 tables (owner, full member, project viewer, outsider, signed-out) and fails when a table is added without coverage; passes on PGlite and on the Supabase project |
+| RLS on every table | done | `tests/db/rls-matrix.test.ts` covers all 52 tables (owner, full member, project viewer, outsider, signed-out) and fails when a table is added without coverage; passes on PGlite and on the Supabase project |
 | Supabase backend | done | project connected, migrations applied, storage/realtime/cron verified (`tests/db/supabase-only.test.ts`) |
-| Free-tier deploy (Vercel) | pending | README |
+| Free-tier deploy (Vercel) | blocked — the Vercel CLI on this machine is not logged in (`vercel whoami`: token not valid); steps in README → Vercel | README |
 | UTC storage, user zone | done | `lib/dates.ts` |
 | 30-day trash, undo, export | done | settings trash/data, undo toast |
-| Accessibility | done (phase 1 pass) | e2e accessible-name test |
+| Accessibility | done — Lighthouse accessibility 100 (task lists are now a valid grid: rowgroups, rows, cells) | e2e accessible-name test, Lighthouse |
 | Auth magic link + Google | done in code, blocked live | `src/app/login`, `src/app/auth` |
 | Workspaces, members, invitations, guests | done | settings/workspace, `share-dialog.tsx`, RLS tests |
 | Projects: list, board, calendar, timeline, table, overview, notes | done | `components/projects/*` |
@@ -161,4 +161,4 @@ Every row runs in the demo and against the real backend (`e2e/demo/checklist.spe
 | Settings | done | `components/settings/*` |
 | CSV + planner import | done | `lib/import/planner.ts`, `components/settings/import.tsx` |
 | Onboarding | done | `src/app/onboarding/onboarding-client.tsx` |
-| Lighthouse ≥ 90 | not run | phase 8 |
+| Lighthouse ≥ 90 | partial — see section 2 «Performance»: 88 / 75 performance, 100 accessibility, best practices, SEO | local Lighthouse |

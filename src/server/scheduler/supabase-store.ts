@@ -1,9 +1,10 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { EXPORT_TABLES, exportFileName } from "@/lib/export";
 import type { PushSub, SchedNotification, SchedProfile, SchedReminder, SchedTask, SchedulerStore } from "./core";
 
 const PROFILE_COLS =
-  "id, name, email, language, timezone, quiet_enabled, quiet_start, quiet_end, notify_prefs, telegram_chat_id, digest_enabled, digest_time, review_enabled, review_dow, review_time, overdue_nudge_enabled, last_digest_on, last_review_on, last_overdue_nudge_on, shutdown_enabled, shutdown_time, last_shutdown_on";
+  "id, name, email, language, timezone, quiet_enabled, quiet_start, quiet_end, notify_prefs, telegram_chat_id, digest_enabled, digest_time, review_enabled, review_dow, review_time, overdue_nudge_enabled, last_digest_on, last_review_on, last_overdue_nudge_on, shutdown_enabled, shutdown_time, last_shutdown_on, prayer_enabled, prayer_lat, prayer_lng, prayer_madhab, prayer_minutes, backup_enabled, last_backup_on";
 
 function check<T>(res: { data: T | null; error: { message: string } | null }): T {
   if (res.error) throw new Error(res.error.message);
@@ -77,7 +78,7 @@ export function supabaseSchedulerStore(sb: SupabaseClient): SchedulerStore {
         await sb
           .from("profiles")
           .select(PROFILE_COLS)
-          .or("digest_enabled.eq.true,review_enabled.eq.true,overdue_nudge_enabled.eq.true,shutdown_enabled.eq.true")
+          .or("digest_enabled.eq.true,review_enabled.eq.true,overdue_nudge_enabled.eq.true,shutdown_enabled.eq.true,backup_enabled.eq.true")
           .or("telegram_chat_id.not.is.null,email.not.is.null"),
       ) as SchedProfile[];
     },
@@ -89,6 +90,28 @@ export function supabaseSchedulerStore(sb: SupabaseClient): SchedulerStore {
     async responsibleTasks(userId, until) {
       const rows = check(await sb.rpc("responsible_open_tasks", { p_user: userId, p_until: until })) as Omit<SchedTask, "project_name">[];
       return withProjectNames(rows);
+    },
+
+    async backupFor(userId) {
+      const owned = check(await sb.from("workspaces").select("id, name").eq("owner_id", userId).is("deleted_at", null)) as { id: string; name: string }[];
+      const files: { filename: string; content: string; workspace: string }[] = [];
+      for (const ws of owned) {
+        const data: Record<string, unknown> = { exported_at: new Date().toISOString(), workspace: ws };
+        let rows = 0;
+        for (const table of EXPORT_TABLES) {
+          const list: unknown[] = [];
+          for (let from = 0; ; from += 1000) {
+            const page = check(await sb.from(table).select("*").eq("workspace_id", ws.id).range(from, from + 999)) as unknown[];
+            list.push(...page);
+            if (page.length < 1000) break;
+          }
+          data[table] = list;
+          rows += list.length;
+        }
+        if (rows === 0) continue; // nothing worth backing up
+        files.push({ filename: exportFileName(ws.name, "json"), content: JSON.stringify(data), workspace: ws.name });
+      }
+      return files;
     },
 
     async timeBlocks(userId, date) {

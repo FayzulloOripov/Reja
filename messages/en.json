@@ -139,7 +139,10 @@
     "routines": "Routines",
     "contacts": "Contacts",
     "review": "Weekly review",
-    "shutdown": "Close the day"
+    "shutdown": "Close the day",
+    "pipeline": "Pipeline",
+    "money": "Money",
+    "docs": "Docs"
   },
   "auth": {
     "title": "Welcome to Reja",
@@ -641,7 +644,34 @@
     },
     "deleteKr": "Delete key result “{title}”",
     "deleteKrTitle": "Delete this key result?",
-    "deleteKrBody": "“{title}” and its history will be deleted. This cannot be undone."
+    "deleteKrBody": "“{title}” and its history will be deleted. This cannot be undone.",
+    "checkIn": "Check in",
+    "checkInFor": "Check in «{title}»",
+    "checkInNote": "Note",
+    "checkInNotePlaceholder": "What changed?",
+    "checkInNotes": "Check-in notes",
+    "autoHint": "The value is worked out from your data",
+    "source": "Value source",
+    "sourceFor": "Value source of «{title}»",
+    "pickLabel": "Pick a label",
+    "scale": "Unit",
+    "sources": {
+      "manual": "Manual",
+      "money_income": "Income this month",
+      "pipeline_won": "Won deals",
+      "tasks_done": "Completed tasks"
+    },
+    "sourceHints": {
+      "manual": "You update the value; each check-in stays in the history with its note.",
+      "money_income": "Approved income this month in Money.",
+      "pipeline_won": "Deals won within the goal's period.",
+      "tasks_done": "Tasks with the chosen label completed within the goal's period."
+    },
+    "scales": {
+      "1": "UZS",
+      "1000": "thousand UZS",
+      "1000000": "million UZS"
+    }
   },
   "habits": {
     "title": "Habits",
@@ -915,7 +945,9 @@
     "poweredBy": "Shared with Reja",
     "notFound": "This link was turned off or is invalid",
     "inviteTitle": "Invite people",
-    "projectMembers": "Project members"
+    "projectMembers": "Project members",
+    "adding": "Adding the task…",
+    "added": "Added to the inbox"
   },
   "onboarding": {
     "welcome": "Welcome!",
@@ -1060,7 +1092,11 @@
     "reviewSubject": "Weekly review",
     "reviewHeading": "Week in review, {name}",
     "notificationSubject": "{title}",
-    "reminderSubject": "⏰ {title}"
+    "reminderSubject": "⏰ {title}",
+    "backupSubject": "Reja backup — {date}",
+    "backupHeading": "Weekly backup",
+    "backupIntro": "A full copy of your workspaces is attached ({count} files, JSON). Keep it somewhere safe.",
+    "backupFiles": "Workspaces attached"
   },
   "bot": {
     "welcome": "Hi! I'm the Reja bot.\n\nTo link your account, send me the code from Reja → Settings → Telegram.",
@@ -1298,25 +1334,25 @@
         "title": "Clear the inbox",
         "body": "Move each item to a project, give it a date, or delete it."
       },
-      "numbers": {
-        "title": "The week in numbers",
-        "body": "What got done this week and how much time it took."
-      },
       "overdue": {
         "title": "Overdue",
-        "body": "Do it, give it a new date, or let it go."
-      },
-      "waiting": {
-        "title": "Waiting on others",
-        "body": "Who owes you what — chase where needed."
+        "body": "Do it, give it a new date, or let it go. Check who you're waiting on too."
       },
       "next": {
-        "title": "Next week",
+        "title": "Next week's priorities",
         "body": "Next week's dates and your main focus."
       },
-      "reflect": {
-        "title": "Reflect",
-        "body": "What went well and what you'll change."
+      "projects": {
+        "title": "Project health",
+        "body": "Each active project: its health and why. Open a project to fix it if needed."
+      },
+      "goals": {
+        "title": "Goals",
+        "body": "How far ahead or behind each goal is, compared with the time passed."
+      },
+      "monday": {
+        "title": "Monday's top 3",
+        "body": "Pick the three things to do first on Monday and sum up the week."
       }
     },
     "inboxClear": "Inbox is empty",
@@ -1338,7 +1374,11 @@
     "historyEmptyBody": "Every finished weekly review is kept here.",
     "weekOf": "Week of {date}",
     "historyStats": "{done} done · {overdue} overdue",
-    "reminderHint": "Turn on the weekly review reminder in Settings"
+    "reminderHint": "Turn on the weekly review reminder in Settings",
+    "waitingTitle": "Waiting on others: {count}",
+    "noProjects": "No active projects",
+    "noGoals": "No active goals",
+    "mondayTop3": "Monday's top 3"
   },
   "shutdown": {
     "title": "Close the day",
@@ -1357,7 +1397,12 @@
     "closed": "Day closed",
     "closedBody": "{done} done today. Get some rest!",
     "homeTitle": "Time to close the day",
-    "homeBody": "Move what's left and pick tomorrow's top 3"
+    "homeBody": "Move what's left and pick tomorrow's top 3",
+    "later": "Later",
+    "drop": "Drop",
+    "triage": "What to do with «{title}»",
+    "dropped": "Task cancelled",
+    "movedLater": "Moved to next Monday"
   },
   "routines": {
     "title": "Routines",
@@ -1387,5 +1432,246 @@
     },
     "homeEmpty": "Add a routine",
     "progress": "{done}/{total}"
+  },
+  "modules": {
+    "title": "Modules",
+    "hint": "Extra sections for business. Switched on per workspace.",
+    "pipeline": "Pipeline",
+    "pipelineHint": "Deals by stage, conversion and stale deals",
+    "money": "Money",
+    "moneyHint": "Income and expenses, UZS/USD, partner split and approval of large expenses",
+    "docs": "Docs",
+    "docsHint": "Project documents with version history and linked tasks",
+    "offTitle": "«{name}» is off in this workspace",
+    "offBody": "A workspace admin can switch it on in Settings → Workspace → Modules.",
+    "openSettings": "Open settings"
+  },
+  "pipeline": {
+    "title": "Pipeline",
+    "subtitle": "Deals, next steps and conversion",
+    "newDeal": "New deal",
+    "editDeal": "Edit deal",
+    "dealTitle": "Deal name",
+    "value": "Value",
+    "stage": "Stage",
+    "owner": "Owner",
+    "contact": "Contact",
+    "source": "Source",
+    "sourcePlaceholder": "Instagram, referral…",
+    "nextStep": "Next step",
+    "nextStepPlaceholder": "E.g. send the proposal",
+    "nextStepDate": "Date",
+    "lostReason": "Why it was lost",
+    "lostReasonRequired": "Write why the deal was lost",
+    "lostTitle": "«{title}» — why was it lost?",
+    "lostBody": "The reason helps you improve the pipeline later.",
+    "lostPlaceholder": "E.g. budget too small",
+    "markLost": "Mark as lost",
+    "history": "Stage history",
+    "createdIn": "Created in «{stage}»",
+    "move": "Move",
+    "moveTo": "Move to stage",
+    "moveDeal": "Move «{title}»",
+    "moved": "Moved to «{stage}»",
+    "openDeals": "Open deals",
+    "wonThisMonth": "Won this month",
+    "conversion": "Conversion",
+    "conversionHint": "This month: {won} won, {lost} lost",
+    "needAttention": "Need attention",
+    "needAttentionHint": "Stale or next step overdue",
+    "stale": {
+      "no_move": "No movement for 14 days",
+      "step_overdue": "Next step overdue",
+      "no_step": "No next step"
+    },
+    "noStages": "No stages",
+    "noStagesBody": "Switch the module off and on again to add the default stages.",
+    "guest": "The pipeline is visible to team members only",
+    "toProject": "Turn into a project",
+    "wonTitle": "«{title}» won!",
+    "wonBody": "Create a project from the deal — pick a template to get sections and tasks ready.",
+    "template": "Template",
+    "emptyProject": "Empty project",
+    "later": "Later",
+    "createProject": "Create project"
+  },
+  "money": {
+    "title": "Money",
+    "subtitle": "Income and expenses, monthly result and the partner split",
+    "addIncome": "Income",
+    "addExpense": "Expense",
+    "editEntry": "Edit entry",
+    "income": "Income",
+    "expense": "Expenses",
+    "profit": "Profit",
+    "inUsd": "of which {amount}",
+    "ratesHint": "1 USD = {rate} UZS",
+    "month": "Month",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month",
+    "allProjects": "All projects",
+    "allPartners": "All partners",
+    "partner": "Partner",
+    "byMonth": "By month",
+    "mln": "M",
+    "thousand": "k",
+    "pendingTitle": "Waiting for approval: {count}",
+    "waitingForPartner": "Waiting for your partner",
+    "approve": "Approve",
+    "reject": "Reject",
+    "splitTitle": "Partner split",
+    "splitOff": "The split rule is off. Set it up in Settings → Workspace → Money.",
+    "splitRule": "Direct costs first, then {fund}% to the common fund, the rest by shares",
+    "directCosts": "Direct costs",
+    "fundShare": "Common fund ({pct}%)",
+    "whoOwes": "Who pays whom",
+    "settled": "All square — nobody owes anything",
+    "pays": "pays",
+    "fund": "Common fund",
+    "entries": "Entries: {count}",
+    "empty": "No entries this month",
+    "emptyBody": "Add income or an expense — the month's result and the split are worked out for you.",
+    "guest": "Money is visible to team members only",
+    "direct": "direct",
+    "directLabel": "Direct cost",
+    "directHint": "Spent on a project (ads, materials) — taken off before the split. Other expenses are paid from the common fund.",
+    "status": {
+      "pending": "waiting for approval",
+      "rejected": "rejected"
+    },
+    "amount": "Amount",
+    "currency": "Currency",
+    "rate": "USD rate",
+    "method": "Method",
+    "methods": {
+      "cash": "Cash",
+      "card": "Card",
+      "transfer": "Transfer"
+    },
+    "receivedBy": "Received by",
+    "paidBy": "Paid by",
+    "category": "Category",
+    "categoryPlaceholder": "Ads, rent, salaries…",
+    "needsApproval": "Expenses of {amount} or more count once your partner approves them.",
+    "settings": "Money settings",
+    "settingsHint": "Exchange rate, approval threshold and the partner split",
+    "perUsd": "UZS = 1 USD",
+    "rateHint": "New USD entries use this rate",
+    "threshold": "Approval threshold",
+    "thresholdHint": "Expenses above this need the other partner's approval",
+    "thresholdOff": "Off",
+    "split": "Partner split",
+    "splitHint": "E.g. costs, then 10% to a fund, then 50/50",
+    "fundPct": "Common fund",
+    "shareOf": "{name}'s share",
+    "sharesNot100": "Shares add up to {total}% — they should be 100%"
+  },
+  "docs": {
+    "title": "Docs",
+    "subtitle": "SOPs, scripts, proposals — every project document",
+    "search": "Search documents",
+    "empty": "No documents yet",
+    "emptyBody": "Create one in a project's «Notes» tab.",
+    "linkedCount": "{count, plural, one {# task} other {# tasks}}",
+    "history": "History",
+    "historyTitle": "«{title}» — versions",
+    "historyHint": "Changes are kept at most every 10 minutes; you can bring an older version back.",
+    "versions": "Versions",
+    "noVersions": "No earlier versions yet",
+    "restore": "Restore this version",
+    "linkedTasks": "Linked tasks",
+    "linkTask": "Link a task",
+    "searchTask": "Search tasks…",
+    "noLinked": "No tasks linked to this document",
+    "unlink": "Unlink «{title}»"
+  },
+  "energy": {
+    "label": "Energy",
+    "deep": "Deep work",
+    "quick": "Quick task",
+    "cardTitle": "What now?",
+    "morning": "For the morning focus — deep work",
+    "gap": "Free {from}–{to} — quick tasks"
+  },
+  "prayer": {
+    "title": "Prayer times",
+    "hint": "Optional: the five prayers show on the day timeline and reminders stay out of those minutes.",
+    "enable": "Plan around prayer times",
+    "city": "City",
+    "pickCity": "Pick a city",
+    "madhab": "Asr time",
+    "hanafi": "Hanafi",
+    "shafi": "Shafi'i",
+    "minutes": "For each prayer",
+    "minutesHint": "Reminders wait during this time",
+    "today": "Today",
+    "method": "Calculated with the Muslim World League (MWL) method; it can differ from your local mosque by a few minutes.",
+    "names": {
+      "fajr": "Fajr",
+      "dhuhr": "Dhuhr",
+      "asr": "Asr",
+      "maghrib": "Maghrib",
+      "isha": "Isha"
+    }
+  },
+  "calendarSync": {
+    "title": "Google Calendar",
+    "hint": "Two-way: busy time from Google shows on the day timeline, and time blocks you mark go to Google.",
+    "soon": "Coming soon",
+    "notConfigured": "Connecting Google Calendar works once the administrator sets up the Google OAuth keys. Meanwhile you can subscribe one way with the ICS link below.",
+    "connect": "Connect Google Calendar",
+    "connectedAs": "Connected: {email}",
+    "lastSync": "Last sync: {when}",
+    "neverSynced": "Not synced yet",
+    "syncNow": "Sync now",
+    "disconnect": "Disconnect",
+    "synced": "Google Calendar synced",
+    "connectedToast": "Google Calendar connected",
+    "errorToast": "Couldn't reach Google Calendar",
+    "lastError": "Last error: {message}",
+    "blockHint": "Tap the calendar icon on a time block in the day timeline — the block goes to Google Calendar and stays updated.",
+    "blockToggle": "«{title}» — write to Google Calendar",
+    "busy": "Busy",
+    "fromGoogle": "Google Calendar",
+    "allDay": "All day"
+  },
+  "trust": {
+    "devicesTitle": "Devices",
+    "devicesHint": "Where your account is signed in. Sign out of any you don't recognise.",
+    "thisDevice": "This device",
+    "unknownDevice": "Unknown device",
+    "lastActive": "Last active {when}",
+    "signOut": "Sign out",
+    "signOutOthers": "Sign out of all other devices",
+    "signedOut": "Signed out (takes effect within an hour)",
+    "demoNote": "Not available in the demo — it shows in a real account.",
+    "backupTitle": "Backups",
+    "backupHint": "A full copy of your data.",
+    "backupWeekly": "Weekly backup by email",
+    "backupWeeklyHint": "Every Sunday night the workspaces you own are emailed to you as JSON files.",
+    "exportAll": "Download everything",
+    "exportAllHint": "All workspaces and your personal data in one JSON file",
+    "exportAllButton": "Download",
+    "auditTitle": "Audit log",
+    "auditHint": "Who changed roles, deleted projects or exported data — visible to admins only.",
+    "auditEmpty": "Nothing recorded yet",
+    "someone": "Someone",
+    "system": "System",
+    "audit": {
+      "member_added": "added «{name}» ({role})",
+      "role_changed": "changed «{name}»'s role: {from} → {to}",
+      "member_removed": "removed «{name}»",
+      "project_deleted": "moved project «{name}» to the trash",
+      "project_deleted_forever": "deleted project «{name}» for good",
+      "project_restored": "restored project «{name}»",
+      "modules_changed": "changed the modules",
+      "money_settings_changed": "changed the money settings",
+      "invite_created": "created an invitation ({role})",
+      "invite_revoked": "revoked an invitation",
+      "expense_approved": "approved a large expense",
+      "expense_rejected": "rejected a large expense",
+      "data_exported": "exported data ({format})",
+      "other": "{action}"
+    }
   }
 }

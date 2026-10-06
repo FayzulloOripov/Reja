@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useMounted, useTheme } from "@/components/providers/theme";
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { setLocaleCookie } from "@/server/actions/locale";
 import { useMe } from "@/store/hooks";
 import { refresh, useStore } from "@/store/store";
@@ -14,7 +14,7 @@ import { useBootstrap } from "@/hooks/use-bootstrap";
 import { MobileTabBar, MobileTopBar } from "./mobile-nav";
 import { DemoBanner } from "./demo-banner";
 import { FocusPill } from "./focus-pill";
-import { PwaManager } from "./pwa";
+import { AppBadge, PwaManager } from "./pwa";
 import { Sidebar } from "./sidebar";
 import { useGlobalShortcuts } from "./shortcuts";
 import { cn } from "@/lib/utils";
@@ -64,6 +64,8 @@ export function AppClient({ userId, demo, children }: { userId: string; demo?: b
   }, []);
 
   const showSkeleton = !mounted || ((status === "loading" || status === "idle") && !me);
+  // the task panel, quick add and palette (editor, cmdk…) load after the page itself is on screen
+  const overlaysReady = useIdleAfter(!showSkeleton);
 
   return (
     <div className="flex min-h-dvh bg-background">
@@ -86,11 +88,28 @@ export function AppClient({ userId, demo, children }: { userId: string; demo?: b
         </main>
       </div>
       <MobileTabBar />
-      <Overlays />
+      {overlaysReady && <Overlays />}
       {mounted && <PwaManager />}
+      {mounted && <AppBadge />}
       <FocusPill />
     </div>
   );
+}
+
+/** True once `when` has held and the browser has had an idle moment (or 1.5 s passed). */
+function useIdleAfter(when: boolean): boolean {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    if (!when || ready) return;
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
+    if (w.requestIdleCallback) {
+      const id = w.requestIdleCallback(() => setReady(true), { timeout: 1500 });
+      return () => w.cancelIdleCallback?.(id);
+    }
+    const id = setTimeout(() => setReady(true), 300);
+    return () => clearTimeout(id);
+  }, [when, ready]);
+  return ready;
 }
 
 /** Nothing cached and the first load failed: say so and offer a retry. */

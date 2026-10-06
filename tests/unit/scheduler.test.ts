@@ -2,6 +2,7 @@ import { createTranslator } from "next-intl";
 import { beforeEach, describe, expect, it } from "vitest";
 import uz from "../../messages/uz.json";
 import en from "../../messages/en.json";
+import { prayerBlocks } from "@/lib/prayer";
 import { runScheduler, type SchedNotification, type SchedProfile, type SchedReminder, type SchedTask, type SchedulerStore, type Senders } from "@/server/scheduler/core";
 
 const t = (locale: string) => {
@@ -92,6 +93,10 @@ class FakeStore implements SchedulerStore {
   async completedCount() {
     return 7;
   }
+  backups: { filename: string; content: string; workspace: string }[] = [{ filename: "reja-agentlik.json", content: "{}", workspace: "Agentlik" }];
+  async backupFor() {
+    return this.backups;
+  }
   async pushSubscriptions() {
     return [{ id: "s1", endpoint: "https://push.example/1", p256dh: "k", auth: "a" }];
   }
@@ -106,6 +111,7 @@ class FakeSenders implements Senders {
   telegrams: { chatId: number; html: string; buttons?: unknown }[] = [];
   pushes: string[] = [];
   emails: string[] = [];
+  attachments: ({ filename: string; content: string }[] | undefined)[] = [];
   failTelegram = false;
   async telegram(chatId: number, html: string, buttons?: unknown) {
     if (this.failTelegram) throw new Error("telegram down");
@@ -115,8 +121,9 @@ class FakeSenders implements Senders {
     this.pushes.push(payload.title);
     return "ok" as const;
   }
-  async email(to: string, subject: string) {
+  async email(to: string, subject: string, _content?: unknown, _lang?: string, attachments?: { filename: string; content: string }[]) {
     this.emails.push(subject);
+    this.attachments.push(attachments);
     return true;
   }
 }
@@ -160,6 +167,19 @@ describe("reminders", () => {
     expect(senders.telegrams).toHaveLength(0);
     expect(store.reminders[0]).toMatchObject({ status: "pending", remind_at: "2026-10-06T02:00:00.000Z" });
     await run("2026-10-06T02:00:10Z"); // 07:00 local
+    expect(senders.telegrams).toHaveLength(1);
+  });
+
+  it("keeps reminders out of prayer time when prayer-aware planning is on", async () => {
+    const tashkent = { prayer_enabled: true, prayer_lat: 41.2995, prayer_lng: 69.2401, prayer_madhab: "hanafi" as const, prayer_minutes: 20 };
+    store.prof.set("u1", profile({ ...tashkent }));
+    const dhuhr = prayerBlocks("2026-10-05", tashkent)[1];
+    const at = new Date(dhuhr.start.getTime() + 2 * 60_000).toISOString();
+    store.reminders.push({ id: "rp", user_id: "u1", task_id: "t1", title: null, remind_at: at, channels: ["telegram"], attempts: 0, status: "pending" });
+    const res = await run(at);
+    expect(res.reminders.deferred).toBe(1);
+    expect(store.reminders[0]).toMatchObject({ status: "pending", remind_at: dhuhr.end.toISOString() });
+    await run(dhuhr.end.toISOString());
     expect(senders.telegrams).toHaveLength(1);
   });
 
@@ -236,6 +256,16 @@ describe("daily digest and weekly review", () => {
     expect(senders.pushes).toContain("Kunni yakunlash vaqti");
     const again = await run("2026-10-05T13:50:00Z");
     expect(again.daily.shutdown).toBe(0);
+  });
+
+  it("emails the weekly backup on Sunday night, once, with the JSON attached", async () => {
+    store.prof.set("u1", profile({ digest_enabled: false, review_enabled: false, backup_enabled: true, last_backup_on: null }));
+    const before = await run("2026-10-10T21:30:00Z"); // Sunday 02:30 Tashkent
+    expect(before.daily.backup).toBe(0);
+    const at = await run("2026-10-10T22:05:00Z"); // Sunday 03:05
+    expect(at.daily.backup).toBe(1);
+    expect(senders.attachments.at(-1)).toEqual([{ filename: "reja-agentlik.json", content: "{}" }]);
+    expect((await run("2026-10-10T22:30:00Z")).daily.backup).toBe(0);
   });
 
   it("sends the weekly review on the chosen weekday", async () => {

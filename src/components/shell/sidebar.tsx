@@ -2,6 +2,9 @@
 
 import {
   BarChart3,
+  Banknote,
+  FileText,
+  Filter,
   ClipboardCheck,
   Handshake,
   ListChecks,
@@ -99,7 +102,14 @@ export function useNavItems() {
     { href: "/overview", label: t("overview"), icon: LayoutDashboard },
     { href: "/notifications", label: t("notifications"), icon: Bell, badge: unread, tone: "danger" },
   ];
+  const modules = useCurrentWorkspace()?.modules;
+  const business: NavItem[] = [
+    ...(modules?.pipeline ? [{ href: "/pipeline", label: t("pipeline"), icon: Filter }] : []),
+    ...(modules?.money ? [{ href: "/money", label: t("money"), icon: Banknote }] : []),
+    ...(modules?.docs ? [{ href: "/docs", label: t("docs"), icon: FileText }] : []),
+  ];
   const secondary: NavItem[] = [
+    ...business,
     { href: "/meetings", label: t("meetings"), icon: Handshake },
     { href: "/review", label: t("review"), icon: ClipboardCheck },
     { href: "/goals", label: t("goals"), icon: Target },

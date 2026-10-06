@@ -22,6 +22,8 @@ import { useMe, useToday, useTz, useUserId } from "@/store/hooks";
 import { setLocaleCookie } from "@/server/actions/locale";
 import { sendTestNotification } from "@/server/actions/notifications";
 import { getBrowserSupabase } from "@/lib/supabase/client";
+import { PrayerCard } from "./prayer";
+import { DevicesCard } from "./trust";
 import { SettingsCard, SettingsRow, timeValue } from "./common";
 import { useSyncedState } from "@/hooks/use-synced-state";
 
@@ -46,6 +48,7 @@ export function ProfileSection() {
   if (!me) return null;
 
   return (
+    <div className="space-y-5">
     <SettingsCard title={t("settings.profile")}>
       <div className="flex items-center gap-4 px-5 py-4">
         <UserAvatar profile={{ ...me, avatar_url: avatar || null }} size={56} />
@@ -147,6 +150,9 @@ export function ProfileSection() {
         </Button>
       </SettingsRow>
     </SettingsCard>
+    <PrayerCard me={me} />
+    <DevicesCard />
+    </div>
   );
 }
 

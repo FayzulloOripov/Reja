@@ -54,7 +54,11 @@ export async function seedDemoAccount(sb: SupabaseClient, people: SeedPeople, op
     if (error) throw new Error(`${table}: ${error.message}`);
   };
 
-  const team = fix((demo.workspaces as Row[]).filter((w) => !w.is_personal));
+  // the split rule is keyed by user id: point it at the real people
+  const team = fix((demo.workspaces as Row[]).filter((w) => !w.is_personal)).map((w) => {
+    const split = w.money_split as { fund_pct: number; shares: Record<string, number> } | null;
+    return split ? { ...w, money_split: { ...split, shares: Object.fromEntries(Object.entries(split.shares).map(([k, v]) => [remap(k), v])) } } : w;
+  });
   await insert("workspaces", team);
   // the owner's membership is added by a trigger
   await insert("workspace_members", fix((demo.workspace_members as Row[]).filter((m) => m.user_id !== DEMO_USER_ID)));
@@ -85,6 +89,12 @@ export async function seedDemoAccount(sb: SupabaseClient, people: SeedPeople, op
   await insert("routines", fix(demo.routines));
   await insert("routine_runs", fix(demo.routine_runs));
   await insert("weekly_reviews", fix(demo.weekly_reviews));
+  await insert("deal_stages", fix(demo.deal_stages));
+  await insert("deals", fix(demo.deals));
+  // amount_uzs is computed by the database
+  await insert("money_entries", fix(demo.money_entries).map(({ amount_uzs: _uzs, ...r }) => (void _uzs, r)));
+  await insert("note_versions", fix(demo.note_versions));
+  await insert("note_tasks", fix(demo.note_tasks));
 
   const teamId = team[0]?.id as string;
   const { error } = await sb.from("profiles").update({ current_workspace_id: teamId, onboarded_at: new Date().toISOString(), timezone: tz, language: lang }).eq("id", people.me);

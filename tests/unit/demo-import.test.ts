@@ -112,3 +112,33 @@ describe("planDemoImport — organisation", () => {
     expect(p.items.find((i) => i.table === "routine_runs")!.row).toMatchObject({ user_id: "me", checked: ["r1", "r2"] });
   });
 });
+
+describe("planDemoImport — business modules", () => {
+  const demo = buildDemoData(DEMO_USER_ID, "2026-10-06", "Asia/Tashkent", "uz");
+  const snap: Snapshot = Object.fromEntries(
+    Object.entries(demo).map(([table, rows]) => [table, Object.fromEntries((rows as Record<string, unknown>[]).map((r) => [String(r.id ?? `${r.note_id ?? r.task_id}|${r.task_id ?? r.user_id}`), r]))]),
+  );
+  let n = 0;
+  const plan = planDemoImport(snap, { userId: "me", workspaceId: "ws", mode: "all", newId: () => `b-${++n}` });
+  const of = (table: string) => plan.items.filter((i) => i.table === table).map((i) => i.row);
+
+  it("brings stages, deals and money; amount_uzs is left to the database and the partner's money goes to the fund", () => {
+    expect(of("deal_stages")).toHaveLength(demo.deal_stages.length);
+    const stageIds = new Set(of("deal_stages").map((s) => s.id));
+    expect(of("deals")).toHaveLength(demo.deals.length);
+    for (const d of of("deals")) expect(stageIds.has(d.stage_id)).toBe(true);
+    const money = of("money_entries");
+    expect(money).toHaveLength(demo.money_entries.length);
+    expect(money.every((m) => !("amount_uzs" in m) && (m.partner_id === "me" || m.partner_id === null) && m.created_by === "me")).toBe(true);
+    // stages come before the deals that use them
+    const order = plan.items.map((i) => i.table);
+    expect(order.indexOf("deal_stages")).toBeLessThan(order.indexOf("deals"));
+  });
+
+  it("keeps document links between imported notes and tasks", () => {
+    const notes = new Set(of("notes").map((x) => x.id));
+    const links = of("note_tasks");
+    expect(links.length).toBe(demo.note_tasks.length);
+    for (const l of links) expect(notes.has(l.note_id)).toBe(true);
+  });
+});

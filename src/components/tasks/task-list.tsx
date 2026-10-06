@@ -279,9 +279,10 @@ export function TaskList({ groups, showProject, sortable, readOnly, allowAdd, on
           </div>
         );
         return (
-          <section key={g.key} aria-label={typeof g.title === "string" ? g.title : undefined} className="space-y-1">
+          <div role="rowgroup" key={g.key} aria-label={typeof g.title === "string" ? g.title : undefined} className="space-y-1">
             {g.title !== undefined && (
-              <div className="flex items-center gap-2 px-2.5 pb-1">
+              <div role="row" className="flex items-center gap-2 px-2.5 pb-1">
+                <div role="columnheader" className="contents">
                 {g.collapsible !== false && (
                   <button
                     onClick={() => setCollapsed((c) => ({ ...c, [g.key]: !c[g.key] }))}
@@ -296,6 +297,7 @@ export function TaskList({ groups, showProject, sortable, readOnly, allowAdd, on
                 <h3 className={cn("font-sans text-13 font-semibold tracking-normal", g.tone === "danger" ? "text-danger-fg" : "text-foreground")}>{g.title}</h3>
                 <span className="tnum text-xs text-muted-foreground">{g.tasks.length}</span>
                 <span className="ml-2 h-px flex-1 bg-border" />
+                </div>
               </div>
             )}
             {!isCollapsed &&
@@ -308,8 +310,14 @@ export function TaskList({ groups, showProject, sortable, readOnly, allowAdd, on
               ) : (
                 rows
               ))}
-            {!isCollapsed && allowAdd && !readOnly && !g.noAdd && <InlineAdd defaults={g.defaults} />}
-          </section>
+            {!isCollapsed && allowAdd && !readOnly && !g.noAdd && (
+              <div role="row">
+                <div role="gridcell">
+                  <InlineAdd defaults={g.defaults} />
+                </div>
+              </div>
+            )}
+          </div>
         );
       })}
     </div>
@@ -322,7 +330,7 @@ export function TaskList({ groups, showProject, sortable, readOnly, allowAdd, on
       <BodyPortal>
         <DragOverlay dropAnimation={{ duration: 180, easing: "cubic-bezier(0.22, 0.8, 0.24, 1)" }}>
           {activeTask ? (
-            <div className="rotate-[0.6deg] scale-[1.02] rounded-lg bg-card shadow-elev-4 ring-1 ring-border">
+            <div role="grid" aria-hidden className="rotate-[0.6deg] scale-[1.02] rounded-lg bg-card shadow-elev-4 ring-1 ring-border">
               <TaskRow task={activeTask} showProject={showProject} />
             </div>
           ) : null}
@@ -342,7 +350,12 @@ function GapRow({ group, droppable }: { group: TaskGroup; droppable: boolean }) 
       {group.gap!.label}
     </button>
   );
-  return droppable ? <GroupDrop id={`group:${group.key}`}>{button}</GroupDrop> : button;
+  const row = (
+    <div role="row">
+      <div role="gridcell">{button}</div>
+    </div>
+  );
+  return droppable ? <GroupDrop id={`group:${group.key}`}>{row}</GroupDrop> : row;
 }
 
 /** "Add task" row that understands the quick-add syntax. */

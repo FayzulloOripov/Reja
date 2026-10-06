@@ -23,7 +23,7 @@ const task = (p: Partial<Task>): Task =>
     id: Math.random().toString(36), workspace_id: "w", project_id: null, section_id: null, parent_id: null, title: "t",
     description: null, status: "todo", priority: "none", start_date: null, due_date: null, due_at: null, deadline: null,
     estimate_min: null, recurrence: null, recurrence_parent_id: null, top_date: null, position: 0, completed_at: null,
-    created_by: "u", source: null, waiting_on_user_id: null, waiting_on_contact_id: null, waiting_since: null, follow_up_date: null,
+    created_by: "u", source: null, waiting_on_user_id: null, waiting_on_contact_id: null, waiting_since: null, follow_up_date: null, energy: null,
     created_at: "", updated_at: "", deleted_at: null, ...p,
   }) as Task;
 

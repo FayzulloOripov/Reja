@@ -2,7 +2,9 @@
 
 import { Download, Share, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { isOpen } from "@/lib/health";
+import { useMyTasks, useToday } from "@/store/hooks";
 import { LogoMark } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 
@@ -93,4 +95,17 @@ export function PwaManager() {
       </div>
     </div>
   );
+}
+
+/** The home-screen icon shows how many tasks are open for today (where the platform supports badges). */
+export function AppBadge() {
+  const mine = useMyTasks();
+  const today = useToday();
+  const count = useMemo(() => mine.filter((x) => isOpen(x) && ((x.due_date && x.due_date <= today) || x.top_date === today)).length, [mine, today]);
+  useEffect(() => {
+    const nav = navigator as Navigator & { setAppBadge?: (n?: number) => Promise<void>; clearAppBadge?: () => Promise<void> };
+    if (!nav.setAppBadge) return;
+    void (count > 0 ? nav.setAppBadge(count) : nav.clearAppBadge?.())?.catch(() => {});
+  }, [count]);
+  return null;
 }

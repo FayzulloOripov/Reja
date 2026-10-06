@@ -3,7 +3,7 @@
 import { FileText, Plus, Trash2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSyncedState } from "@/hooks/use-synced-state";
 import { EmptyState } from "@/components/common/empty-state";
 import { RichEditor } from "@/components/editor/rich-editor";
@@ -12,6 +12,7 @@ import { useFormat } from "@/lib/format";
 import type { Note, Project } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { createNote, deleteNote, updateNote } from "@/store/actions";
+import { LinkedTasks, VersionsButton } from "@/components/business/doc-extras";
 import { useToday, useTz } from "@/store/hooks";
 import { useStore } from "@/store/store";
 
@@ -80,8 +81,20 @@ export function NotesTab({ project, writable }: { project: Project; writable: bo
 
 function NoteEditor({ note, writable }: { note: Note; writable: boolean }) {
   const t = useTranslations();
+  const docs = useStore((s) => Boolean(s.data.workspaces[note.workspace_id]?.modules?.docs));
   const [title, setTitle] = useSyncedState(note.title);
+  // bumped after restoring a version, so the editor shows the restored text
+  const [revision, setRevision] = useState(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pending = useRef<Note["content"] | undefined>(undefined);
+  useEffect(() => {
+    const id = note.id;
+    return () => {
+      // keep what was typed when the document closes before the save timer fires
+      if (timer.current) clearTimeout(timer.current);
+      if (pending.current !== undefined) updateNote(id, { content: pending.current });
+    };
+  }, [note.id]);
   return (
     <article className="min-h-[50vh] rounded-2xl border bg-card p-5 shadow-elev-1 sm:p-8">
       <div className="flex items-start gap-2">
@@ -94,6 +107,7 @@ function NoteEditor({ note, writable }: { note: Note; writable: boolean }) {
           aria-label={t("notes.titlePlaceholder")}
           className="flex-1 bg-transparent font-display text-28 font-bold outline-none placeholder:text-subtle-foreground"
         />
+        {docs && <VersionsButton note={note} writable={writable} onRestored={() => setRevision((r) => r + 1)} />}
         {writable && (
           <Button variant="ghost" size="icon-sm" onClick={() => deleteNote(note.id)} aria-label={t("common.delete")}>
             <Trash2 />
@@ -102,17 +116,23 @@ function NoteEditor({ note, writable }: { note: Note; writable: boolean }) {
       </div>
       <div className="mt-4">
         <RichEditor
+          key={revision}
           value={note.content}
           editable={writable}
           toolbar
           placeholder={t("notes.bodyPlaceholder")}
           className="min-h-[40vh] text-[15px]"
           onChange={(doc) => {
+            pending.current = doc;
             if (timer.current) clearTimeout(timer.current);
-            timer.current = setTimeout(() => updateNote(note.id, { content: doc }), 700);
+            timer.current = setTimeout(() => {
+              updateNote(note.id, { content: doc });
+              pending.current = undefined;
+            }, 700);
           }}
         />
       </div>
+      {docs && <LinkedTasks note={note} writable={writable} />}
     </article>
   );
 }

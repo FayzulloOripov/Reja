@@ -23,7 +23,7 @@ import {
 } from "@/lib/import/planner";
 import { useFormat } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { runImport } from "@/store/actions";
+import { runImport } from "@/store/import-actions";
 import { useAreas, useCurrentWorkspace, useProjects, useToday, useTz } from "@/store/hooks";
 import { useStore } from "@/store/store";
 

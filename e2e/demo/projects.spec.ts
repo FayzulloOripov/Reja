@@ -74,7 +74,7 @@ test("delegated tasks stay visible: Home card and Kutilmoqda", async ({ page }) 
   await expect(card).toContainText("Asila bilan uchrashuv");
   await card.getByRole("link", { name: /Hammasi/ }).click();
   await expect(page).toHaveURL(/\/waiting/);
-  await expect(page.getByRole("region", { name: "Hamkor (demo)" })).toContainText("Asila bilan uchrashuv");
+  await expect(page.getByRole("rowgroup", { name: "Hamkor (demo)" })).toContainText("Asila bilan uchrashuv");
 });
 
 test.describe("phone", () => {

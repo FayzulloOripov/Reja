@@ -70,6 +70,16 @@ export interface Profile {
   shutdown_enabled: boolean;
   shutdown_time: TimeOfDay;
   last_shutdown_on: ISODate | null;
+  /** prayer-aware planning (off by default) */
+  prayer_enabled: boolean;
+  prayer_city: string | null;
+  prayer_lat: number | null;
+  prayer_lng: number | null;
+  prayer_madhab: "hanafi" | "shafi";
+  prayer_minutes: number;
+  /** weekly JSON backup by email (owners of workspaces) */
+  backup_enabled: boolean;
+  last_backup_on: ISODate | null;
   last_digest_on: ISODate | null;
   last_review_on: ISODate | null;
   last_overdue_nudge_on: ISODate | null;
@@ -84,9 +94,28 @@ export interface Workspace {
   color: string;
   owner_id: UUID;
   is_personal: boolean;
+  /** business modules switched on for this workspace */
+  modules: WorkspaceModules;
+  /** UZS for one USD */
+  usd_rate: number;
+  /** expenses at or above this (UZS) need another partner's approval; null = never */
+  approval_threshold_uzs: number | null;
+  money_split: MoneySplit | null;
   created_at: ISODateTime;
   updated_at: ISODateTime;
   deleted_at: ISODateTime | null;
+}
+
+export interface WorkspaceModules {
+  pipeline: boolean;
+  money: boolean;
+  docs: boolean;
+}
+
+/** Partner split: direct costs first, then fund_pct % to a common fund, the rest by shares (%). */
+export interface MoneySplit {
+  fund_pct: number;
+  shares: Record<UUID, number>;
 }
 
 export interface WorkspaceMember {
@@ -211,6 +240,8 @@ export interface Task {
   waiting_on_contact_id: UUID | null;
   waiting_since: ISODate | null;
   follow_up_date: ISODate | null;
+  /** «chuqur ish» (deep work) or «tez ish» (quick task) */
+  energy: "deep" | "quick" | null;
   created_at: ISODateTime;
   updated_at: ISODateTime;
   deleted_at: ISODateTime | null;
@@ -384,15 +415,22 @@ export interface KeyResult {
   current: number;
   unit: string | null;
   position: number;
+  /** where the current value comes from: manual check-ins or live data */
+  source: KeyResultSource;
+  /** label for tasks_done; project to narrow money/pipeline; scale divides money (1 000 000 → "mln soʻm") */
+  source_config: { label_id?: UUID; project_id?: UUID; scale?: number };
   created_at: ISODateTime;
   updated_at: ISODateTime;
 }
+
+export type KeyResultSource = "manual" | "money_income" | "pipeline_won" | "tasks_done";
 
 export interface KeyResultHistory {
   id: UUID;
   key_result_id: UUID;
   workspace_id: UUID;
   value: number;
+  note: string | null;
   recorded_by: UUID | null;
   recorded_at: ISODateTime;
 }
@@ -439,6 +477,9 @@ export interface TimeBlock {
   task_id: UUID | null;
   title: string | null;
   color: string | null;
+  /** mirror this block to Google Calendar */
+  sync_google: boolean;
+  google_event_id: string | null;
   created_at: ISODateTime;
   updated_at: ISODateTime;
 }
@@ -625,4 +666,118 @@ export interface RoutineRun {
   completed_at: ISODateTime | null;
   created_at: ISODateTime;
   updated_at: ISODateTime;
+}
+
+export type Currency = "UZS" | "USD";
+
+export interface DealStage {
+  id: UUID;
+  workspace_id: UUID;
+  name: string;
+  kind: "open" | "won" | "lost";
+  color: string;
+  position: number;
+  created_at: ISODateTime;
+  updated_at: ISODateTime;
+}
+
+export interface Deal {
+  id: UUID;
+  workspace_id: UUID;
+  stage_id: UUID;
+  title: string;
+  value: number | null;
+  currency: Currency;
+  owner_id: UUID | null;
+  contact_id: UUID | null;
+  source: string | null;
+  next_step: string | null;
+  next_step_date: ISODate | null;
+  lost_reason: string | null;
+  project_id: UUID | null;
+  position: number;
+  stage_changed_at: ISODateTime;
+  closed_at: ISODateTime | null;
+  created_by: UUID | null;
+  deleted_at: ISODateTime | null;
+  created_at: ISODateTime;
+  updated_at: ISODateTime;
+}
+
+export interface DealStageHistory {
+  id: UUID;
+  deal_id: UUID;
+  workspace_id: UUID;
+  from_stage_id: UUID | null;
+  to_stage_id: UUID | null;
+  changed_by: UUID | null;
+  changed_at: ISODateTime;
+}
+
+export interface MoneyEntry {
+  id: UUID;
+  workspace_id: UUID;
+  project_id: UUID | null;
+  kind: "income" | "expense";
+  amount: number;
+  currency: Currency;
+  rate: number | null;
+  /** computed by the database */
+  amount_uzs: number;
+  date: ISODate;
+  method: "cash" | "card" | "transfer";
+  partner_id: UUID | null;
+  category: string | null;
+  note: string | null;
+  direct: boolean;
+  status: "approved" | "pending" | "rejected";
+  approved_by: UUID | null;
+  approved_at: ISODateTime | null;
+  created_by: UUID | null;
+  deleted_at: ISODateTime | null;
+  created_at: ISODateTime;
+  updated_at: ISODateTime;
+}
+
+export interface NoteVersion {
+  id: UUID;
+  note_id: UUID;
+  workspace_id: UUID;
+  project_id: UUID;
+  title: string;
+  content: RichDoc;
+  created_by: UUID | null;
+  created_at: ISODateTime;
+}
+
+export interface NoteTask {
+  note_id: UUID;
+  task_id: UUID;
+  workspace_id: UUID;
+  created_at: ISODateTime;
+}
+
+/** Busy time read from the user's Google Calendar. */
+export interface CalendarEvent {
+  id: UUID;
+  user_id: UUID;
+  google_id: string;
+  calendar_id: string;
+  title: string | null;
+  start_at: ISODateTime;
+  end_at: ISODateTime;
+  all_day: boolean;
+  time_block_id: UUID | null;
+  updated_at: ISODateTime;
+}
+
+export interface AuditEntry {
+  id: UUID;
+  workspace_id: UUID;
+  actor_id: UUID | null;
+  action: string;
+  target_type: string | null;
+  target_id: UUID | null;
+  details: Record<string, unknown>;
+  created_at: ISODateTime;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarClock, LineChart as LineIcon, MoreHorizontal, Plus, Target, Trash2, X } from "lucide-react";
+import { CalendarClock, LineChart as LineIcon, MoreHorizontal, Plus, Target, Trash2, X, Zap } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -27,14 +27,27 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { safeColor } from "@/lib/colors";
-import { goalPace, goalProgress, krProgress } from "@/lib/goals";
+import { goalPace, goalProgress, krProgress, withLive, type AutoData } from "@/lib/goals";
 import { useFormat } from "@/lib/format";
-import type { Goal, KeyResult } from "@/lib/types";
+import type { Goal, KeyResult, KeyResultSource } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { addKeyResult, createGoal, deleteGoal, deleteKeyResult, updateGoal, updateKeyResult } from "@/store/actions";
-import { useCurrentWorkspace, useProjects, useToday, useTz, useWorkspaceRole } from "@/store/hooks";
+import { useCurrentWorkspace, useLabels, useProjects, useToday, useTz, useWorkspaceRole } from "@/store/hooks";
 import { useStore } from "@/store/store";
 import { isFullMember } from "@/lib/permissions";
+
+/** Everything a data-fed key result can count: money, won deals, labelled tasks. */
+function useAutoData(): AutoData {
+  const money = useStore((s) => s.data.money_entries);
+  const deals = useStore((s) => s.data.deals);
+  const stages = useStore((s) => s.data.deal_stages);
+  const tasks = useStore((s) => s.data.tasks);
+  const taskLabels = useStore((s) => s.data.task_labels);
+  return useMemo(
+    () => ({ money: Object.values(money), deals: Object.values(deals), stages, tasks: Object.values(tasks), taskLabels: Object.values(taskLabels) }),
+    [money, deals, stages, tasks, taskLabels],
+  );
+}
 
 export default function GoalsPage() {
   const t = useTranslations();
@@ -42,6 +55,9 @@ export default function GoalsPage() {
   const role = useWorkspaceRole(ws?.id);
   const goals = useStore((s) => s.data.goals);
   const krs = useStore((s) => s.data.key_results);
+  const auto = useAutoData();
+  const today = useToday();
+  const tz = useTz();
   const [open, setOpen] = useState(false);
   const list = useMemo(
     () =>
@@ -65,7 +81,12 @@ export default function GoalsPage() {
       ) : (
         <div className="space-y-4">
           {list.map((g) => (
-            <GoalCard key={g.id} goal={g} krs={Object.values(krs).filter((k) => k.goal_id === g.id).sort((a, b) => a.position - b.position)} writable={writable} />
+            <GoalCard
+              key={g.id}
+              goal={g}
+              krs={Object.values(krs).filter((k) => k.goal_id === g.id).sort((a, b) => a.position - b.position).map((k) => withLive(k, g, auto, today, tz))}
+              writable={writable}
+            />
           ))}
         </div>
       )}
@@ -94,7 +115,7 @@ function GoalCard({ goal, krs, writable }: { goal: Goal; krs: KeyResult[]; writa
     return Object.values(history)
       .filter((h) => h.key_result_id === chartFor)
       .sort((a, b) => a.recorded_at.localeCompare(b.recorded_at))
-      .map((h) => ({ date: h.recorded_at.slice(0, 10), value: Number(h.value) }));
+      .map((h) => ({ date: h.recorded_at.slice(0, 10), value: Number(h.value), note: h.note }));
   }, [history, chartFor]);
 
   return (
@@ -184,22 +205,14 @@ function GoalCard({ goal, krs, writable }: { goal: Goal; krs: KeyResult[]; writa
                   {value(k.current)} / {value(k.target, k.unit)} · <b className="text-foreground">{f.num(krProgress(k))}%</b>
                 </p>
               </div>
-              <label className="flex items-center gap-1.5 text-13 tnum">
-                <span className="sr-only">{t("goals.krCurrent")}</span>
-                <Input
-                  type="number"
-                  defaultValue={k.current}
-                  key={k.current}
-                  disabled={!writable}
-                  onBlur={(e) => {
-                    const v = Number(e.target.value);
-                    if (!Number.isNaN(v) && v !== Number(k.current)) updateKeyResult(k, { current: v });
-                  }}
-                  onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-                  className="h-7 w-20 text-right"
-                />
-                <span className="sr-only">/ {value(k.target, k.unit)}</span>
-              </label>
+              {k.source !== "manual" ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-info-soft px-2 py-0.5 text-2xs font-medium text-info-fg" title={t("goals.autoHint")}>
+                  <Zap className="size-3" /> {t(`goals.sources.${k.source}`)}
+                </span>
+              ) : (
+                <CheckIn kr={k} disabled={!writable} unitLabel={value(k.target, k.unit)} />
+              )}
+              {writable && <KrSource kr={k} workspaceId={goal.workspace_id} />}
               <Button variant="ghost" size="icon-sm" aria-label={t("goals.history")} aria-pressed={chartFor === k.id} onClick={() => setChartFor(chartFor === k.id ? null : k.id)}>
                 <LineIcon />
               </Button>
@@ -213,7 +226,7 @@ function GoalCard({ goal, krs, writable }: { goal: Goal; krs: KeyResult[]; writa
             {chartFor === k.id && (
               <div className="mt-3 h-40 animate-fade-up" role="img" aria-label={`${t("goals.history")}: ${k.title}`}>
                 {chartData.length < 2 ? (
-                  <p className="py-12 text-center text-13 text-muted-foreground">{t("reports.noData")}</p>
+                  <p className="py-12 text-center text-13 text-muted-foreground">{k.source !== "manual" ? t("goals.autoHint") : t("reports.noData")}</p>
                 ) : (
                   <ResponsiveContainer>
                     <LineChart data={chartData} margin={{ top: 8, right: 12, left: -16, bottom: 0 }}>
@@ -226,6 +239,16 @@ function GoalCard({ goal, krs, writable }: { goal: Goal; krs: KeyResult[]; writa
                   </ResponsiveContainer>
                 )}
               </div>
+            )}
+            {chartFor === k.id && chartData.some((d) => d.note) && (
+              <ul className="mt-2 space-y-0.5 text-xs" aria-label={t("goals.checkInNotes")}>
+                {chartData.filter((d) => d.note).map((d, i) => (
+                  <li key={i} className="flex gap-2 tnum">
+                    <span className="shrink-0 text-muted-foreground">{f.dayMonth(d.date)} · {value(d.value, k.unit)}</span>
+                    <span>{d.note}</span>
+                  </li>
+                ))}
+              </ul>
             )}
           </li>
         ))}
@@ -356,5 +379,124 @@ function NewGoalDialog({ open, onOpenChange, workspaceId }: { open: boolean; onO
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** A manual check-in: the new value and an optional note, kept in the history. */
+function CheckIn({ kr, disabled, unitLabel }: { kr: KeyResult; disabled: boolean; unitLabel: string }) {
+  const t = useTranslations();
+  const [open, setOpen] = useState(false);
+  const [val, setVal] = useState(String(kr.current));
+  const [note, setNote] = useState("");
+  return (
+    <Popover
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (o) {
+          setVal(String(kr.current));
+          setNote("");
+        }
+      }}
+    >
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="h-7 tnum" disabled={disabled} aria-label={t("goals.checkInFor", { title: kr.title })}>
+          {t("goals.checkIn")}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-72">
+        <form
+          className="space-y-2.5"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const v = Number(val.replace(",", "."));
+            if (Number.isNaN(v)) return;
+            updateKeyResult(kr, { current: v }, note);
+            setOpen(false);
+          }}
+        >
+          <div className="space-y-1">
+            <Label htmlFor={`ci-${kr.id}`}>{t("goals.krCurrent")}</Label>
+            <div className="flex items-center gap-2">
+              <Input id={`ci-${kr.id}`} autoFocus inputMode="decimal" className="tnum" value={val} onChange={(e) => setVal(e.target.value)} />
+              <span className="shrink-0 text-xs text-muted-foreground">/ {unitLabel}</span>
+            </div>
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor={`cin-${kr.id}`}>{t("goals.checkInNote")}</Label>
+            <Input id={`cin-${kr.id}`} value={note} maxLength={500} onChange={(e) => setNote(e.target.value)} placeholder={t("goals.checkInNotePlaceholder")} />
+          </div>
+          <Button type="submit" size="sm" className="w-full">{t("common.save")}</Button>
+        </form>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+const SCALES = [1, 1000, 1_000_000] as const;
+
+/** Where a key result's value comes from: manual check-ins, or live data from the modules. */
+function KrSource({ kr, workspaceId }: { kr: KeyResult; workspaceId: string }) {
+  const t = useTranslations();
+  const ws = useStore((s) => s.data.workspaces[workspaceId]);
+  const labels = useLabels(workspaceId);
+  const projects = useProjects(workspaceId);
+  const sources: KeyResultSource[] = ["manual", ...(ws?.modules?.money ? (["money_income"] as const) : []), ...(ws?.modules?.pipeline ? (["pipeline_won"] as const) : []), "tasks_done"];
+  const cfg = kr.source_config ?? {};
+  const set = (source: KeyResultSource, config: KeyResult["source_config"] = cfg) => updateKeyResult(kr, { source, source_config: config });
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="ghost" size="icon-sm" aria-label={t("goals.sourceFor", { title: kr.title })}>
+          <Zap className={cn(kr.source !== "manual" && "text-info-fg")} />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-72 space-y-3">
+        <div className="space-y-1">
+          <Label htmlFor={`src-${kr.id}`}>{t("goals.source")}</Label>
+          <Select value={kr.source} onValueChange={(v) => set(v as KeyResultSource, {})}>
+            <SelectTrigger id={`src-${kr.id}`} className="w-full"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {sources.map((s) => <SelectItem key={s} value={s}>{t(`goals.sources.${s}`)}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">{t(`goals.sourceHints.${kr.source}`)}</p>
+        </div>
+        {kr.source === "tasks_done" && (
+          <div className="space-y-1">
+            <Label htmlFor={`lbl-${kr.id}`}>{t("task.labels")}</Label>
+            <Select value={cfg.label_id ?? ""} onValueChange={(v) => set("tasks_done", { label_id: v })}>
+              <SelectTrigger id={`lbl-${kr.id}`} className="w-full"><SelectValue placeholder={t("goals.pickLabel")} /></SelectTrigger>
+              <SelectContent>
+                {labels.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        {kr.source === "money_income" && (
+          <>
+            <div className="space-y-1">
+              <Label htmlFor={`scale-${kr.id}`}>{t("goals.scale")}</Label>
+              <Select value={String(cfg.scale ?? 1)} onValueChange={(v) => set("money_income", { ...cfg, scale: Number(v) })}>
+                <SelectTrigger id={`scale-${kr.id}`} className="w-full"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {SCALES.map((sc) => <SelectItem key={sc} value={String(sc)}>{t(`goals.scales.${sc}`)}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor={`proj-${kr.id}`}>{t("task.project")}</Label>
+              <Select value={cfg.project_id ?? "all"} onValueChange={(v) => set("money_income", { ...cfg, project_id: v === "all" ? undefined : v })}>
+                <SelectTrigger id={`proj-${kr.id}`} className="w-full"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("money.allProjects")}</SelectItem>
+                  {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </>
+        )}
+      </PopoverContent>
+    </Popover>
   );
 }

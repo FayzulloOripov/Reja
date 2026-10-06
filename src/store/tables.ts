@@ -1,11 +1,18 @@
 import type {
   ActivityEntry,
+  CalendarEvent,
   Area,
   Attachment,
   ChecklistItem,
   Comment,
   Contact,
   DailyShutdown,
+  Deal,
+  DealStage,
+  DealStageHistory,
+  MoneyEntry,
+  NoteTask,
+  NoteVersion,
   Meeting,
   MeetingAttendee,
   MeetingItem,
@@ -82,6 +89,13 @@ export interface Tables {
   daily_shutdowns: DailyShutdown;
   routines: Routine;
   routine_runs: RoutineRun;
+  deal_stages: DealStage;
+  deals: Deal;
+  deal_stage_history: DealStageHistory;
+  money_entries: MoneyEntry;
+  note_versions: NoteVersion;
+  note_tasks: NoteTask;
+  calendar_events: CalendarEvent;
 }
 
 export type TableName = keyof Tables;
@@ -129,6 +143,13 @@ export const PK: { [T in TableName]: (keyof Tables[T] & string)[] } = {
   daily_shutdowns: ["id"],
   routines: ["id"],
   routine_runs: ["id"],
+  deal_stages: ["id"],
+  deals: ["id"],
+  deal_stage_history: ["id"],
+  money_entries: ["id"],
+  note_versions: ["id"],
+  note_tasks: ["note_id", "task_id"],
+  calendar_events: ["id"],
 };
 
 export const TABLE_NAMES = Object.keys(PK) as TableName[];
@@ -164,6 +185,13 @@ export const PROFILE_EDITABLE = [
   "daily_capacity_minutes",
   "shutdown_enabled",
   "shutdown_time",
+  "prayer_enabled",
+  "prayer_city",
+  "prayer_lat",
+  "prayer_lng",
+  "prayer_madhab",
+  "prayer_minutes",
+  "backup_enabled",
 ] as const;
 
 export type StoreData = { [T in TableName]: Record<string, Row<T>> };

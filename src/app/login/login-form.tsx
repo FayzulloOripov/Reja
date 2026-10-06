@@ -8,7 +8,6 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getBrowserSupabase } from "@/lib/supabase/client";
 import { sendMagicLink } from "@/server/actions/auth";
 import { setLocaleCookie } from "@/server/actions/locale";
 
@@ -36,6 +35,8 @@ export function LoginForm({ next, initialError, demo, fromDemo }: { next?: strin
     setGoogle(true);
     const redirectTo = new URL("/auth/callback", window.location.origin);
     if (next) redirectTo.searchParams.set("next", next);
+    // the Supabase client loads only when it is needed (keeps the sign-in page light)
+    const { getBrowserSupabase } = await import("@/lib/supabase/client");
     const { error } = await getBrowserSupabase().auth.signInWithOAuth({ provider: "google", options: { redirectTo: redirectTo.toString() } });
     if (error) {
       setError(error.message);

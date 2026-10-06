@@ -76,6 +76,20 @@ create table auth.users (
   email text,
   raw_user_meta_data jsonb not null default '{}'
 );
+-- Supabase keeps sign-in sessions here (only what the app's functions read)
+create table auth.sessions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  refreshed_at timestamp,
+  not_after timestamptz,
+  user_agent text,
+  ip inet
+);
+create function auth.jwt() returns jsonb language sql stable as $$
+  select jsonb_build_object('sub', nullif(current_setting('request.jwt.claim.sub', true), ''), 'session_id', nullif(current_setting('request.jwt.claim.session_id', true), ''))
+$$;
 create function auth.uid() returns uuid language sql stable as $$
   select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
 $$;
@@ -106,14 +120,18 @@ export interface TestUser {
   id: string;
   email: string;
   personalWorkspace: string;
+  /** the auth session this user acts in (tests of the device list) */
+  sessionId?: string;
 }
 
 export async function createUser(db: Db, email: string, name?: string): Promise<TestUser> {
   if (REMOTE) email = email.replace("@", `+${RUN_TAG}@`);
   const { rows } = await db.query<{ id: string }>(
     REMOTE
-      ? `insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
-         values (gen_random_uuid(), '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', $1, $2, now(), now()) returning id`
+      ? // the empty token columns keep Supabase Auth able to list users while these rows exist
+        `insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at,
+                                 confirmation_token, recovery_token, email_change_token_new, email_change, email_change_token_current, phone_change, phone_change_token, reauthentication_token)
+         values (gen_random_uuid(), '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', $1, $2, now(), now(), '', '', '', '', '', '', '', '') returning id`
       : `insert into auth.users (email, raw_user_meta_data) values ($1, $2) returning id`,
     [email, JSON.stringify({ full_name: name ?? email.split("@")[0] })],
   );
@@ -133,9 +151,11 @@ export async function as<T>(
 ): Promise<T> {
   return db.transaction(async (tx) => {
     if (user) {
-      await tx.query(`select set_config('request.jwt.claim.sub', $1, true), set_config('request.jwt.claim.email', $2, true)`, [
+      await tx.query(`select set_config('request.jwt.claim.sub', $1, true), set_config('request.jwt.claim.email', $2, true), set_config('request.jwt.claim.session_id', $3, true),
+                set_config('request.jwt.claims', json_build_object('sub', $1::text, 'email', $2::text, 'role', 'authenticated', 'session_id', nullif($3::text, ''))::text, true)`, [
         user.id,
         user.email,
+        user.sessionId ?? "",
       ]);
       await tx.exec(`set local role authenticated`);
     } else {

@@ -15,13 +15,16 @@ const url = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").trim().replace(/\/rest\
 const serviceKey = (process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? "").trim();
 
 let adminClient: SupabaseClient | null = null;
-function admin(): SupabaseClient {
+export function admin(): SupabaseClient {
   if (!url || !serviceKey) throw new Error("E2E_BACKEND=real needs NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SECRET_KEY");
   adminClient ??= createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
   return adminClient;
 }
 
 const createdUsers: string[] = [];
+
+/** The real user the current test signed in as (E2E_BACKEND=real). */
+export let currentUser: { id: string; email: string } | null = null;
 
 test.afterEach(async () => {
   if (!REAL) return;
@@ -46,6 +49,7 @@ export async function openDemo(page: Page, path = "/") {
   }
   const tag = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
   const me = await realUser("Demo foydalanuvchi", "me", tag);
+  currentUser = me;
   const partner = await realUser("Hamkor (demo)", "partner", tag);
   const guest = await realUser("Konsultant (demo)", "guest", tag);
   await seedDemoAccount(admin(), { me: me.id, partner: partner.id, guest: guest.id });

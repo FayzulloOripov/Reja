@@ -7,8 +7,36 @@ import { buildDemoData } from "@/lib/demo/seed";
 import { todayIn } from "@/lib/dates";
 import { activityFor } from "@/lib/activity";
 import { DEMO_EDITED } from "@/lib/demo/import";
-import { indexRows } from "./supabase-adapter";
+import { indexRows } from "./index-rows";
 import { PK, type DataAdapter, type StoreData } from "./tables";
+
+/** Rows the database triggers would write for this change (deal stage history, document versions). */
+function demoTriggerRows(
+  op: Parameters<DataAdapter["exec"]>[0],
+  next: Record<string, unknown> | null,
+  userId: string,
+  versions: StoreData["note_versions"],
+): { table: "deal_stage_history" | "note_versions"; row: Record<string, unknown> } | null {
+  const prev = op.prev ?? null;
+  const now = new Date().toISOString();
+  if (op.table === "deals" && next && (op.kind === "insert" || (op.kind === "update" && prev?.stage_id !== next.stage_id))) {
+    return {
+      table: "deal_stage_history",
+      row: { id: crypto.randomUUID(), deal_id: next.id, workspace_id: next.workspace_id, from_stage_id: op.kind === "update" ? (prev?.stage_id ?? null) : null, to_stage_id: next.stage_id, changed_by: userId, changed_at: now },
+    };
+  }
+  if (op.table === "notes" && op.kind === "update" && prev && next && (JSON.stringify(prev.content) !== JSON.stringify(next.content) || prev.title !== next.title)) {
+    const last = Object.values(versions)
+      .filter((v) => v.note_id === prev.id)
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+    if (last && last.created_by === userId && Date.now() - Date.parse(last.created_at) < 10 * 60_000) return null;
+    return {
+      table: "note_versions",
+      row: { id: crypto.randomUUID(), note_id: prev.id, workspace_id: prev.workspace_id, project_id: prev.project_id, title: prev.title, content: prev.content, created_by: userId, created_at: now },
+    };
+  }
+  return null;
+}
 
 export function createDemoAdapter(lang: "uz" | "en"): DataAdapter {
   const files = new Map<string, string>();
@@ -49,6 +77,11 @@ export function createDemoAdapter(lang: "uz" | "en"): DataAdapter {
           const table = s.data[op.table] as unknown as Record<string, Record<string, unknown>>;
           return table[key] ? { data: { ...s.data, [op.table]: { ...table, [key]: { ...table[key], [DEMO_EDITED]: true } } } } : {};
         });
+      }
+      // what the database triggers add: deal stage history and document versions
+      const extra = demoTriggerRows(op, next, st.userId ?? "", st.data.note_versions);
+      if (extra) {
+        useStore.setState((s) => ({ data: { ...s.data, [extra.table]: { ...(s.data[extra.table] as Record<string, unknown>), [extra.row.id as string]: extra.row } } }));
       }
     },
 

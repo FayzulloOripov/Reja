@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Check, CheckSquare, CirclePause, GitBranch, GripVertical, MessageSquare, Star, Sun, Sunrise } from "lucide-react";
+import { Brain, CalendarDays, Check, CheckSquare, CirclePause, GitBranch, GripVertical, MessageSquare, Star, Sun, Sunrise, Zap } from "lucide-react";
 import { animate, motion, useMotionValue, useTransform } from "motion/react";
 import { useTranslations } from "next-intl";
 import { memo, useMemo, useRef, useState, type HTMLAttributes } from "react";
@@ -178,6 +178,8 @@ function TaskRowInner({ task, showProject, focused, selected, readOnly, indent, 
         className,
       )}
     >
+      {/* a grid row holds cells: one cell with everything (display: contents keeps the layout) */}
+      <div role="gridcell" className="contents">
       {overdue && !done && <span aria-hidden className="absolute top-2 bottom-2 left-0 w-[3px] rounded-full bg-destructive" />}
       {dragHandle && !readOnly && (
         <button
@@ -199,6 +201,8 @@ function TaskRowInner({ task, showProject, focused, selected, readOnly, indent, 
           </p>
           <div className="flex shrink-0 items-center gap-1.5">
             {isTop && <Star role="img" aria-label={t("task.top3")} className="size-3.5 fill-warning text-warning" />}
+            {task.energy === "deep" && <Brain role="img" aria-label={t("energy.deep")} className="size-3.5 text-[var(--pc-violet-fg)]" />}
+            {task.energy === "quick" && <Zap role="img" aria-label={t("energy.quick")} className="size-3.5 text-[var(--pc-amber-fg)]" />}
             {task.priority !== "none" && <PriorityIcon priority={task.priority} />}
             {meta.assignees.length > 0 && <AvatarStack people={meta.assignees} size={20} max={2} />}
           </div>
@@ -261,6 +265,7 @@ function TaskRowInner({ task, showProject, focused, selected, readOnly, indent, 
           </DatePicker>
         </div>
       )}
+      </div>
     </div>
   );
 

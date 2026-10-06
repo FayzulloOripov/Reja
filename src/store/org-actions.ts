@@ -310,6 +310,22 @@ export function moveLeftoversToTomorrow(tasks: Task[]) {
   undo(tr("task.bulkRescheduled", { count: tasks.length }), mutate(ops));
 }
 
+/** Shutdown, one task at a time: tomorrow, later (next Monday, off the dates) or drop it. */
+export function triageLeftover(task: Task, choice: "tomorrow" | "later" | "drop") {
+  if (choice === "tomorrow") return moveLeftoversToTomorrow([task]);
+  const t0 = today();
+  const values: Partial<Task> =
+    choice === "drop"
+      ? { status: "cancelled", top_date: task.top_date === t0 ? null : task.top_date }
+      : { due_date: nextMonday(t0), due_at: null, top_date: task.top_date === t0 ? null : task.top_date };
+  undo(choice === "drop" ? tr("shutdown.dropped") : tr("shutdown.movedLater"), mutate([{ table: "tasks", kind: "update", row: { id: task.id }, values }]));
+}
+
+function nextMonday(from: string): string {
+  const dow = new Date(from + "T00:00:00Z").getUTCDay(); // 0 = Sunday
+  return addDays(from, ((8 - dow) % 7) || 7);
+}
+
 // ------------------------------------------------------------------ routines
 
 export function createRoutine(input: { workspaceId: string; name: string; items: string[]; recurrence: string; visibility?: Routine["visibility"]; color?: string }): Routine {

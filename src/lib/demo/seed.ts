@@ -2,13 +2,19 @@
 // Every person and company here is invented; names end with "(demo)" where they could be mistaken.
 
 import { addDays, addMonths, nextWeekday, startOfMonth, startOfWeek, zonedToUtc } from "../dates";
+import { DEFAULT_STAGES } from "../pipeline";
 import type {
   ActivityEntry,
   Area,
   Comment,
   ChecklistItem,
   Contact,
+  Deal,
+  DealStage,
   Meeting,
+  MoneyEntry,
+  NoteTask,
+  NoteVersion,
   MeetingAttendee,
   MeetingItem,
   Routine,
@@ -70,6 +76,11 @@ export interface DemoData {
   routines: Routine[];
   routine_runs: RoutineRun[];
   weekly_reviews: WeeklyReview[];
+  deal_stages: DealStage[];
+  deals: Deal[];
+  money_entries: MoneyEntry[];
+  note_versions: NoteVersion[];
+  note_tasks: NoteTask[];
 }
 
 function seededId(n: number): string {
@@ -116,6 +127,14 @@ export function buildDemoData(userId: string, today: string, tz = "Asia/Tashkent
     shutdown_enabled: false,
     shutdown_time: "18:30:00",
     last_shutdown_on: null,
+    prayer_enabled: false,
+    prayer_city: null,
+    prayer_lat: null,
+    prayer_lng: null,
+    prayer_madhab: "hanafi",
+    prayer_minutes: 20,
+    backup_enabled: true,
+    last_backup_on: null,
     work_start: "10:00:00",
     work_end: "19:00:00",
     day_start: "07:00:00",
@@ -134,8 +153,8 @@ export function buildDemoData(userId: string, today: string, tz = "Asia/Tashkent
   const partner = profile(PARTNER, uz ? "Hamkor (demo)" : "Partner (demo)", "partner@example.test");
   const guest = profile(GUEST, uz ? "Konsultant (demo)" : "Consultant (demo)", "consultant@example.test");
 
-  const wsPersonal: Workspace = { id: id(), name: uz ? "Shaxsiy" : "Personal", icon: "sparkles", color: "tangerine", owner_id: userId, is_personal: true, deleted_at: null, ...stamp };
-  const wsTeam: Workspace = { id: id(), name: uz ? "Demo agentlik" : "Demo Agency", icon: "briefcase", color: "indigo", owner_id: userId, is_personal: false, deleted_at: null, ...stamp };
+  const wsPersonal: Workspace = { id: id(), name: uz ? "Shaxsiy" : "Personal", icon: "sparkles", color: "tangerine", owner_id: userId, is_personal: true, modules: { pipeline: false, money: false, docs: false }, usd_rate: 12800, approval_threshold_uzs: null, money_split: null, deleted_at: null, ...stamp };
+  const wsTeam: Workspace = { id: id(), name: uz ? "Demo agentlik" : "Demo Agency", icon: "briefcase", color: "indigo", owner_id: userId, is_personal: false, modules: { pipeline: true, money: true, docs: true }, usd_rate: 12800, approval_threshold_uzs: 5_000_000, money_split: { fund_pct: 10, shares: { [userId]: 50, [PARTNER]: 50 } }, deleted_at: null, ...stamp };
   me.current_workspace_id = wsTeam.id;
 
   const members: WorkspaceMember[] = [
@@ -256,6 +275,7 @@ export function buildDemoData(userId: string, today: string, tz = "Asia/Tashkent
       waiting_on_contact_id: null,
       waiting_since: null,
       follow_up_date: null,
+      energy: null,
       deleted_at: null,
       ...stamp,
       ...extra,
@@ -279,13 +299,13 @@ export function buildDemoData(userId: string, today: string, tz = "Asia/Tashkent
   t(pHome, uz ? "Oila bilan kechki ovqat" : "Family dinner", { due_date: today, due_at: at(today, "19:00") });
 
   // Overdue
-  t(pSales, uz ? "Avgust tushumi farqini solishtirish" : "Reconcile the August revenue gap", { due_date: addDays(today, -3), priority: "high", section_id: sReview.id }, { label: labels[0] });
+  t(pSales, uz ? "Avgust tushumi farqini solishtirish" : "Reconcile the August revenue gap", { due_date: addDays(today, -3), priority: "high", section_id: sReview.id, energy: "deep" }, { label: labels[0] });
   t(pAgency, uz ? "Hamkorlik kelishuviga javob berish" : "Reply to the partnership agreement", { due_date: addDays(today, -1), priority: "medium", section_id: sLeads.id }, { assignee: PARTNER });
 
   // Upcoming
   t(pAgency, uz ? "Brend nomi va shartnoma shablonini kelishish" : "Agree on brand name and contract template", { due_date: addDays(today, 2), deadline: addDays(today, 5), priority: "high", section_id: sContract.id, start_date: addDays(today, -2) }, { assignee: PARTNER });
-  t(pAgency, uz ? "Metod paketi rejasi" : "Method pack plan", { start_date: addDays(today, 1), due_date: addDays(today, 9), priority: "medium", section_id: sProposal.id });
-  t(pSales, uz ? "Sotuv tizimi 2-qism: qoʻngʻiroq skriptlari" : "Sales system part 2: call scripts", { start_date: addDays(today, 3), due_date: addDays(today, 12), section_id: sPlanned.id }, { label: labels[2] });
+  t(pAgency, uz ? "Metod paketi rejasi" : "Method pack plan", { start_date: addDays(today, 1), due_date: addDays(today, 9), priority: "medium", section_id: sProposal.id, energy: "deep" });
+  t(pSales, uz ? "Sotuv tizimi 2-qism: qoʻngʻiroq skriptlari" : "Sales system part 2: call scripts", { start_date: addDays(today, 3), due_date: addDays(today, 12), section_id: sPlanned.id, energy: "deep" }, { label: labels[2] });
   t(pSales, uz ? "Oktabr maqsadini menejer bilan kelishish" : "Agree on October target with the manager", { due_date: addDays(today, 1), priority: "high", section_id: sPlanned.id });
   t(pSales, uz ? "CRM texnik topshirigʻini CTO ga yuborish" : "Send the CRM spec to the CTO", { due_date: addDays(today, 4), section_id: sDoing.id, start_date: today }, { label: labels[2] });
   t(pClinic, uz ? "Kurslar va muolajalar qoʻllanmasi" : "Courses and treatments guide", { start_date: addDays(today, -5), due_date: addDays(today, 6), status: "in_progress" }, { assignee: GUEST });
@@ -294,7 +314,7 @@ export function buildDemoData(userId: string, today: string, tz = "Asia/Tashkent
   t(pHealth, uz ? "Har kuni 8 stakan suv" : "8 glasses of water", { due_date: today, recurrence: "FREQ=DAILY" });
 
   // Someday / no date
-  t(pAgency, uz ? "Voronka sahifasidagi narxlarni yangilash" : "Update prices on the funnel page", { priority: "low", section_id: sLeads.id });
+  t(pAgency, uz ? "Voronka sahifasidagi narxlarni yangilash" : "Update prices on the funnel page", { priority: "low", section_id: sLeads.id, energy: "quick", estimate_min: 15 });
   t(null, uz ? "Kiyim uslubi: asosiy garderob roʻyxati" : "Wardrobe basics list", {});
 
   // Done (this week and last week, for reports)
@@ -327,9 +347,9 @@ export function buildDemoData(userId: string, today: string, tz = "Asia/Tashkent
   const goal: Goal = { id: id(), workspace_id: wsTeam.id, project_id: pSales.id, title: uz ? "Oktabr: 120 mln soʻm tushum" : "October: 120M revenue", description: null, owner_id: userId, start_date: startOfMonth(today), target_date: addDays(startOfMonth(addMonths(today, 1)), -1), status: "active", color: "tangerine", deleted_at: null, ...stamp };
   const goal2: Goal = { id: id(), workspace_id: wsTeam.id, project_id: pAgency.id, title: uz ? "Agentlikni ishga tushirish" : "Launch the agency", description: null, owner_id: userId, start_date: addDays(today, -20), target_date: addDays(today, 40), status: "active", color: "indigo", deleted_at: null, ...stamp };
   const key_results: KeyResult[] = [
-    { id: id(), goal_id: goal.id, workspace_id: wsTeam.id, title: uz ? "Tushum" : "Revenue", start_value: 0, target: 120, current: 54, unit: uz ? "mln soʻm" : "M", position: 1, ...stamp },
-    { id: id(), goal_id: goal.id, workspace_id: wsTeam.id, title: uz ? "Konversiya" : "Conversion", start_value: 8, target: 15, current: 11, unit: "%", position: 2, ...stamp },
-    { id: id(), goal_id: goal2.id, workspace_id: wsTeam.id, title: uz ? "Imzolangan mijozlar" : "Signed clients", start_value: 0, target: 3, current: 1, unit: uz ? "ta" : "", position: 1, ...stamp },
+    { id: id(), goal_id: goal.id, workspace_id: wsTeam.id, title: uz ? "Tushum" : "Revenue", start_value: 0, target: 120, current: 54, unit: uz ? "mln soʻm" : "M", position: 1, source: "manual", source_config: {}, ...stamp },
+    { id: id(), goal_id: goal.id, workspace_id: wsTeam.id, title: uz ? "Konversiya" : "Conversion", start_value: 8, target: 15, current: 11, unit: "%", position: 2, source: "manual", source_config: {}, ...stamp },
+    { id: id(), goal_id: goal2.id, workspace_id: wsTeam.id, title: uz ? "Imzolangan mijozlar" : "Signed clients", start_value: 0, target: 3, current: 1, unit: uz ? "ta" : "", position: 1, source: "pipeline_won", source_config: {}, ...stamp },
   ];
   const key_result_history: KeyResultHistory[] = [12, 25, 33, 41, 54].map((v, i) => ({
     id: id(),
@@ -337,6 +357,7 @@ export function buildDemoData(userId: string, today: string, tz = "Asia/Tashkent
     workspace_id: wsTeam.id,
     value: v,
     recorded_by: userId,
+    note: i === 4 ? (uz ? "Ikki katta toʻlov tushdi" : "Two large payments came in") : null,
     recorded_at: at(addDays(today, -20 + i * 5), "18:00"),
   }));
 
@@ -364,8 +385,8 @@ export function buildDemoData(userId: string, today: string, tz = "Asia/Tashkent
   ];
 
   const time_blocks: TimeBlock[] = [
-    { id: id(), user_id: userId, date: today, start_at: at(today, "08:00"), end_at: at(today, "09:00"), task_id: null, title: uz ? "Agentlik ishlari" : "Agency work", color: "indigo", ...stamp },
-    { id: id(), user_id: userId, date: today, start_at: at(today, "14:00"), end_at: at(today, "15:30"), task_id: tasks[0].id, title: null, color: null, ...stamp },
+    { id: id(), user_id: userId, date: today, start_at: at(today, "08:00"), end_at: at(today, "09:00"), task_id: null, title: uz ? "Agentlik ishlari" : "Agency work", color: "indigo", sync_google: false, google_event_id: null, ...stamp },
+    { id: id(), user_id: userId, date: today, start_at: at(today, "14:00"), end_at: at(today, "15:30"), task_id: tasks[0].id, title: null, color: null, sync_google: false, google_event_id: null, ...stamp },
   ];
 
   const weekStart = startOfWeek(today);
@@ -475,7 +496,61 @@ export function buildDemoData(userId: string, today: string, tz = "Asia/Tashkent
     { id: id(), user_id: userId, week_start: addDays(startOfWeek(today), -7), data: { step: 5, stats: { done: 6, overdue: 2, minutes: 150 }, wins: uz ? "Ikki yangi mijoz bilan uchrashdik" : "Met two new clients", lessons: uz ? "Ertalab birinchi soatni fokusga ajratish kerak" : "Keep the first hour for focus", focus: uz ? "CRM ni tanlash" : "Choose the CRM" }, completed_at: at(addDays(startOfWeek(today), -1), "10:00"), ...stamp },
   ];
 
+  // ---------------------------------------------------------------- business modules (team workspace)
+  const deal_stages: DealStage[] = DEFAULT_STAGES.map((st, i) => ({ id: id(), workspace_id: wsTeam.id, name: st.name[lang], kind: st.kind, color: st.color, position: i + 1, ...stamp }));
+  const [stLead, stContact, stProposal, stNego, stWon, stLost] = deal_stages;
+  const deal = (stage: DealStage, title: string, extra: Partial<Deal> = {}): Deal => ({
+    id: id(), workspace_id: wsTeam.id, stage_id: stage.id, title, value: null, currency: "UZS", owner_id: userId, contact_id: null, source: null,
+    next_step: null, next_step_date: null, lost_reason: null, project_id: null, position: pos++, stage_changed_at: at(addDays(today, -3), "10:00"),
+    closed_at: null, created_by: userId, deleted_at: null, ...stamp, ...extra,
+  });
+  const deals: Deal[] = [
+    deal(stLead, uz ? "Fitnes klubi (demo) — SMM" : "Fitness club (demo) — SMM", { value: 6_000_000, source: "Instagram", next_step: uz ? "Brif yuborish" : "Send the brief", next_step_date: addDays(today, 1) }),
+    deal(stContact, uz ? "Oʻquv markazi (demo) — sayt" : "Training centre (demo) — website", { value: 1_500, currency: "USD", source: uz ? "Tavsiya" : "Referral", owner_id: PARTNER, next_step: uz ? "Narx taklifi" : "Quote", next_step_date: addDays(today, -2) }),
+    deal(stProposal, uz ? "TexnoSoft (demo) — CRM joriy etish" : "TexnoSoft (demo) — CRM rollout", { value: 24_000_000, contact_id: contacts[0].id, source: "LinkedIn", next_step: uz ? "Demo uchrashuv" : "Demo meeting", next_step_date: addDays(today, 2) }),
+    deal(stNego, uz ? "Restoran tarmogʻi (demo) — brending" : "Restaurant chain (demo) — branding", { value: 15_000_000, source: "Telegram", stage_changed_at: at(addDays(today, -20), "10:00") }),
+    deal(stWon, uz ? "Demo klinika — reklama paketi" : "Demo clinic — ad package", { value: 9_000_000, source: uz ? "Tavsiya" : "Referral", closed_at: at(addDays(today, -2), "16:00"), stage_changed_at: at(addDays(today, -2), "16:00"), project_id: pClinic.id }),
+    deal(stLost, uz ? "Kiyim doʻkoni (demo) — SMM" : "Clothing shop (demo) — SMM", { value: 4_000_000, source: "Instagram", lost_reason: uz ? "Byudjeti yetmadi" : "Budget too small", closed_at: at(addDays(today, -5), "12:00"), stage_changed_at: at(addDays(today, -5), "12:00") }),
+  ];
+
+  const monthStart = startOfMonth(today);
+  const dayInMonth = (n: number) => (addDays(monthStart, n) <= today ? addDays(monthStart, n) : today);
+  const prevMonth = startOfMonth(addMonths(today, -1));
+  let mPos = 0;
+  const money = (kind: MoneyEntry["kind"], amount: number, date: string, extra: Partial<MoneyEntry> = {}): MoneyEntry => {
+    const currency = extra.currency ?? "UZS";
+    const rate = currency === "USD" ? 12_800 : null;
+    return {
+      id: id(), workspace_id: wsTeam.id, project_id: null, kind, amount, currency, rate, amount_uzs: currency === "USD" ? amount * 12_800 : amount,
+      date, method: "card", partner_id: userId, category: null, note: null, direct: false, status: "approved", approved_by: null, approved_at: null,
+      created_by: userId, deleted_at: null, created_at: at(date, `1${mPos++ % 9}:00`), updated_at: ts, ...extra,
+    };
+  };
+  const money_entries: MoneyEntry[] = [
+    money("income", 30_000_000, dayInMonth(1), { project_id: pSales.id, note: uz ? "Sotuv bonusi" : "Sales bonus", method: "transfer" }),
+    money("income", 18_000_000, dayInMonth(2), { project_id: pAgency.id, partner_id: PARTNER, created_by: PARTNER, note: uz ? "Demo klinika — 1-toʻlov" : "Demo clinic — 1st payment", method: "cash" }),
+    money("income", 500, dayInMonth(3), { project_id: pAgency.id, currency: "USD", note: uz ? "Xorijiy mijoz" : "Foreign client" }),
+    money("expense", 2_400_000, dayInMonth(2), { project_id: pAgency.id, direct: true, category: uz ? "Reklama" : "Ads", note: uz ? "Instagram reklama" : "Instagram ads" }),
+    money("expense", 1_200_000, dayInMonth(3), { partner_id: PARTNER, created_by: PARTNER, category: uz ? "Ofis" : "Office", note: uz ? "Internet va ijara ulushi" : "Internet and rent share", method: "cash" }),
+    money("expense", 7_500_000, today, { partner_id: PARTNER, created_by: PARTNER, status: "pending", category: uz ? "Texnika" : "Equipment", note: uz ? "Yangi noutbuk" : "New laptop" }),
+    money("income", 22_000_000, addDays(prevMonth, 4), { project_id: pSales.id, note: uz ? "Sotuv bonusi" : "Sales bonus", method: "transfer" }),
+    money("income", 9_000_000, addDays(prevMonth, 12), { project_id: pAgency.id, partner_id: PARTNER, created_by: PARTNER, method: "cash" }),
+    money("expense", 3_000_000, addDays(prevMonth, 15), { direct: true, category: uz ? "Reklama" : "Ads" }),
+  ];
+
+  const note_versions: NoteVersion[] = [
+    { id: id(), note_id: notes[0].id, workspace_id: wsTeam.id, project_id: pAgency.id, title: uz ? "Mijoz bilan uchrashuv qaydlari" : "Client meeting notes",
+      content: { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: uz ? "Asosiy savollar: byudjet va muddat." : "Key questions: budget and timeline." }] }] },
+      created_by: PARTNER, created_at: at(addDays(today, -6), "12:00") },
+  ];
+  const note_tasks: NoteTask[] = [{ note_id: notes[0].id, task_id: tasks[8].id, workspace_id: wsTeam.id, created_at: ts }];
+
   return {
+    deal_stages,
+    deals,
+    money_entries,
+    note_versions,
+    note_tasks,
     contacts,
     meetings,
     meeting_attendees,

@@ -21,6 +21,12 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/icons/maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
       { src: "/icons/icon.svg", sizes: "any", type: "image/svg+xml" },
     ],
+    // sharing a link or text (e.g. from Telegram) to Reja creates an inbox task
+    share_target: {
+      action: "/share-target",
+      method: "GET",
+      params: { title: "title", text: "text", url: "url" },
+    },
     shortcuts: [
       { name: "Yangi vazifa", short_name: "Qoʻshish", url: "/?quickadd=1", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
       { name: "Kiruvchi", url: "/inbox", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },

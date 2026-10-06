@@ -2,6 +2,7 @@
 
 import {
   Bell,
+  Brain,
   CalendarDays,
   CalendarRange,
   ChevronRight,
@@ -22,6 +23,7 @@ import {
   Trash2,
   UserPlus,
   X,
+  Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -400,6 +402,27 @@ function TaskDetailBody({ task, onClose, fullPage }: { task: Task; onClose?: () 
                 <PropButton className="text-muted-foreground">{labels.length ? "+" : t("task.addLabel")}</PropButton>
               </LabelPicker>
             )}
+          </Prop>
+
+          <Prop icon={<Brain />} label={t("energy.label")}>
+            <div className="flex gap-1" role="radiogroup" aria-label={t("energy.label")}>
+              {(["deep", "quick"] as const).map((e) => (
+                <button
+                  key={e}
+                  type="button"
+                  role="radio"
+                  aria-checked={task.energy === e}
+                  disabled={!writable}
+                  onClick={() => updateTask(task.id, { energy: task.energy === e ? null : e })}
+                  className={cn(
+                    "inline-flex h-7 items-center gap-1 rounded-md border px-2 text-xs disabled:pointer-events-none",
+                    task.energy === e ? "border-brand bg-brand-soft text-brand-fg" : "text-muted-foreground hover:bg-muted",
+                  )}
+                >
+                  {e === "deep" ? <Brain className="size-3" /> : <Zap className="size-3" />} {t(`energy.${e}`)}
+                </button>
+              ))}
+            </div>
           </Prop>
 
           <Prop icon={<Repeat />} label={t("task.repeat")}>

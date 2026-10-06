@@ -63,6 +63,10 @@ const ORDER = [
   "routine_runs",
   "weekly_reviews",
   "daily_shutdowns",
+  "deal_stages",
+  "deals",
+  "money_entries",
+  "note_tasks",
 ] as const;
 
 const list = (snap: Snapshot, table: string): Row[] => Object.values(snap[table] ?? {}).filter((r) => !r.deleted_at);
@@ -83,7 +87,7 @@ export function planDemoImport(snap: Snapshot, opts: DemoImportOptions): { items
   // "mine": rows the visitor created, and sample rows they changed (e.g. completed a sample task)
   for (const table of ORDER) {
     for (const row of list(snap, table)) {
-      if (table === "habit_logs" || table === "task_labels" || table === "task_assignees" || table === "meeting_attendees" || table === "routine_runs") continue; // decided by their parents below
+      if (table === "habit_logs" || table === "task_labels" || table === "task_assignees" || table === "meeting_attendees" || table === "routine_runs" || table === "note_tasks" || table === "deal_stages") continue; // decided by their parents below
       if (opts.mode === "all" || !isSeedId(row.id) || row[DEMO_EDITED]) chosen[table].push(row);
     }
   }
@@ -115,6 +119,12 @@ export function planDemoImport(snap: Snapshot, opts: DemoImportOptions): { items
     if (table === "tasks") ensure("contacts", row.waiting_on_contact_id);
     if (table === "meetings") ensure("projects", row.project_id);
     if (table === "meeting_items") ensure("meetings", row.meeting_id);
+    if (table === "deals") {
+      ensure("deal_stages", row.stage_id);
+      ensure("contacts", row.contact_id);
+      ensure("projects", row.project_id);
+    }
+    if (table === "money_entries") ensure("projects", row.project_id);
   }
   for (const table of ORDER) for (const row of [...chosen[table]]) deps(table, row);
 
@@ -149,6 +159,9 @@ export function planDemoImport(snap: Snapshot, opts: DemoImportOptions): { items
       chosen.meeting_attendees.push(a);
     }
   }
+  const noteIds = new Set(chosen.notes.map((n) => n.id as string));
+  for (const l of list(snap, "note_tasks")) if (noteIds.has(l.note_id as string) && chosen.tasks.some((t) => t.id === l.task_id)) chosen.note_tasks.push(l);
+  if (opts.mode === "all") for (const st of list(snap, "deal_stages")) if (!chosen.deal_stages.includes(st)) chosen.deal_stages.push(st);
   const routineIds = new Set(chosen.routines.map((r) => r.id as string));
   for (const r of list(snap, "routine_runs")) if (routineIds.has(r.routine_id as string) && r.user_id === DEMO_USER_ID) chosen.routine_runs.push(r);
 
@@ -232,6 +245,44 @@ export function planDemoImport(snap: Snapshot, opts: DemoImportOptions): { items
   for (const r of chosen.routine_runs) push("routine_runs", { ...r, id: map(r.id), routine_id: map(r.routine_id), workspace_id: ws, user_id: me, created_at: now, updated_at: now });
   for (const r of chosen.weekly_reviews) push("weekly_reviews", { ...r, id: map(r.id), user_id: me, created_at: now, updated_at: now });
   for (const r of chosen.daily_shutdowns) push("daily_shutdowns", { ...r, id: map(r.id), user_id: me, created_at: now, updated_at: now });
+
+  const stageIds = new Set(chosen.deal_stages.map((st) => st.id as string));
+  const projectIds = new Set(chosen.projects.map((pr) => pr.id as string));
+  for (const r of chosen.deal_stages) push("deal_stages", { ...r, id: map(r.id), workspace_id: ws, created_at: now, updated_at: now });
+  for (const r of chosen.deals) {
+    if (!stageIds.has(r.stage_id as string)) continue;
+    push("deals", {
+      ...r,
+      id: map(r.id),
+      workspace_id: ws,
+      stage_id: map(r.stage_id),
+      owner_id: me,
+      contact_id: r.contact_id && contactIds.has(r.contact_id as string) ? map(r.contact_id) : null,
+      project_id: r.project_id && projectIds.has(r.project_id as string) ? map(r.project_id) : null,
+      created_by: me,
+      created_at: now,
+      updated_at: now,
+    });
+  }
+  for (const r of chosen.money_entries) {
+    // amount_uzs is computed by the database; money the invented partner handled goes to the fund
+    const { amount_uzs: _uzs, ...rest } = r;
+    void _uzs;
+    push("money_entries", {
+      ...rest,
+      id: map(r.id),
+      workspace_id: ws,
+      project_id: r.project_id && projectIds.has(r.project_id as string) ? map(r.project_id) : null,
+      partner_id: r.partner_id === DEMO_USER_ID ? me : null,
+      status: "approved",
+      approved_by: null,
+      approved_at: null,
+      created_by: me,
+      created_at: now,
+      updated_at: now,
+    });
+  }
+  for (const r of chosen.note_tasks) push("note_tasks", { note_id: map(r.note_id), task_id: map(r.task_id), workspace_id: ws, created_at: now });
 
   const summary: DemoImportSummary = {
     projects: chosen.projects.length,

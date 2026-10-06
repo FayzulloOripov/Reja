@@ -139,7 +139,10 @@
     "routines": "Rutinlar",
     "contacts": "Kontaktlar",
     "review": "Haftalik tahlil",
-    "shutdown": "Kunni yakunlash"
+    "shutdown": "Kunni yakunlash",
+    "pipeline": "Savdo voronkasi",
+    "money": "Pul",
+    "docs": "Hujjatlar"
   },
   "auth": {
     "title": "Reja’ga xush kelibsiz",
@@ -641,7 +644,34 @@
     },
     "deleteKr": "«{title}» natijasini oʻchirish",
     "deleteKrTitle": "Natijani oʻchirasizmi?",
-    "deleteKrBody": "«{title}» va uning tarixi oʻchiriladi. Buni qaytarib boʻlmaydi."
+    "deleteKrBody": "«{title}» va uning tarixi oʻchiriladi. Buni qaytarib boʻlmaydi.",
+    "checkIn": "Yangilash",
+    "checkInFor": "«{title}» qiymatini yangilash",
+    "checkInNote": "Izoh",
+    "checkInNotePlaceholder": "Nima oʻzgardi?",
+    "checkInNotes": "Yangilash izohlari",
+    "autoHint": "Qiymat maʼlumotlardan avtomatik hisoblanadi",
+    "source": "Qiymat manbasi",
+    "sourceFor": "«{title}» qiymat manbasi",
+    "pickLabel": "Yorliqni tanlang",
+    "scale": "Birlik",
+    "sources": {
+      "manual": "Qoʻlda",
+      "money_income": "Bu oygi kirim",
+      "pipeline_won": "Yutilgan bitimlar",
+      "tasks_done": "Bajarilgan vazifalar"
+    },
+    "sourceHints": {
+      "manual": "Qiymatni oʻzingiz yangilaysiz; har bir yangilash izoh bilan tarixda qoladi.",
+      "money_income": "Pul boʻlimidagi bu oygi tasdiqlangan kirim.",
+      "pipeline_won": "Maqsad davrida yutilgan bitimlar soni.",
+      "tasks_done": "Maqsad davrida bajarilgan, tanlangan yorliqli vazifalar soni."
+    },
+    "scales": {
+      "1": "soʻm",
+      "1000": "ming soʻm",
+      "1000000": "mln soʻm"
+    }
   },
   "habits": {
     "title": "Odatlar",
@@ -915,7 +945,9 @@
     "poweredBy": "Reja orqali ulashildi",
     "notFound": "Havola oʻchirilgan yoki notoʻgʻri",
     "inviteTitle": "Odamlarni taklif qilish",
-    "projectMembers": "Loyiha aʼzolari"
+    "projectMembers": "Loyiha aʼzolari",
+    "adding": "Vazifa qoʻshilmoqda…",
+    "added": "Kiruvchiga qoʻshildi"
   },
   "onboarding": {
     "welcome": "Xush kelibsiz!",
@@ -1060,7 +1092,11 @@
     "reviewSubject": "Haftalik tahlil",
     "reviewHeading": "Hafta yakuni, {name}",
     "notificationSubject": "{title}",
-    "reminderSubject": "⏰ {title}"
+    "reminderSubject": "⏰ {title}",
+    "backupSubject": "Reja zaxira nusxasi — {date}",
+    "backupHeading": "Haftalik zaxira nusxa",
+    "backupIntro": "Ish maydonlaringizning toʻliq nusxasi ilova qilindi ({count} ta fayl, JSON). Uni xavfsiz joyda saqlang.",
+    "backupFiles": "Ilova qilingan ish maydonlari"
   },
   "bot": {
     "welcome": "Assalomu alaykum! Men Reja botiman.\n\nHisobingizni ulash uchun Reja → Sozlamalar → Telegram boʻlimidagi kodni shu yerga yuboring.",
@@ -1298,25 +1334,25 @@
         "title": "Kiruvchini tozalang",
         "body": "Har bir ishni loyihaga oʻtkazing, sana qoʻying yoki oʻchiring."
       },
-      "numbers": {
-        "title": "Hafta raqamlarda",
-        "body": "Bu hafta nima bajarildi va qancha vaqt ketdi."
-      },
       "overdue": {
         "title": "Kechikkanlar",
-        "body": "Har birini bajaring, yangi sana qoʻying yoki voz keching."
-      },
-      "waiting": {
-        "title": "Kutilayotganlar",
-        "body": "Kimdan nima kutyapsiz — kerak boʻlsa soʻrab koʻring."
+        "body": "Har birini bajaring, yangi sana qoʻying yoki voz keching. Kimdandir kutayotganlaringizni ham koʻring."
       },
       "next": {
-        "title": "Keyingi hafta",
-        "body": "Kelgusi haftadagi muddatlar va asosiy eʼtibor."
+        "title": "Keyingi hafta ustuvorliklari",
+        "body": "Kelgusi haftadagi muddatlar va asosiy eʼtiboringiz."
       },
-      "reflect": {
-        "title": "Xulosa",
-        "body": "Nima yaxshi boʻldi va nimani oʻzgartirasiz."
+      "projects": {
+        "title": "Loyihalar holati",
+        "body": "Har bir faol loyiha: holati va sababi. Kerak boʻlsa loyihani ochib tuzating."
+      },
+      "goals": {
+        "title": "Maqsadlar",
+        "body": "Maqsadlar qanchalik oldinda yoki ortda — vaqtga nisbatan."
+      },
+      "monday": {
+        "title": "Dushanbaning 3 ta asosiysi",
+        "body": "Dushanba kuni birinchi navbatda qiladigan 3 ta ishni tanlang va haftaga xulosa yozing."
       }
     },
     "inboxClear": "Kiruvchi boʻsh",
@@ -1338,7 +1374,11 @@
     "historyEmptyBody": "Tugallangan har bir haftalik tahlil shu yerda saqlanadi.",
     "weekOf": "{date} haftasi",
     "historyStats": "{done} bajarildi · {overdue} kechikkan",
-    "reminderHint": "Haftalik tahlil eslatmasini Sozlamalarda yoqing"
+    "reminderHint": "Haftalik tahlil eslatmasini Sozlamalarda yoqing",
+    "waitingTitle": "Kutilayotganlar: {count}",
+    "noProjects": "Faol loyiha yoʻq",
+    "noGoals": "Faol maqsad yoʻq",
+    "mondayTop3": "Dushanbaning 3 ta asosiysi"
   },
   "shutdown": {
     "title": "Kunni yakunlash",
@@ -1357,7 +1397,12 @@
     "closed": "Kun yakunlandi",
     "closedBody": "Bugun {done} ta ish bajarildi. Dam oling!",
     "homeTitle": "Kunni yakunlash vaqti",
-    "homeBody": "Qolganlarni koʻchiring va ertangi 3 ta asosiyni tanlang"
+    "homeBody": "Qolganlarni koʻchiring va ertangi 3 ta asosiyni tanlang",
+    "later": "Keyinroq",
+    "drop": "Tashlash",
+    "triage": "«{title}» bilan nima qilamiz",
+    "dropped": "Vazifa bekor qilindi",
+    "movedLater": "Keyingi dushanbaga koʻchirildi"
   },
   "routines": {
     "title": "Rutinlar",
@@ -1387,5 +1432,246 @@
     },
     "homeEmpty": "Rutin qoʻshish",
     "progress": "{done}/{total}"
+  },
+  "modules": {
+    "title": "Modullar",
+    "hint": "Biznes uchun qoʻshimcha boʻlimlar. Har bir ish maydonida alohida yoqiladi.",
+    "pipeline": "Savdo voronkasi",
+    "pipelineHint": "Bitimlar bosqichlar boʻyicha, konversiya va eskirgan bitimlar",
+    "money": "Pul",
+    "moneyHint": "Kirim va chiqim, UZS/USD, hamkorlar ulushi va katta xarajatlarni tasdiqlash",
+    "docs": "Hujjatlar",
+    "docsHint": "Loyiha hujjatlari: versiyalar tarixi va bogʻlangan vazifalar",
+    "offTitle": "«{name}» bu ish maydonida yoqilmagan",
+    "offBody": "Ish maydoni administratori uni Sozlamalar → Ish maydoni → Modullar boʻlimida yoqishi mumkin.",
+    "openSettings": "Sozlamalarni ochish"
+  },
+  "pipeline": {
+    "title": "Savdo voronkasi",
+    "subtitle": "Bitimlar, keyingi qadamlar va konversiya",
+    "newDeal": "Yangi bitim",
+    "editDeal": "Bitimni tahrirlash",
+    "dealTitle": "Bitim nomi",
+    "value": "Summa",
+    "stage": "Bosqich",
+    "owner": "Masʼul",
+    "contact": "Kontakt",
+    "source": "Manba",
+    "sourcePlaceholder": "Instagram, tavsiya…",
+    "nextStep": "Keyingi qadam",
+    "nextStepPlaceholder": "Masalan: taklif yuborish",
+    "nextStepDate": "Sanasi",
+    "lostReason": "Yutqazish sababi",
+    "lostReasonRequired": "Yutqazilgan bitim uchun sababni yozing",
+    "lostTitle": "«{title}» — nega yutqazildi?",
+    "lostBody": "Sabab keyinchalik voronkani yaxshilashga yordam beradi.",
+    "lostPlaceholder": "Masalan: byudjeti yetmadi",
+    "markLost": "Yutqazildi deb belgilash",
+    "history": "Bosqichlar tarixi",
+    "createdIn": "«{stage}» bosqichida yaratildi",
+    "move": "Koʻchirish",
+    "moveTo": "Bosqichga koʻchirish",
+    "moveDeal": "«{title}» bitimini koʻchirish",
+    "moved": "«{stage}» bosqichiga koʻchirildi",
+    "openDeals": "Ochiq bitimlar",
+    "wonThisMonth": "Bu oy yutildi",
+    "conversion": "Konversiya",
+    "conversionHint": "Bu oy: {won} yutildi, {lost} yutqazildi",
+    "needAttention": "Eʼtibor kerak",
+    "needAttentionHint": "Eskirgan yoki qadami kechikkan",
+    "stale": {
+      "no_move": "14 kundan beri harakatsiz",
+      "step_overdue": "Keyingi qadam kechikdi",
+      "no_step": "Keyingi qadam yoʻq"
+    },
+    "noStages": "Bosqichlar yoʻq",
+    "noStagesBody": "Modulni oʻchirib qayta yoqing — standart bosqichlar qoʻshiladi.",
+    "guest": "Savdo voronkasi faqat jamoa aʼzolariga koʻrinadi",
+    "toProject": "Loyihaga aylantirish",
+    "wonTitle": "«{title}» yutildi!",
+    "wonBody": "Bitimdan loyiha yarating — shablon tanlasangiz, boʻlimlar va vazifalar tayyor boʻladi.",
+    "template": "Shablon",
+    "emptyProject": "Boʻsh loyiha",
+    "later": "Keyinroq",
+    "createProject": "Loyiha yaratish"
+  },
+  "money": {
+    "title": "Pul",
+    "subtitle": "Kirim va chiqim, oylik natija va hamkorlar ulushi",
+    "addIncome": "Kirim",
+    "addExpense": "Chiqim",
+    "editEntry": "Yozuvni tahrirlash",
+    "income": "Kirim",
+    "expense": "Chiqim",
+    "profit": "Foyda",
+    "inUsd": "shundan {amount}",
+    "ratesHint": "1 USD = {rate} soʻm",
+    "month": "Oy",
+    "prevMonth": "Oldingi oy",
+    "nextMonth": "Keyingi oy",
+    "allProjects": "Barcha loyihalar",
+    "allPartners": "Barcha hamkorlar",
+    "partner": "Hamkor",
+    "byMonth": "Oylar boʻyicha",
+    "mln": "mln",
+    "thousand": "ming",
+    "pendingTitle": "Tasdiq kutilmoqda: {count}",
+    "waitingForPartner": "Hamkor tasdigʻini kutyapti",
+    "approve": "Tasdiqlash",
+    "reject": "Rad etish",
+    "splitTitle": "Hamkorlar ulushi",
+    "splitOff": "Ulush qoidasi yoqilmagan. Uni Sozlamalar → Ish maydoni → Pul boʻlimida sozlang.",
+    "splitRule": "Avval toʻgʻridan-toʻgʻri xarajatlar, keyin {fund}% umumiy fondga, qolgani ulushlar boʻyicha",
+    "directCosts": "Toʻgʻridan-toʻgʻri xarajatlar",
+    "fundShare": "Umumiy fond ({pct}%)",
+    "whoOwes": "Kim kimga beradi",
+    "settled": "Hisob teng — hech kim qarzdor emas",
+    "pays": "beradi",
+    "fund": "Umumiy fond",
+    "entries": "Yozuvlar: {count}",
+    "empty": "Bu oy yozuv yoʻq",
+    "emptyBody": "Kirim yoki chiqim qoʻshing — oylik natija va ulushlar avtomatik hisoblanadi.",
+    "guest": "Pul boʻlimi faqat jamoa aʼzolariga koʻrinadi",
+    "direct": "toʻgʻridan-toʻgʻri",
+    "directLabel": "Toʻgʻridan-toʻgʻri xarajat",
+    "directHint": "Loyiha uchun sarflangan (reklama, material) — ulushdan oldin ayriladi. Boshqa xarajatlar umumiy fonddan toʻlanadi.",
+    "status": {
+      "pending": "tasdiq kutilmoqda",
+      "rejected": "rad etilgan"
+    },
+    "amount": "Summa",
+    "currency": "Valyuta",
+    "rate": "USD kursi",
+    "method": "Usul",
+    "methods": {
+      "cash": "Naqd",
+      "card": "Karta",
+      "transfer": "Oʻtkazma"
+    },
+    "receivedBy": "Kim oldi",
+    "paidBy": "Kim toʻladi",
+    "category": "Toifa",
+    "categoryPlaceholder": "Reklama, ijara, maosh…",
+    "needsApproval": "{amount} va undan katta xarajat hamkor tasdigʻidan keyin hisobga olinadi.",
+    "settings": "Pul sozlamalari",
+    "settingsHint": "Valyuta kursi, tasdiq chegarasi va hamkorlar ulushi",
+    "perUsd": "soʻm = 1 USD",
+    "rateHint": "Yangi USD yozuvlari shu kurs bilan hisoblanadi",
+    "threshold": "Tasdiq chegarasi",
+    "thresholdHint": "Shu summadan katta xarajatni boshqa hamkor tasdiqlaydi",
+    "thresholdOff": "Oʻchirilgan",
+    "split": "Hamkorlar ulushi",
+    "splitHint": "Masalan: xarajatlar, keyin 10% fondga, keyin 50/50",
+    "fundPct": "Umumiy fond",
+    "shareOf": "{name} ulushi",
+    "sharesNot100": "Ulushlar yigʻindisi {total}% — 100% boʻlishi kerak"
+  },
+  "docs": {
+    "title": "Hujjatlar",
+    "subtitle": "SOP, skriptlar, takliflar — barcha loyiha hujjatlari",
+    "search": "Hujjatlarni qidirish",
+    "empty": "Hali hujjat yoʻq",
+    "emptyBody": "Loyihaning «Qaydlar» boʻlimida hujjat yarating.",
+    "linkedCount": "{count} ta vazifa",
+    "history": "Tarix",
+    "historyTitle": "«{title}» — versiyalar",
+    "historyHint": "Oʻzgartirishlar 10 daqiqada bir marta saqlanadi; eski versiyani qaytarish mumkin.",
+    "versions": "Versiyalar",
+    "noVersions": "Hali oldingi versiya yoʻq",
+    "restore": "Shu versiyani qaytarish",
+    "linkedTasks": "Bogʻlangan vazifalar",
+    "linkTask": "Vazifa bogʻlash",
+    "searchTask": "Vazifani qidirish…",
+    "noLinked": "Bu hujjatga bogʻlangan vazifa yoʻq",
+    "unlink": "«{title}» bogʻlanishini olib tashlash"
+  },
+  "energy": {
+    "label": "Energiya",
+    "deep": "Chuqur ish",
+    "quick": "Tez ish",
+    "cardTitle": "Hozir nima qilay?",
+    "morning": "Ertalabki fokus uchun — chuqur ish",
+    "gap": "{from}–{to} boʻsh vaqt — tez ishlar"
+  },
+  "prayer": {
+    "title": "Namoz vaqtlari",
+    "hint": "Ixtiyoriy: besh vaqt namoz kun jadvalida koʻrinadi, eslatmalar bu daqiqalarga tushmaydi.",
+    "enable": "Namoz vaqtlarini hisobga olish",
+    "city": "Shahar",
+    "pickCity": "Shaharni tanlang",
+    "madhab": "Asr vaqti",
+    "hanafi": "Hanafiy",
+    "shafi": "Shofeʼiy",
+    "minutes": "Har bir namozga",
+    "minutesHint": "Bu vaqtda eslatmalar kutib turadi",
+    "today": "Bugun",
+    "method": "Hisob: Musulmon olami ligasi (MWL) usuli. Mahalliy masjid vaqtidan bir necha daqiqa farq qilishi mumkin.",
+    "names": {
+      "fajr": "Bomdod",
+      "dhuhr": "Peshin",
+      "asr": "Asr",
+      "maghrib": "Shom",
+      "isha": "Xufton"
+    }
+  },
+  "calendarSync": {
+    "title": "Google Calendar",
+    "hint": "Ikki tomonlama: Google’dagi band vaqtlar kun jadvalida koʻrinadi, belgilangan vaqt bloklari Google’ga yoziladi.",
+    "soon": "Tez orada",
+    "notConfigured": "Google Calendar ulanishi administrator Google OAuth kalitlarini sozlagandan keyin ishlaydi. Hozircha quyidagi ICS havola orqali bir tomonlama obuna boʻlishingiz mumkin.",
+    "connect": "Google Calendar’ni ulash",
+    "connectedAs": "Ulangan: {email}",
+    "lastSync": "Oxirgi sinxronlash: {when}",
+    "neverSynced": "Hali sinxronlanmagan",
+    "syncNow": "Hozir sinxronlash",
+    "disconnect": "Uzish",
+    "synced": "Google Calendar sinxronlandi",
+    "connectedToast": "Google Calendar ulandi",
+    "errorToast": "Google Calendar bilan bogʻlanib boʻlmadi",
+    "lastError": "Oxirgi xato: {message}",
+    "blockHint": "Kun jadvalidagi vaqt blokida kalendar belgisini bosing — blok Google Calendar’ga yoziladi va oʻzgarsa yangilanadi.",
+    "blockToggle": "«{title}» — Google Calendar’ga yozish",
+    "busy": "Band",
+    "fromGoogle": "Google Calendar",
+    "allDay": "Kun boʻyi"
+  },
+  "trust": {
+    "devicesTitle": "Qurilmalar",
+    "devicesHint": "Hisobingizga kirilgan qurilmalar. Tanimaganingizdan chiqib keting.",
+    "thisDevice": "Shu qurilma",
+    "unknownDevice": "Nomaʼlum qurilma",
+    "lastActive": "Oxirgi faollik: {when}",
+    "signOut": "Chiqish",
+    "signOutOthers": "Boshqa barcha qurilmalardan chiqish",
+    "signedOut": "Qurilmadan chiqildi (bir soat ichida kuchga kiradi)",
+    "demoNote": "Demoda mavjud emas — haqiqiy hisobda koʻrinadi.",
+    "backupTitle": "Zaxira nusxa",
+    "backupHint": "Maʼlumotlaringizning toʻliq nusxasi.",
+    "backupWeekly": "Haftalik zaxira nusxa emailga",
+    "backupWeeklyHint": "Har yakshanba tunda oʻzingizga tegishli ish maydonlari JSON fayl sifatida emailingizga yuboriladi.",
+    "exportAll": "Hammasini yuklab olish",
+    "exportAllHint": "Barcha ish maydonlari va shaxsiy maʼlumotlar bitta JSON faylda",
+    "exportAllButton": "Yuklab olish",
+    "auditTitle": "Audit jurnali",
+    "auditHint": "Kim rollarni oʻzgartirdi, loyihalarni oʻchirdi yoki maʼlumotlarni yuklab oldi — faqat administratorlarga koʻrinadi.",
+    "auditEmpty": "Hali yozuv yoʻq",
+    "someone": "Kimdir",
+    "system": "Tizim",
+    "audit": {
+      "member_added": "«{name}»ni qoʻshdi ({role})",
+      "role_changed": "«{name}» rolini oʻzgartirdi: {from} → {to}",
+      "member_removed": "«{name}»ni chiqardi",
+      "project_deleted": "«{name}» loyihasini savatga tashladi",
+      "project_deleted_forever": "«{name}» loyihasini butunlay oʻchirdi",
+      "project_restored": "«{name}» loyihasini tikladi",
+      "modules_changed": "modullarni oʻzgartirdi",
+      "money_settings_changed": "pul sozlamalarini oʻzgartirdi",
+      "invite_created": "taklif yaratdi ({role})",
+      "invite_revoked": "taklifni bekor qildi",
+      "expense_approved": "katta xarajatni tasdiqladi",
+      "expense_rejected": "katta xarajatni rad etdi",
+      "data_exported": "maʼlumotlarni yuklab oldi ({format})",
+      "other": "{action}"
+    }
   }
 }

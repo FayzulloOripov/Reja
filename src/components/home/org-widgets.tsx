@@ -1,14 +1,18 @@
 "use client";
 
-import { ChevronRight, ListChecks, MoonStar, Plus } from "lucide-react";
+import { Brain, ChevronRight, ListChecks, MoonStar, Plus, Zap } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 import { Section } from "@/components/common/bits";
-import { minutesToHHMM } from "@/lib/dates";
+import { addDays, hhmmToMinutes, minutesToHHMM } from "@/lib/dates";
+import { energySuggestions } from "@/lib/energy";
+import type { Task } from "@/lib/types";
+import { useBusySpans } from "@/hooks/use-day-busy";
+import { useUI } from "@/store/ui";
 import { routineDueOn, runProgress, shutdownDue } from "@/lib/org";
 import { cn } from "@/lib/utils";
-import { useMe, useNowMinutes, useRoutines, useToday, useTz, useUserId } from "@/store/hooks";
+import { useMe, useMyTasks, useNowMinutes, useRoutines, useToday, useTz, useUserId } from "@/store/hooks";
 import { useStore } from "@/store/store";
 
 /** After the chosen time, a nudge to close the day (Settings → «Kunni yakunlash»). */
@@ -67,6 +71,50 @@ export function RoutinesRow() {
           );
         })}
       </ul>
+    </Section>
+  );
+}
+
+/** «Hozir nima qilay?»: deep work for the morning block, quick tasks that fit the next free gap. */
+export function EnergyCard() {
+  const t = useTranslations("energy");
+  const today = useToday();
+  const now = useNowMinutes();
+  const me = useMe();
+  const mine = useMyTasks();
+  const busy = useBusySpans(today);
+  const openTask = useUI((s) => s.openTask);
+  const s = useMemo(
+    () => energySuggestions(mine, { today, nowMin: now, dayEnd: hhmmToMinutes(me?.day_end ?? "22:00"), busy, horizon: addDays(today, 7) }),
+    [mine, today, now, me?.day_end, busy],
+  );
+  if (!mine.some((x) => x.energy)) return null;
+  if (!s.deep.length && !s.quick.length) return null;
+  const row = (task: Task, icon: React.ReactNode) => (
+    <li key={task.id}>
+      <button type="button" onClick={() => openTask(task.id)} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-13 hover:bg-muted">
+        {icon}
+        <span className="min-w-0 flex-1 truncate">{task.title}</span>
+        {task.estimate_min && <span className="shrink-0 text-xs text-muted-foreground tnum">{task.estimate_min}′</span>}
+      </button>
+    </li>
+  );
+  return (
+    <Section title={t("cardTitle")}>
+      <div className="space-y-3 rounded-2xl border bg-card p-3 shadow-elev-1">
+        {s.deep.length > 0 && (
+          <div>
+            <p className="mb-1 px-2 text-xs font-medium text-muted-foreground">{t("morning")}</p>
+            <ul>{s.deep.map((x) => row(x, <Brain className="size-3.5 shrink-0 text-[var(--pc-violet-fg)]" aria-hidden />))}</ul>
+          </div>
+        )}
+        {s.quick.length > 0 && s.gap && (
+          <div>
+            <p className="mb-1 px-2 text-xs font-medium text-muted-foreground tnum">{t("gap", { from: minutesToHHMM(s.gap.start), to: minutesToHHMM(s.gap.end) })}</p>
+            <ul>{s.quick.map((x) => row(x, <Zap className="size-3.5 shrink-0 text-[var(--pc-amber-fg)]" aria-hidden />))}</ul>
+          </div>
+        )}
+      </div>
     </Section>
   );
 }

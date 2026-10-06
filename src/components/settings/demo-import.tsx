@@ -11,7 +11,8 @@ import { DEMO_USER_ID } from "@/lib/demo/seed";
 import { cn } from "@/lib/utils";
 import { uuid } from "@/store/factories";
 import { useCurrentWorkspace, useUserId } from "@/store/hooks";
-import { deleteSnapshots, mutate, readSnapshot, type MutationInput } from "@/store/store";
+import { updateWorkspace } from "@/store/actions";
+import { deleteSnapshots, mutate, readSnapshot, useStore, type MutationInput } from "@/store/store";
 import type { TableName } from "@/store/tables";
 
 /**
@@ -70,6 +71,14 @@ export function DemoImportCard({ className }: { className?: string }) {
             setState("busy");
             // every item is a new row in the account (new ids), written in dependency order
             mutate(plan.items.map((i): MutationInput => ({ table: i.table as TableName, kind: i.kind, row: i.row })));
+            // switch on the business modules the imported data uses
+            const target = ws ? useStore.getState().data.workspaces[ws.id] : undefined;
+            if (target) {
+              const used = { pipeline: plan.items.some((i) => i.table === "deals"), money: plan.items.some((i) => i.table === "money_entries"), docs: plan.items.some((i) => i.table === "note_tasks") };
+              if (Object.entries(used).some(([k, on]) => on && !target.modules?.[k as keyof typeof used])) {
+                updateWorkspace(target.id, { modules: { ...target.modules, ...Object.fromEntries(Object.entries(used).filter(([, on]) => on)) } });
+              }
+            }
             await deleteSnapshots(DEMO_USER_ID);
             setState("done");
             toast.success(t("done", { tasks: plan.summary.tasks }));

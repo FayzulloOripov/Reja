@@ -16,7 +16,7 @@ import { isOpen } from "@/lib/health";
 import { unfinishedToday } from "@/lib/org";
 import { cn } from "@/lib/utils";
 import { setTop } from "@/store/actions";
-import { moveLeftoversToTomorrow, saveShutdown } from "@/store/org-actions";
+import { moveLeftoversToTomorrow, saveShutdown, triageLeftover } from "@/store/org-actions";
 import { useMyTasks, useToday, useTz, useUserId } from "@/store/hooks";
 import { useStore } from "@/store/store";
 
@@ -65,7 +65,18 @@ export default function ShutdownPage() {
         <Step n={2} title={t("shutdown.unfinishedTitle", { count: unfinished.length })}>
           {unfinished.length ? (
             <>
-              <TaskList groups={[{ key: "left", tasks: unfinished, noAdd: true }]} showProject />
+              <ul className="divide-y rounded-xl border">
+                {unfinished.map((task) => (
+                  <li key={task.id} className="flex flex-wrap items-center gap-2 px-3 py-2">
+                    <span className="min-w-0 flex-1 truncate text-sm">{task.title}</span>
+                    <div className="flex gap-1" role="group" aria-label={t("shutdown.triage", { title: task.title })}>
+                      <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => triageLeftover(task, "tomorrow")}>{t("common.tomorrow")}</Button>
+                      <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => triageLeftover(task, "later")}>{t("shutdown.later")}</Button>
+                      <Button size="sm" variant="ghost" className="h-7 text-xs text-muted-foreground" onClick={() => triageLeftover(task, "drop")}>{t("shutdown.drop")}</Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
               <Button
                 variant="outline"
                 size="sm"

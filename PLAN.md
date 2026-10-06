@@ -125,9 +125,9 @@ AUDIT.md tracks every item. Phases:
 - [x] 3 Projects and areas — Projects page, areas everywhere, workload (owner rule, work days, capacity), activity in the demo and live feeds, delegated view
 - [x] 4 Check list — everything in «not tested yet» tested in demo and on Supabase; board reorder, drag preview offset, fast-close data loss fixed
 - [x] 5 Organisation — waiting-for, contacts, meetings, weekly review, daily shutdown, routines
-- [ ] 6 Business modules — pipeline, money, docs, goals fed by data
-- [ ] 7 Communication and personal — Telegram group digests and replies, email digest, Google Calendar, PWA, prayer times, energy labels
-- [ ] 8 Data, trust, ship — import, backups, sessions, audit log, deploy, Lighthouse, Playwright
+- [x] 6 Business modules — pipeline, money, docs, goals fed by data
+- [x] 7 Communication and personal (Telegram postponed, email waiting for Resend, Google waiting for OAuth keys) — Telegram group digests and replies, email digest, Google Calendar, PWA, prayer times, energy labels
+- [x] 8 Data, trust, ship (deploy blocked on Vercel login; Lighthouse performance below 90 on Home) — import, backups, sessions, audit log, deploy, Lighthouse, Playwright
 
 Decisions in round 2:
 - Demo is a runtime mode (`/demo` cookie) instead of a build flag, so one production build serves both and the demo e2e suite runs in CI without keys.

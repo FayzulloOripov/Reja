@@ -77,9 +77,15 @@ export interface DailySlotProfile {
   shutdown_enabled?: boolean;
   shutdown_time?: string;
   last_shutdown_on?: ISODate | null;
+  /** weekly backup by email, Sunday night */
+  backup_enabled?: boolean;
+  last_backup_on?: ISODate | null;
 }
 
-export type DailySlotKind = "digest" | "review" | "overdue" | "shutdown";
+export type DailySlotKind = "digest" | "review" | "overdue" | "shutdown" | "backup";
+
+/** The weekly backup goes out on Sunday at this local time. */
+export const BACKUP_TIME = "03:00";
 
 /** How late a missed slot may still be sent (e.g. the cron was down for a while). */
 const LATE_WINDOW_MINUTES = 180;
@@ -112,6 +118,9 @@ export function dueDailySlots(p: DailySlotProfile, now: Date): { kind: DailySlot
   }
   if (p.shutdown_enabled && p.shutdown_time && inWindow(p.shutdown_time) && (!p.last_shutdown_on || p.last_shutdown_on < today)) {
     out.push({ kind: "shutdown", date: today });
+  }
+  if (p.backup_enabled && isoWeekday(today) === 7 && inWindow(BACKUP_TIME) && (!p.last_backup_on || p.last_backup_on < today)) {
+    out.push({ kind: "backup", date: today });
   }
   return out;
 }

@@ -3,17 +3,20 @@
 import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
 import { getBrowserSupabase } from "@/lib/supabase/client";
 import type { ActivityEntry } from "@/lib/types";
+import { indexRows } from "./index-rows";
 import {
   AdapterError,
   PK,
   type ChangeEvent,
   type DataAdapter,
   type Op,
-  type StoreData,
   type TableName,
 } from "./tables";
 
 const PAGE = 1000;
+
+/** Generated columns: kept locally for the screen, never sent. */
+const GENERATED: Partial<Record<TableName, string[]>> = { money_entries: ["amount_uzs"] };
 
 function isNetworkError(message: string): boolean {
   return (
@@ -38,6 +41,8 @@ async function fetchAllPages<T>(build: () => Query): Promise<T[]> {
 /** Loaders for tables added after the first release (kept separate so the list above stays readable). */
 function EXTRA_LOADERS(sb: SupabaseClient, userId: string): Partial<Record<TableName, () => Query>> {
   const since60 = new Date(Date.now() - 60 * 86_400_000).toISOString();
+  const since400 = new Date(Date.now() - 400 * 86_400_000).toISOString();
+  const in60 = new Date(Date.now() + 60 * 86_400_000).toISOString();
   const since60d = since60.slice(0, 10);
   return {
     contacts: () => sb.from("contacts").select("*").is("deleted_at", null),
@@ -48,6 +53,12 @@ function EXTRA_LOADERS(sb: SupabaseClient, userId: string): Partial<Record<Table
     daily_shutdowns: () => sb.from("daily_shutdowns").select("*").eq("user_id", userId).gte("date", since60d),
     routines: () => sb.from("routines").select("*").is("archived_at", null),
     routine_runs: () => sb.from("routine_runs").select("*").gte("date", since60d),
+    deal_stages: () => sb.from("deal_stages").select("*"),
+    deals: () => sb.from("deals").select("*").is("deleted_at", null),
+    deal_stage_history: () => sb.from("deal_stage_history").select("*").gte("changed_at", since400),
+    money_entries: () => sb.from("money_entries").select("*").is("deleted_at", null).gte("date", since400.slice(0, 10)),
+    note_tasks: () => sb.from("note_tasks").select("*"),
+    calendar_events: () => sb.from("calendar_events").select("*").eq("user_id", userId).gte("end_at", since60).lte("start_at", in60),
   };
 }
 
@@ -77,10 +88,15 @@ const WORKSPACE_TABLES: TableName[] = [
   "meeting_items",
   "routines",
   "routine_runs",
+  "deal_stages",
+  "deals",
+  "deal_stage_history",
+  "money_entries",
+  "note_tasks",
 ];
 
 // Tables scoped to the signed-in user.
-const USER_TABLES: TableName[] = ["notifications", "reminders", "habits", "habit_logs", "time_blocks", "project_favorites", "weekly_reviews", "daily_shutdowns"];
+const USER_TABLES: TableName[] = ["notifications", "reminders", "habits", "habit_logs", "time_blocks", "project_favorites", "weekly_reviews", "daily_shutdowns", "calendar_events"];
 
 export function createSupabaseAdapter(): DataAdapter {
   const sb = getBrowserSupabase();
@@ -141,6 +157,10 @@ export function createSupabaseAdapter(): DataAdapter {
 
     async exec(op: Op) {
       const table = sb.from(op.table);
+      // columns the database computes cannot be written
+      if (op.values && GENERATED[op.table]) {
+        op = { ...op, values: Object.fromEntries(Object.entries(op.values).filter(([k]) => !GENERATED[op.table]!.includes(k))) };
+      }
       let error: { message: string; code?: string } | null = null;
       if (op.kind === "insert") {
         const res = await table.upsert(op.values!, { onConflict: PK[op.table].join(","), ignoreDuplicates: true });
@@ -251,17 +271,6 @@ export function createSupabaseAdapter(): DataAdapter {
       await sb.storage.from("attachments").remove([path]);
     },
   };
-}
-
-function indexRows(rows: Record<string, Record<string, unknown>[]>): Partial<StoreData> {
-  const out: Record<string, Record<string, unknown>> = {};
-  for (const [table, list] of Object.entries(rows)) {
-    const pk = PK[table as TableName];
-    const map: Record<string, unknown> = {};
-    for (const r of list) map[pk.map((c) => String(r[c])).join("|")] = r;
-    out[table] = map;
-  }
-  return out as Partial<StoreData>;
 }
 
 export { indexRows };

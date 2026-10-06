@@ -12,6 +12,8 @@ const schema = z.object({
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().optional(),
   ALLOW_DEMO_SEED: z.string().optional(),
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
 });
 
 const parsed = schema.parse(process.env);
@@ -26,4 +28,8 @@ export const serverEnv = {
   resendKey: parsed.RESEND_API_KEY ?? "",
   emailFrom: parsed.EMAIL_FROM ?? "Reja <onboarding@resend.dev>",
   allowDemoSeed: parsed.ALLOW_DEMO_SEED === "true",
+  googleClientId: (parsed.GOOGLE_CLIENT_ID ?? "").trim(),
+  googleClientSecret: (parsed.GOOGLE_CLIENT_SECRET ?? "").trim(),
 };
+
+export const googleConfigured = () => Boolean(serverEnv.googleClientId && serverEnv.googleClientSecret);

@@ -55,9 +55,11 @@ export function SubtasksSection({ task, writable }: { task: Task; writable: bool
     <section>
       <SectionTitle icon={<GitBranch />} title={t("task.subtasks")} count={subtasks.length ? t("common.of", { done, total: subtasks.length }) : undefined} />
       <div className="-mx-2.5 space-y-px">
-        {subtasks.map((s) => (
-          <TaskRow key={s.id} task={s} readOnly={!writable} />
-        ))}
+        <div role="grid" aria-label={t("task.subtasks")}>
+          {subtasks.map((s) => (
+            <TaskRow key={s.id} task={s} readOnly={!writable} />
+          ))}
+        </div>
         {writable && <InlineAdd sticky defaults={{ parentId: task.id, projectId: task.project_id }} placeholder={t("task.addSubtask")} />}
       </div>
     </section>

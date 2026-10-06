@@ -63,6 +63,7 @@ export function newTask(p: Partial<Task> & Pick<Task, "workspace_id" | "title">)
     waiting_on_contact_id: null,
     waiting_since: null,
     follow_up_date: null,
+    energy: null,
     created_at: now(),
     updated_at: now(),
     deleted_at: null,
@@ -102,6 +103,10 @@ export function newWorkspace(p: Partial<Workspace> & Pick<Workspace, "name" | "o
   return {
     id: uuid(),
     icon: null,
+    modules: { pipeline: false, money: false, docs: false },
+    usd_rate: 12800,
+    approval_threshold_uzs: null,
+    money_split: null,
     color: "tangerine",
     is_personal: false,
     created_at: now(),
@@ -165,7 +170,7 @@ export function newGoal(p: Partial<Goal> & Pick<Goal, "workspace_id" | "title">)
 }
 
 export function newKeyResult(p: Partial<KeyResult> & Pick<KeyResult, "goal_id" | "workspace_id" | "title" | "target">): KeyResult {
-  return { id: uuid(), start_value: 0, current: 0, unit: null, position: Date.now(), created_at: now(), updated_at: now(), ...p };
+  return { id: uuid(), start_value: 0, current: 0, unit: null, position: Date.now(), source: "manual", source_config: {}, created_at: now(), updated_at: now(), ...p };
 }
 
 export function newNote(p: Partial<Note> & Pick<Note, "workspace_id" | "project_id">): Note {
@@ -187,7 +192,7 @@ export function newHabit(p: Partial<Habit> & Pick<Habit, "user_id" | "name">): H
 }
 
 export function newTimeBlock(p: Partial<TimeBlock> & Pick<TimeBlock, "user_id" | "date" | "start_at" | "end_at">): TimeBlock {
-  return { id: uuid(), task_id: null, title: null, color: null, created_at: now(), updated_at: now(), ...p };
+  return { id: uuid(), task_id: null, title: null, color: null, sync_google: false, google_event_id: null, created_at: now(), updated_at: now(), ...p };
 }
 
 export function newTimeEntry(p: Partial<TimeEntry> & Pick<TimeEntry, "task_id" | "workspace_id" | "user_id" | "minutes">): TimeEntry {

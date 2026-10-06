@@ -28,6 +28,12 @@ export const EXPORT_TABLES = [
   "meeting_items",
   "routines",
   "routine_runs",
+  "deal_stages",
+  "deals",
+  "deal_stage_history",
+  "money_entries",
+  "note_versions",
+  "note_tasks",
 ] as const;
 
 type Row = Record<string, unknown>;
